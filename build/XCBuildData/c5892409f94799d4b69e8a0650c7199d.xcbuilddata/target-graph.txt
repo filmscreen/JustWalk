@@ -1,0 +1,8 @@
+Target dependency graph (4 targets)
+Target 'JustWalk' in project 'JustWalk'
+➜ Explicit dependency on target 'JustWalkWatch Watch App' in project 'JustWalk'
+➜ Explicit dependency on target 'JustWalk WidgetsExtension' in project 'JustWalk'
+Target 'JustWalk WidgetsExtension' in project 'JustWalk' (no dependencies)
+Target 'JustWalkWatch Watch App' in project 'JustWalk'
+➜ Explicit dependency on target 'JustWalk Widgets (Watch)Extension' in project 'JustWalk'
+Target 'JustWalk Widgets (Watch)Extension' in project 'JustWalk' (no dependencies)

@@ -6,56 +6,101 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @Environment(AppState.self) private var appState
+    @Environment(\.scenePhase) private var scenePhase
+
+    @State private var pendingMilestone: MilestoneEvent?
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        @Bindable var appState = appState
+
+        Group {
+            if #available(iOS 18, *) {
+                TabView(selection: $appState.selectedTab) {
+                    Tab("Today", systemImage: "circle.circle", value: .today) {
+                        NavigationStack {
+                            if appState.healthKitDenied {
+                                HealthAccessRequiredView()
+                            } else {
+                                TodayView()
+                            }
+                        }
+                    }
+
+                    Tab("Walks", systemImage: "figure.walk", value: .walks) {
+                        NavigationStack {
+                            if appState.healthKitDenied {
+                                HealthAccessRequiredView()
+                            } else {
+                                WalksHomeView()
+                            }
+                        }
+                    }
+
+                    Tab("Settings", systemImage: "gearshape", value: .settings) {
+                        NavigationStack {
+                            SettingsView()
+                        }
                     }
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+            } else {
+                TabView {
+                    NavigationStack {
+                        if appState.healthKitDenied {
+                            HealthAccessRequiredView()
+                        } else {
+                            TodayView()
+                        }
                     }
+                    .tabItem { Label("Today", systemImage: "circle.circle") }
+                    .tag(AppTab.today)
+
+                    NavigationStack {
+                        if appState.healthKitDenied {
+                            HealthAccessRequiredView()
+                        } else {
+                            WalksHomeView()
+                        }
+                    }
+                    .tabItem { Label("Walks", systemImage: "figure.walk") }
+                    .tag(AppTab.walks)
+
+                    NavigationStack {
+                        SettingsView()
+                    }
+                    .tabItem { Label("Settings", systemImage: "gearshape") }
+                    .tag(AppTab.settings)
                 }
             }
-        } detail: {
-            Text("Select an item")
+        }
+        .tint(JW.Color.accent)
+        .toolbarBackground(JW.Color.backgroundPrimary, for: .tabBar)
+        .toastOverlay()
+        .fullScreenCover(item: $pendingMilestone) { event in
+            MilestoneFullscreenView(event: event) {
+                pendingMilestone = nil
+            }
+        }
+        .onAppear {
+            checkForPendingFullscreen()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                checkForPendingFullscreen()
+            }
         }
     }
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
+    private func checkForPendingFullscreen() {
+        if let event = MilestoneManager.shared.checkPendingFullscreen() {
+            pendingMilestone = event
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .environment(AppState())
 }

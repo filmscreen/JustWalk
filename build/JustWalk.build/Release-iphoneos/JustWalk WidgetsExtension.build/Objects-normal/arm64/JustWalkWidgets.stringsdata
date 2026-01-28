@@ -1,0 +1,184 @@
+{
+  "source": "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk Widgets/JustWalkWidgets.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Steps Ring",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 169
+        }
+      },
+      {
+        "comment": "",
+        "key": "Today's step progress toward your goal.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 170
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 218
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 221
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 224
+        }
+      },
+      {
+        "comment": "",
+        "key": "Today",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 260
+        }
+      },
+      {
+        "comment": "",
+        "key": "Streak Flame",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 301
+        }
+      },
+      {
+        "comment": "",
+        "key": "Your current walking streak.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 302
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 316
+        }
+      },
+      {
+        "comment": "",
+        "key": "day",
+        "location": {
+          "startingColumn": 45,
+          "startingLine": 319
+        }
+      },
+      {
+        "comment": "",
+        "key": "days",
+        "location": {
+          "startingColumn": 53,
+          "startingLine": 319
+        }
+      },
+      {
+        "comment": "",
+        "key": "Weekly Trends",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 350
+        }
+      },
+      {
+        "comment": "",
+        "key": "Your step activity over the past week.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 351
+        }
+      },
+      {
+        "comment": "",
+        "key": "This Week",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 368
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ steps",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 371
+        }
+      },
+      {
+        "comment": "",
+        "key": "%@ goal",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 396
+        }
+      },
+      {
+        "comment": "",
+        "key": "Steps Gauge",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 424
+        }
+      },
+      {
+        "comment": "",
+        "key": "Step progress at a glance.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 425
+        }
+      },
+      {
+        "comment": "",
+        "key": "Streak Count",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 460
+        }
+      },
+      {
+        "comment": "",
+        "key": "Your current streak on the lock screen.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 461
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld-day streak",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 471
+        }
+      },
+      {
+        "comment": "",
+        "key": "Start your streak!",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 473
+        }
+      }
+    ]
+  },
+  "version": 1
+}

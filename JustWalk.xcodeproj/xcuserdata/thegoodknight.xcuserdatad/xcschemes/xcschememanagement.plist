@@ -4,10 +4,60 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>JustWalk.xcscheme_^#shared#^_</key>
+		<key>JustWalk Widgets (Watch)Extension.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
+		</dict>
+		<key>JustWalk WidgetsExtension.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
+		<key>JustWalk.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>2</integer>
+		</dict>
+		<key>JustWalkTests.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>isShown</key>
+			<false/>
+			<key>orderHint</key>
+			<integer>4</integer>
+		</dict>
+		<key>JustWalkWatch Watch App.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
+	</dict>
+	<key>SuppressBuildableAutocreation</key>
+	<dict>
+		<key>2A0F42AE2F23DB6A00866B22</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>2A0F42BF2F23DB6B00866B22</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>2A0F42E12F23DC9F00866B22</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>2A3BEF482F27666F00C3D8FA</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>2A3BEF662F27669900C3D8FA</key>
+		<dict>
+			<key>primary</key>
+			<true/>
 		</dict>
 	</dict>
 </dict>

@@ -1,0 +1,521 @@
+{
+  "" : {
+    "const-values" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalk-primary.swiftconstvalues",
+    "dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalk-primary.d",
+    "diagnostics" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalk-primary.dia",
+    "emit-module-dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalk-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalk-primary-emit-module.dia",
+    "pch" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalk-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalk-primary.swiftdeps"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Animation/AnimatedCounter.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/AnimatedCounter.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/AnimatedCounter.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/AnimatedCounter.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Animation/AnimationModifiers.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/AnimationModifiers.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/AnimationModifiers.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/AnimationModifiers.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Animation/ConfettiView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ConfettiView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ConfettiView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ConfettiView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Animation/JustWalkAnimation.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkAnimation.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkAnimation.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkAnimation.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Animation/JustWalkHaptics.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkHaptics.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkHaptics.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkHaptics.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Components/GlassButton.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GlassButton.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GlassButton.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GlassButton.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Components/GlassPanel.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GlassPanel.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GlassPanel.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GlassPanel.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Components/GlassStatView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GlassStatView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GlassStatView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GlassStatView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/ContentView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Debug/DebugOverlayView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DebugOverlayView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DebugOverlayView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DebugOverlayView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Debug/TestDataProvider.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TestDataProvider.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TestDataProvider.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TestDataProvider.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Debug/TestPersona.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TestPersona.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TestPersona.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TestPersona.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/DesignSystem/JustWalkTheme.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkTheme.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkTheme.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkTheme.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/JustWalkApp.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkApp.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkApp.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkApp.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/LiveActivity/WalkActivityAttributes.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkActivityAttributes.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkActivityAttributes.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkActivityAttributes.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/LiveActivity/WalkActivityWidget.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkActivityWidget.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkActivityWidget.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkActivityWidget.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/CloudKitSyncManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CloudKitSyncManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CloudKitSyncManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CloudKitSyncManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/DynamicCardEngine.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DynamicCardEngine.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DynamicCardEngine.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DynamicCardEngine.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/HapticsManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/HapticsManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/HapticsManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/HapticsManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/HealthKitManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/HealthKitManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/HealthKitManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/HealthKitManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/IntervalVoiceManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalVoiceManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalVoiceManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalVoiceManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/JustWalkWidgetData.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkWidgetData.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkWidgetData.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JustWalkWidgetData.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/LiveActivityManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/LiveActivityManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/LiveActivityManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/LiveActivityManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/NotificationManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/NotificationManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/NotificationManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/NotificationManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/PersistenceManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PersistenceManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PersistenceManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PersistenceManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/PhoneConnectivityManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PhoneConnectivityManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PhoneConnectivityManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PhoneConnectivityManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/ReviewManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ReviewManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ReviewManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ReviewManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/ShieldManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShieldManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShieldManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShieldManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/StepDataManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StepDataManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StepDataManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StepDataManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/StreakManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/SubscriptionManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/SubscriptionManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/SubscriptionManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/SubscriptionManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Managers/WalkSessionManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkSessionManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkSessionManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkSessionManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/AppState.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/AppState.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/AppState.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/AppState.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/CodableCoordinate.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CodableCoordinate.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CodableCoordinate.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CodableCoordinate.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/CustomIntervalConfig.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CustomIntervalConfig.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CustomIntervalConfig.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CustomIntervalConfig.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/DailyLog.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DailyLog.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DailyLog.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DailyLog.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/DynamicCardType.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DynamicCardType.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DynamicCardType.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DynamicCardType.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/IntervalPhase.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalPhase.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalPhase.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalPhase.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/IntervalProgram.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalProgram.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalProgram.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalProgram.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/IntervalUsageData.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalUsageData.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalUsageData.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalUsageData.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/LegacyBadge.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/LegacyBadge.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/LegacyBadge.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/LegacyBadge.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/ShieldData.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShieldData.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShieldData.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShieldData.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/StreakData.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakData.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakData.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakData.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/TrackedWalk.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TrackedWalk.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TrackedWalk.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TrackedWalk.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/UserProfile.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/UserProfile.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/UserProfile.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/UserProfile.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Models/WalkMode.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkMode.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkMode.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkMode.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Sharing/MonthlyShareCard.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/MonthlyShareCard.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/MonthlyShareCard.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/MonthlyShareCard.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Sharing/ShareCardBranding.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShareCardBranding.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShareCardBranding.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShareCardBranding.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Sharing/ShareCardComponents.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShareCardComponents.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShareCardComponents.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShareCardComponents.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Sharing/ShareCardRenderer.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShareCardRenderer.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShareCardRenderer.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShareCardRenderer.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Sharing/StreakShareCard.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakShareCard.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakShareCard.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakShareCard.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Sharing/WalkCompleteShareCard.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkCompleteShareCard.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkCompleteShareCard.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkCompleteShareCard.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/GoalPickerView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GoalPickerView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GoalPickerView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GoalPickerView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/GoalSettingView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GoalSettingView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GoalSettingView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GoalSettingView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/JourneyBeginsView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JourneyBeginsView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JourneyBeginsView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/JourneyBeginsView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/LoopingVideoPlayer.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/LoopingVideoPlayer.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/LoopingVideoPlayer.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/LoopingVideoPlayer.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/NameView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/NameView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/NameView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/NameView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/OnboardingCalibrationView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingCalibrationView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingCalibrationView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingCalibrationView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/OnboardingContainerView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingContainerView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingContainerView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingContainerView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/OnboardingInstructionView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingInstructionView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingInstructionView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingInstructionView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/OnboardingLaunchView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingLaunchView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingLaunchView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingLaunchView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/OnboardingPermissionsView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingPermissionsView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingPermissionsView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingPermissionsView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/OnboardingPromiseView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingPromiseView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingPromiseView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingPromiseView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/OnboardingWelcomeView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingWelcomeView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingWelcomeView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/OnboardingWelcomeView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/PaywallView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PaywallView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PaywallView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PaywallView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/PermissionsView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PermissionsView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PermissionsView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PermissionsView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Onboarding/WelcomeView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WelcomeView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WelcomeView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WelcomeView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Progress/MilestonesCardView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/MilestonesCardView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/MilestonesCardView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/MilestonesCardView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Progress/MonthStatsView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/MonthStatsView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/MonthStatsView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/MonthStatsView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Progress/ProgressTabView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ProgressTabView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ProgressTabView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ProgressTabView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Progress/RecentWalksView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/RecentWalksView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/RecentWalksView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/RecentWalksView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Progress/StreakCalendarView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakCalendarView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakCalendarView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakCalendarView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Progress/StreakCardView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakCardView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakCardView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakCardView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Settings/DebugSettingsView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DebugSettingsView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DebugSettingsView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DebugSettingsView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Settings/SettingsView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/SettingsView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Today/DynamicCardView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DynamicCardView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DynamicCardView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/DynamicCardView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Today/ShieldDetailSheet.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShieldDetailSheet.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShieldDetailSheet.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/ShieldDetailSheet.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Today/StepRingView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StepRingView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StepRingView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StepRingView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Today/StreakBadgeView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakBadgeView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakBadgeView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakBadgeView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Today/StreakDetailSheet.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakDetailSheet.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakDetailSheet.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/StreakDetailSheet.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Today/TodayView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TodayView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TodayView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/TodayView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Today/WalkTimeDetailSheet.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkTimeDetailSheet.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkTimeDetailSheet.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkTimeDetailSheet.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Today/WeekChartView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WeekChartView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WeekChartView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WeekChartView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/BottomPanel.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/BottomPanel.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/BottomPanel.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/BottomPanel.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/CustomIntervalBuilderSheet.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CustomIntervalBuilderSheet.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CustomIntervalBuilderSheet.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/CustomIntervalBuilderSheet.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/IntervalCardView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalCardView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalCardView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalCardView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/IntervalOverlayView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalOverlayView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalOverlayView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalOverlayView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/IntervalPickerSheet.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalPickerSheet.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalPickerSheet.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalPickerSheet.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/IntervalPreFlightSheet.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalPreFlightSheet.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalPreFlightSheet.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalPreFlightSheet.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/IntervalUpgradeSheet.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalUpgradeSheet.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalUpgradeSheet.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalUpgradeSheet.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/PostWalkSummaryView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PostWalkSummaryView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PostWalkSummaryView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/PostWalkSummaryView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/WalkActiveView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkActiveView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkActiveView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkActiveView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/WalkHistoryRowView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkHistoryRowView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkHistoryRowView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkHistoryRowView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/WalkHistoryView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkHistoryView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkHistoryView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkHistoryView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/WalkIdleView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkIdleView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkIdleView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkIdleView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/WalkMapView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkMapView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkMapView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkMapView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk/Views/Walk/WalkTabView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkTabView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkTabView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WalkTabView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/Shared/IntervalTransferData.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalTransferData.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalTransferData.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/IntervalTransferData.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/Shared/WatchConnectivityConstants.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WatchConnectivityConstants.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WatchConnectivityConstants.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WatchConnectivityConstants.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/Shared/WatchMessage.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WatchMessage.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WatchMessage.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WatchMessage.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/Shared/WorkoutData.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WorkoutData.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WorkoutData.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/WorkoutData.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

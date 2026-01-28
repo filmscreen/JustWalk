@@ -1,0 +1,48 @@
+{
+  "source": "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk Widgets (Watch)/JustWalkWatchWidgets.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Steps",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 96
+        }
+      },
+      {
+        "comment": "",
+        "key": "Today's step progress.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 97
+        }
+      },
+      {
+        "comment": "",
+        "key": "Streak",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 161
+        }
+      },
+      {
+        "comment": "",
+        "key": "Your current walking streak.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 162
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 177
+        }
+      }
+    ]
+  },
+  "version": 1
+}

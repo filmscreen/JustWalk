@@ -1,0 +1,21 @@
+{
+  "" : {
+    "const-values" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalk WidgetsExtension-primary.swiftconstvalues",
+    "dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalk WidgetsExtension-primary.d",
+    "diagnostics" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalk WidgetsExtension-primary.dia",
+    "emit-module-dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalk WidgetsExtension-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalk WidgetsExtension-primary-emit-module.dia",
+    "pch" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalk WidgetsExtension-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalk WidgetsExtension-primary.swiftdeps"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalk Widgets/JustWalkWidgets.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalkWidgets.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalkWidgets.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/JustWalkWidgets.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-iphoneos/JustWalk WidgetsExtension.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Managers/WatchAppState.swift" : {
+    "abi-baseline-json" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch_Watch_App.abi.json",
+    "const-values" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary.swiftconstvalues",
+    "dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary.d",
+    "diagnostics" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary.dia",
+    "objc-header" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch_Watch_App-Swift.h",
+    "swiftdoc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch_Watch_App.swiftdoc",
+    "swiftmodule" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch_Watch_App.swiftmodule",
+    "swiftsourceinfo" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch_Watch_App.swiftsourceinfo"
+  }
+}

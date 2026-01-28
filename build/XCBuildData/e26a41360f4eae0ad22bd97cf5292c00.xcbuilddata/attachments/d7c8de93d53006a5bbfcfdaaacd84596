@@ -1,0 +1,131 @@
+{
+  "" : {
+    "const-values" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary.swiftconstvalues",
+    "dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary.d",
+    "diagnostics" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary.dia",
+    "emit-module-dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary-emit-module.dia",
+    "pch" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatch Watch App-primary.swiftdeps"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/ContentView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/JustWalkWatchApp.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatchApp.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatchApp.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/JustWalkWatchApp.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Managers/WatchAppState.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchAppState.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchAppState.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchAppState.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Managers/WatchConnectivityManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchConnectivityManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchConnectivityManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchConnectivityManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Managers/WatchHealthKitManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchHealthKitManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchHealthKitManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchHealthKitManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Managers/WatchPersistenceManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchPersistenceManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchPersistenceManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchPersistenceManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Managers/WatchSubscriptionManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchSubscriptionManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchSubscriptionManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchSubscriptionManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Managers/WatchWalkSessionManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkSessionManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkSessionManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkSessionManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Managers/WatchWorkoutManager.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWorkoutManager.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWorkoutManager.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWorkoutManager.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Models/WatchIntervalProgram.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchIntervalProgram.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchIntervalProgram.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchIntervalProgram.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Models/WatchStreakInfo.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchStreakInfo.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchStreakInfo.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchStreakInfo.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Models/WatchWalkRecord.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkRecord.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkRecord.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkRecord.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Views/IdleTabView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/IdleTabView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/IdleTabView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/IdleTabView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Views/WatchDebugView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchDebugView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchDebugView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchDebugView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Views/WatchStepRingView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchStepRingView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchStepRingView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchStepRingView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Views/WatchTodayView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchTodayView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchTodayView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchTodayView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Views/WatchWalkActiveView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkActiveView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkActiveView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkActiveView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Views/WatchWalkStartView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkStartView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkStartView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkStartView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/JustWalkWatch Watch App/Views/WatchWalkSummaryView.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkSummaryView.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkSummaryView.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchWalkSummaryView.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/Shared/IntervalTransferData.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/IntervalTransferData.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/IntervalTransferData.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/IntervalTransferData.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/Shared/WatchConnectivityConstants.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchConnectivityConstants.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchConnectivityConstants.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchConnectivityConstants.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/Shared/WatchMessage.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchMessage.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchMessage.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WatchMessage.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/Shared/WorkoutData.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WorkoutData.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WorkoutData.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/WorkoutData.o"
+  },
+  "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/thegoodknight/Library/Mobile Documents/com~apple~CloudDocs/onworldtech projects/JustWalk/JustWalk/build/JustWalk.build/Release-watchos/JustWalkWatch Watch App.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}

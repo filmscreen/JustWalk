@@ -1,0 +1,51 @@
+//
+//  IntervalUsageData.swift
+//  JustWalk
+//
+//  Weekly interval usage tracking for free-tier gating
+//
+
+import Foundation
+
+struct IntervalUsageData: Codable {
+    var weekStartDate: Date // Monday of current tracking week
+    var intervalsUsedThisWeek: Int
+
+    static let freeWeeklyLimit = 1
+
+    var remainingFree: Int {
+        max(0, Self.freeWeeklyLimit - intervalsUsedThisWeek)
+    }
+
+    var canStartInterval: Bool {
+        remainingFree > 0
+    }
+
+    mutating func resetIfNewWeek() {
+        let currentMonday = Self.mondayOfCurrentWeek()
+        if weekStartDate < currentMonday {
+            weekStartDate = currentMonday
+            intervalsUsedThisWeek = 0
+        }
+    }
+
+    mutating func recordUsage() {
+        resetIfNewWeek()
+        intervalsUsedThisWeek += 1
+    }
+
+    static func empty() -> IntervalUsageData {
+        IntervalUsageData(
+            weekStartDate: mondayOfCurrentWeek(),
+            intervalsUsedThisWeek: 0
+        )
+    }
+
+    /// Compute Monday 00:00 of the current ISO week.
+    private static func mondayOfCurrentWeek() -> Date {
+        var calendar = Calendar(identifier: .iso8601)
+        calendar.firstWeekday = 2 // Monday
+        let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())
+        return calendar.date(from: components) ?? Date()
+    }
+}
