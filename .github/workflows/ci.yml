@@ -16,4 +16,9 @@ jobs:
       - name: Run unit tests
         run: |
           set -o pipefail
-          xcodebuild test -project JustWalk.xcodeproj -scheme JustWalkTests -destination 'platform=iOS Simulator,name=iPhone 14' | sed -u 's/\x1b\[[0-9;]*m//g'
+          echo 'listing repo root:'
+          ls -la
+          echo 'changing into JustWalk dir and listing:'
+          cd JustWalk
+          ls -la
+          xcodebuild test -project JustWalk.xcodeproj -scheme JustWalkTests -destination 'platform=iOS Simulator,name=iPhone 14' | sed -u 's/\\x1b\\[[0-9;]*m//g'
