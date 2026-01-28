@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Just Walk uses your location to track your walk route on the map.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Just Walk uses your location to track your walk route, even when the screen is locked.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Just Walk uses motion sensors to count your steps in real-time during walks.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>JustWalk reads your step count and walking distance to track your daily progress.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>JustWalk saves your walking workouts to Apple Health.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Just Walk saves walk summary images to your photo library when you choose to save them.</string>
+</dict>
+</plist>
