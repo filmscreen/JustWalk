@@ -18,7 +18,7 @@ final class WatchAppState: ObservableObject {
         case walkSummary(WatchWalkRecord)
     }
 
-    private static let logger = Logger(subsystem: "com.justwalk.watch", category: "AppState")
+    private nonisolated static let logger = Logger(subsystem: "com.justwalk.watch", category: "AppState")
 
     @Published var currentScreen: Screen = .idle
 

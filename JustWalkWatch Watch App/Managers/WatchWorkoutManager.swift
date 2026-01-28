@@ -18,7 +18,7 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
 
     static let shared = WatchWorkoutManager()
 
-    private static let logger = Logger(subsystem: "com.justwalk.watch", category: "WorkoutManager")
+    private nonisolated static let logger = Logger(subsystem: "com.justwalk.watch", category: "WorkoutManager")
 
     // MARK: - Published State
 

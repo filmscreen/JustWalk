@@ -53,7 +53,7 @@ enum FatBurnZoneStatus: String {
 
 @Observable
 class WatchWalkSessionManager {
-    private static let logger = Logger(subsystem: "com.justwalk.watch", category: "WalkSession")
+    private nonisolated static let logger = Logger(subsystem: "com.justwalk.watch", category: "WalkSession")
 
     private let healthKit = WatchHealthKitManager.shared
     private let persistence = WatchPersistenceManager.shared

@@ -12,7 +12,7 @@ import os
 class WatchPersistenceManager {
     static let shared = WatchPersistenceManager()
 
-    private static let logger = Logger(subsystem: "com.justwalk.watch", category: "Persistence")
+    private nonisolated static let logger = Logger(subsystem: "com.justwalk.watch", category: "Persistence")
 
     private let defaults = UserDefaults.standard
     private let encoder = JSONEncoder()

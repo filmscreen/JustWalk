@@ -13,7 +13,7 @@ import os
 class WatchSubscriptionManager {
     static let shared = WatchSubscriptionManager()
 
-    private static let logger = Logger(subsystem: "com.justwalk.watch", category: "Subscription")
+    private nonisolated static let logger = Logger(subsystem: "com.justwalk.watch", category: "Subscription")
 
     private static let proAnnualID = "com.onworldtech.justwalk.pro.annual"
     private static let proMonthlyID = "com.onworldtech.justwalk.pro.monthly"

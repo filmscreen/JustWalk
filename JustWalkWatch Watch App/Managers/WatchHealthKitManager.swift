@@ -13,7 +13,7 @@ import os
 class WatchHealthKitManager {
     static let shared = WatchHealthKitManager()
 
-    private static let logger = Logger(subsystem: "com.justwalk.watch", category: "HealthKit")
+    private nonisolated static let logger = Logger(subsystem: "com.justwalk.watch", category: "HealthKit")
 
     private let healthStore = HKHealthStore()
 
