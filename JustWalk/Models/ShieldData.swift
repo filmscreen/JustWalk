@@ -16,7 +16,7 @@ struct ShieldData: Codable {
 
     static let freeMaxBanked = 2
     static let proMaxBanked = 8
-    static let freeMonthlyAllocation = 1
+    static let freeMonthlyAllocation = 2
     static let proMonthlyAllocation = 4
 
     static func maxBanked(isPro: Bool) -> Int {
@@ -64,14 +64,15 @@ struct ShieldData: Codable {
         }
 
         // First launch: give new free-tier users the initial gift of 2 shields
-        // Free users do NOT get monthly refills - only the one-time gift
         if lastRefillDate == nil && !isPro {
             availableShields = Self.freeMaxBanked
         } else if isPro {
             // Pro users get monthly refills
             availableShields = min(availableShields + Self.proMonthlyAllocation, Self.proMaxBanked)
+        } else {
+            // Free users receive a monthly allocation up to the free max
+            availableShields = min(availableShields + Self.freeMonthlyAllocation, Self.freeMaxBanked)
         }
-        // Free users (non-first-launch) get no refill
 
         shieldsUsedThisMonth = 0
         lastRefillDate = now

@@ -21,6 +21,9 @@ private enum WidgetColors {
     static let shield = Color(red: 0x22/255, green: 0xD3/255, blue: 0xEE/255)       // Cyan
     static let bgCard = Color(red: 0x1C/255, green: 0x1C/255, blue: 0x2E/255)
 
+    // Dark indigo backgrounds (matches app theme)
+    static let backgroundPrimary = Color(red: 0x12/255, green: 0x12/255, blue: 0x20/255)
+
     // Ring gradient palette (emerald → brand green → bright mint)
     static let ringStart = Color(red: 0x20/255, green: 0xA0/255, blue: 0x80/255)
     static let ringEnd   = Color(red: 0x86/255, green: 0xEF/255, blue: 0xAC/255)
@@ -164,7 +167,8 @@ struct TodayWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: JustWalkTimelineProvider()) { entry in
             TodayWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .environment(\.colorScheme, .dark)
+                .containerBackground(WidgetColors.backgroundPrimary, for: .widget)
         }
         .configurationDisplayName("Today")
         .description("Today's step progress toward your goal.")
@@ -217,7 +221,8 @@ struct StreakWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: JustWalkTimelineProvider()) { entry in
             StreakWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .environment(\.colorScheme, .dark)
+                .containerBackground(WidgetColors.backgroundPrimary, for: .widget)
         }
         .configurationDisplayName("Streak")
         .description("Your current walking streak.")
@@ -272,7 +277,8 @@ struct TodayStreakWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: JustWalkTimelineProvider()) { entry in
             TodayStreakWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .environment(\.colorScheme, .dark)
+                .containerBackground(WidgetColors.backgroundPrimary, for: .widget)
         }
         .configurationDisplayName("Today + Streak")
         .description("Steps, streak, and goal status at a glance.")
@@ -366,7 +372,8 @@ struct ThisWeekWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: JustWalkTimelineProvider()) { entry in
             ThisWeekWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .environment(\.colorScheme, .dark)
+                .containerBackground(WidgetColors.backgroundPrimary, for: .widget)
         }
         .configurationDisplayName("This Week")
         .description("Your step activity over the past week.")
@@ -441,7 +448,8 @@ struct ShieldsWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: JustWalkTimelineProvider()) { entry in
             ShieldsWidgetView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+                .environment(\.colorScheme, .dark)
+                .containerBackground(WidgetColors.backgroundPrimary, for: .widget)
         }
         .configurationDisplayName("Shields")
         .description("Your streak protection status.")
@@ -678,6 +686,8 @@ struct WalkLiveActivity: Widget {
         ActivityConfiguration(for: WalkActivityAttributes.self) { context in
             // Lock Screen / Banner view
             WalkLockScreenView(context: context)
+                .environment(\.colorScheme, .dark)
+                .background(WidgetColors.backgroundPrimary)
         } dynamicIsland: { context in
             DynamicIsland {
                 // Expanded view

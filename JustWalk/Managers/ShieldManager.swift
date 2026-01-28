@@ -187,4 +187,53 @@ class ShieldManager {
     func clearLastDeployedOvernight() {
         lastDeployedOvernight = false
     }
+
+    // MARK: - Retroactive Repair API
+
+    /// Returns true if the given date is eligible for repair with a shield.
+    /// Rules: within the last 7 days (not today), and the day is missing or not already marked as goalMet/shieldUsed.
+    func canRepairDate(_ date: Date) -> Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let target = calendar.startOfDay(for: date)
+
+        guard let days = calendar.dateComponents([.day], from: target, to: today).day else { return false }
+        guard days > 0 && days <= 7 else { return false }
+
+        if let log = persistence.loadDailyLog(for: target) {
+            if log.goalMet || log.shieldUsed { return false }
+        }
+
+        return true
+    }
+
+    /// Attempts to repair the given date using one shield. Returns true on success.
+    @discardableResult
+    func repairDate(_ date: Date) -> Bool {
+        guard canRepairDate(date) else { return false }
+        guard shieldData.availableShields > 0 else { return false }
+
+        let calendar = Calendar.current
+        let target = calendar.startOfDay(for: date)
+
+        if var log = persistence.loadDailyLog(for: target) {
+            log.goalMet = true
+            log.shieldUsed = true
+            persistence.saveDailyLog(log)
+        } else {
+            let newLog = DailyLog(id: UUID(), date: target, steps: 0, goalMet: true, shieldUsed: true, trackedWalkIDs: [])
+            persistence.saveDailyLog(newLog)
+        }
+
+        // Consume shield
+        shieldData.availableShields -= 1
+        shieldData.shieldsUsedThisMonth += 1
+        shieldData.totalShieldsUsed += 1
+        persistence.saveShieldData(shieldData)
+
+        // Update streak state to reflect a repaired day
+        streakManager.recordShieldUsed(forDate: target)
+
+        return true
+    }
 }
