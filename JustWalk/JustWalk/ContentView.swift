@@ -51,6 +51,12 @@ struct ContentView: View {
                             }
                         }
 
+                        Tab("Eat", systemImage: "fork.knife", value: .eat) {
+                            NavigationStack {
+                                EatTabView()
+                            }
+                        }
+
                         Tab("Settings", systemImage: "gearshape", value: .settings) {
                             NavigationStack {
                                 SettingsView()
@@ -78,6 +84,12 @@ struct ContentView: View {
                         }
                         .tabItem { Label("Walks", systemImage: "figure.walk") }
                         .tag(AppTab.walks)
+
+                        NavigationStack {
+                            EatTabView()
+                        }
+                        .tabItem { Label("Eat", systemImage: "fork.knife") }
+                        .tag(AppTab.eat)
 
                         NavigationStack {
                             SettingsView()

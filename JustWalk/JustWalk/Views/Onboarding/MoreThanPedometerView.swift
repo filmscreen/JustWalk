@@ -51,7 +51,7 @@ struct MoreThanPedometerView: View {
                     .opacity(showHeadline ? 1 : 0)
                     .offset(y: showHeadline ? 0 : 20)
 
-                Text("Pedometers count steps.\nJust Walk builds the habit.")
+                Text("Walking and eating right — that's 95%\nof looking and feeling your best.")
                     .font(JW.Font.body)
                     .foregroundStyle(JW.Color.textSecondary)
                     .multilineTextAlignment(.center)

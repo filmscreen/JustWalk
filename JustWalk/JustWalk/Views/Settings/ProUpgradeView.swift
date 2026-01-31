@@ -91,42 +91,97 @@ struct ProUpgradeView: View {
                                 .foregroundStyle(JW.Color.textPrimary)
                                 .multilineTextAlignment(.center)
 
-                            Text("More walks. More protection. Full history.")
-                                .font(JW.Font.subheadline)
+                            Text("See the full picture")
+                                .font(JW.Font.title3)
                                 .foregroundStyle(JW.Color.textSecondary)
                                 .multilineTextAlignment(.center)
                         }
                         .padding(.horizontal, JW.Spacing.xl)
                         .padding(.top, JW.Spacing.xl)
-                        .padding(.bottom, 24)
                         .opacity(showHero ? 1 : 0)
                         .offset(y: showHero ? 0 : 20)
 
-                        // Feature cards
-                        VStack(spacing: 16) {
-                            FeatureComparisonCard(
-                                icon: "bolt.fill",
-                                iconColor: JW.Color.accent,
-                                title: "Unlimited Guided Walks",
-                                description: "Intervals, Fat Burn, Post-Meal — as many as you want."
-                            )
-                            .staggeredAppearance(index: 0)
+                        // 95% positioning badge
+                        HStack(spacing: JW.Spacing.sm) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 14, weight: .medium))
+                            Text("Two habits. 95% of your wellbeing.")
+                                .font(JW.Font.subheadline.weight(.medium))
+                        }
+                        .foregroundStyle(JW.Color.accent)
+                        .padding(.horizontal, JW.Spacing.lg)
+                        .padding(.vertical, JW.Spacing.sm)
+                        .background(
+                            Capsule()
+                                .fill(JW.Color.accent.opacity(0.15))
+                        )
+                        .padding(.top, JW.Spacing.md)
+                        .padding(.bottom, JW.Spacing.lg)
+                        .opacity(showHero ? 1 : 0)
 
-                            FeatureComparisonCard(
-                                icon: "shield.fill",
-                                iconColor: JW.Color.streak,
-                                title: "4 Shields Every Month",
-                                description: "Life happens. Shields protect your streak when you can't walk."
-                            )
-                            .staggeredAppearance(index: 1)
+                        // Feature sections
+                        VStack(spacing: JW.Spacing.lg) {
+                            // OUTPUT Section
+                            VStack(alignment: .leading, spacing: JW.Spacing.md) {
+                                FeatureSectionHeader(
+                                    label: "OUTPUT",
+                                    icon: "figure.walk",
+                                    color: JW.Color.accent
+                                )
+                                .staggeredAppearance(index: 0)
 
-                            FeatureComparisonCard(
-                                icon: "chart.bar.fill",
-                                iconColor: JW.Color.accentPurple,
-                                title: "Complete Walk History",
-                                description: "See every walk, every streak, from day one."
-                            )
-                            .staggeredAppearance(index: 2)
+                                FeatureComparisonCard(
+                                    icon: "bolt.fill",
+                                    iconColor: JW.Color.accent,
+                                    title: "Unlimited Guided Walks",
+                                    description: "Intervals, Fat Burn, Post-Meal — structured walks for every goal."
+                                )
+                                .staggeredAppearance(index: 1)
+                            }
+
+                            // INTAKE Section
+                            VStack(alignment: .leading, spacing: JW.Spacing.md) {
+                                FeatureSectionHeader(
+                                    label: "INTAKE",
+                                    icon: "fork.knife",
+                                    color: JW.Color.accentBlue
+                                )
+                                .staggeredAppearance(index: 2)
+
+                                FeatureComparisonCard(
+                                    icon: "sparkles",
+                                    iconColor: JW.Color.accentBlue,
+                                    title: "AI Food Logging",
+                                    description: "Describe what you ate — AI estimates calories and macros instantly."
+                                )
+                                .staggeredAppearance(index: 3)
+                            }
+
+                            // PROTECTION Section
+                            VStack(alignment: .leading, spacing: JW.Spacing.md) {
+                                FeatureSectionHeader(
+                                    label: "PROTECTION",
+                                    icon: "shield.fill",
+                                    color: JW.Color.streak
+                                )
+                                .staggeredAppearance(index: 4)
+
+                                FeatureComparisonCard(
+                                    icon: "shield.fill",
+                                    iconColor: JW.Color.streak,
+                                    title: "4 Shields Every Month",
+                                    description: "Life happens. Shields protect your streak when you can't walk."
+                                )
+                                .staggeredAppearance(index: 5)
+
+                                FeatureComparisonCard(
+                                    icon: "chart.bar.fill",
+                                    iconColor: JW.Color.accentPurple,
+                                    title: "Complete Walk History",
+                                    description: "See every walk, every streak, from day one."
+                                )
+                                .staggeredAppearance(index: 6)
+                            }
                         }
                         .padding(.horizontal, JW.Spacing.lg)
                     }
@@ -484,6 +539,28 @@ private struct FeatureComparisonCard: View {
             RoundedRectangle(cornerRadius: JW.Radius.lg)
                 .stroke(Color.white.opacity(0.06), lineWidth: 1)
         )
+    }
+}
+
+// MARK: - Feature Section Header
+
+private struct FeatureSectionHeader: View {
+    let label: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: JW.Spacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(color)
+
+            Text(label)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
+                .tracking(1.5)
+        }
+        .padding(.leading, JW.Spacing.sm)
     }
 }
 

@@ -16,6 +16,8 @@ struct TodayView: View {
     private var shieldManager = ShieldManager.shared
     @StateObject private var dynamicCardEngine = DynamicCardEngine.shared
     private var persistence = PersistenceManager.shared
+    @StateObject private var foodLogManager = FoodLogManager.shared
+    private var subscriptionManager = SubscriptionManager.shared
 
     @AppStorage("dailyStepGoal") private var dailyGoal = 5000
     private var todaySteps: Int { healthKitManager.todaySteps }
@@ -133,6 +135,17 @@ struct TodayView: View {
         return "Your Day."
     }
 
+    /// Today's food summary for Pro users
+    private var todayFoodSummary: (calories: Int, protein: Int) {
+        let summary = foodLogManager.getTodaySummary()
+        return (calories: summary.calories, protein: summary.protein)
+    }
+
+    /// Whether to show the food summary row
+    private var showFoodSummary: Bool {
+        subscriptionManager.isPro
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -184,7 +197,17 @@ struct TodayView: View {
                     }
                 }
                 .staggeredAppearance(index: 1, delay: 0.05)
-                .padding(.bottom, JW.Spacing.xl)             // 24pt → week chart
+                .padding(.bottom, showFoodSummary ? JW.Spacing.md : JW.Spacing.xl)
+
+                // Food Summary Row (Pro only)
+                if showFoodSummary {
+                    FoodSummaryRow(
+                        calories: todayFoodSummary.calories,
+                        protein: todayFoodSummary.protein
+                    )
+                    .staggeredAppearance(index: 2, delay: 0.05)
+                    .padding(.bottom, JW.Spacing.xl)         // 24pt → week chart
+                }
 
                 // Week Chart
                 WeekChartView(liveTodaySteps: todaySteps)
@@ -192,7 +215,7 @@ struct TodayView: View {
                     .padding(.horizontal, JW.Spacing.sm)
                     .jwCard()
                     .padding(.horizontal)
-                    .staggeredAppearance(index: 2, delay: 0.05)
+                    .staggeredAppearance(index: showFoodSummary ? 3 : 2, delay: 0.05)
                     .padding(.bottom, JW.Spacing.lg)
 
                 // Dynamic Card (always visible — never empty)
@@ -205,7 +228,7 @@ struct TodayView: View {
                     removal: .move(edge: .trailing).combined(with: .opacity)
                 ))
                 .padding(.horizontal)
-                .staggeredAppearance(index: 3, delay: 0.05)
+                .staggeredAppearance(index: showFoodSummary ? 4 : 3, delay: 0.05)
 
                 Spacer(minLength: 60)
             }
@@ -484,6 +507,63 @@ struct ShieldsPill: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Food Summary Row
+
+struct FoodSummaryRow: View {
+    let calories: Int
+    let protein: Int
+
+    @Environment(AppState.self) private var appState
+
+    private var hasLoggedFood: Bool {
+        calories > 0 || protein > 0
+    }
+
+    var body: some View {
+        Button {
+            JustWalkHaptics.buttonTap()
+            appState.selectedTab = .eat
+        } label: {
+            HStack(spacing: JW.Spacing.sm) {
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(hasLoggedFood ? JW.Color.accent : JW.Color.textTertiary)
+
+                if hasLoggedFood {
+                    Text("\(calories) cal")
+                        .font(JW.Font.subheadline)
+                        .foregroundStyle(JW.Color.textSecondary)
+                        .contentTransition(.numericText(value: Double(calories)))
+
+                    Text("·")
+                        .font(JW.Font.subheadline)
+                        .foregroundStyle(JW.Color.textTertiary)
+
+                    Text("\(protein)g protein")
+                        .font(JW.Font.subheadline)
+                        .foregroundStyle(JW.Color.textSecondary)
+                        .contentTransition(.numericText(value: Double(protein)))
+                } else {
+                    Text("No food logged")
+                        .font(JW.Font.subheadline)
+                        .foregroundStyle(JW.Color.textTertiary)
+                }
+            }
+            .padding(.horizontal, JW.Spacing.md)
+            .padding(.vertical, JW.Spacing.sm)
+            .background(
+                Capsule()
+                    .fill(JW.Color.backgroundCard)
+            )
+            .overlay(
+                Capsule()
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
+        }
+        .buttonStyle(ScalePressButtonStyle())
     }
 }
 

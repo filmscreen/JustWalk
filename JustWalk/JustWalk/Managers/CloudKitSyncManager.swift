@@ -47,6 +47,7 @@ class CloudKitSyncManager {
         static let userGameState = "UserGameState"
         static let dailyLog = "DailyLog"
         static let trackedWalk = "TrackedWalk"
+        static let foodLog = "FoodLog"
     }
 
     // Fixed record IDs for single-instance records
@@ -213,7 +214,8 @@ class CloudKitSyncManager {
         let criticalNames: [Notification.Name] = [
             .didSaveTrackedWalk,  // Walk history is irreplaceable
             .didSaveShieldData,   // Shield balance must sync immediately (prevents duplication/loss)
-            .didSaveDailyLog      // Goal status & shield usage per day is critical for streak integrity
+            .didSaveDailyLog,     // Goal status & shield usage per day is critical for streak integrity
+            .didSaveFoodLog       // Food logs should sync immediately to preserve meal tracking
         ]
         for name in criticalNames {
             NotificationCenter.default.addObserver(
@@ -450,10 +452,14 @@ class CloudKitSyncManager {
         let walks = persistence.loadAllTrackedWalks()
         let walkRecords = walks.map { buildTrackedWalkRecord($0) }
 
-        // Combine all records
-        let allRecords = [gameStateRecord] + logRecords + walkRecords
+        // Build food log records (ALL food logs — no cutoff)
+        let foodLogs = persistence.loadAllFoodLogs()
+        let foodLogRecords = foodLogs.map { buildFoodLogRecord($0) }
 
-        logger.info("📊 Pushing \(allRecords.count) total records (1 gameState, \(logRecords.count) logs, \(walkRecords.count) walks)")
+        // Combine all records
+        let allRecords = [gameStateRecord] + logRecords + walkRecords + foodLogRecords
+
+        logger.info("📊 Pushing \(allRecords.count) total records (1 gameState, \(logRecords.count) logs, \(walkRecords.count) walks, \(foodLogRecords.count) foodLogs)")
 
         // Batch in groups of 400 (CloudKit limit)
         let batchSize = 400
@@ -564,6 +570,22 @@ class CloudKitSyncManager {
                 }
             } else if let error {
                 self?.logger.error("Pull tracked walks failed: \(error.localizedDescription)")
+                pullError = error
+            }
+            group.leave()
+        }
+
+        // 4. Fetch all food logs
+        group.enter()
+        fetchAllRecords(ofType: RecordType.foodLog) { [weak self] records, error in
+            if let records {
+                self?.logger.info("📥 Pulled \(records.count) food log records from CloudKit")
+                for record in records {
+                    self?.mergeFoodLog(remote: record)
+                }
+            } else if let error {
+                self?.logger.error("Pull food logs failed: \(error.localizedDescription)")
+                self?.logCKError(error, context: "Pull food logs")
                 pullError = error
             }
             group.leave()
@@ -686,6 +708,27 @@ class CloudKitSyncManager {
         if let walkJSON = try? encoder.encode(walk) {
             record["walkJSON"] = walkJSON as CKRecordValue
         }
+
+        return record
+    }
+
+    private func buildFoodLogRecord(_ log: FoodLog) -> CKRecord {
+        let recordID = CKRecord.ID(recordName: "FoodLog_\(log.logID)", zoneID: zoneID)
+        let record = CKRecord(recordType: RecordType.foodLog, recordID: recordID)
+
+        // Map all FoodLog properties to CloudKit fields
+        record["logID"] = log.logID as CKRecordValue
+        record["date"] = log.date as CKRecordValue
+        record["mealType"] = log.mealType.rawValue as CKRecordValue
+        record["name"] = log.name as CKRecordValue
+        record["entryDescription"] = log.entryDescription as CKRecordValue
+        record["calories"] = log.calories as CKRecordValue
+        record["protein"] = log.protein as CKRecordValue
+        record["carbs"] = log.carbs as CKRecordValue
+        record["fat"] = log.fat as CKRecordValue
+        record["source"] = log.source.rawValue as CKRecordValue
+        record["createdAt"] = log.createdAt as CKRecordValue
+        record["modifiedAt"] = log.modifiedAt as CKRecordValue
 
         return record
     }
@@ -938,6 +981,64 @@ class CloudKitSyncManager {
         }
     }
 
+    private func mergeFoodLog(remote: CKRecord) {
+        isMerging = true
+        defer { isMerging = false }
+
+        // Extract fields from CloudKit record
+        guard let logID = remote["logID"] as? String,
+              let date = remote["date"] as? Date,
+              let mealTypeRaw = remote["mealType"] as? String,
+              let name = remote["name"] as? String,
+              let createdAt = remote["createdAt"] as? Date,
+              let modifiedAt = remote["modifiedAt"] as? Date else {
+            logger.error("❌ Failed to decode FoodLog from CloudKit record - missing required fields")
+            return
+        }
+
+        let entryDescription = remote["entryDescription"] as? String ?? ""
+        let calories = remote["calories"] as? Int ?? 0
+        let protein = remote["protein"] as? Int ?? 0
+        let carbs = remote["carbs"] as? Int ?? 0
+        let fat = remote["fat"] as? Int ?? 0
+        let sourceRaw = remote["source"] as? String ?? "manual"
+
+        let mealType = MealType(rawValue: mealTypeRaw) ?? .unspecified
+        let source = EntrySource(rawValue: sourceRaw) ?? .manual
+
+        // Create the FoodLog from CloudKit fields
+        let remoteLog = FoodLog(
+            id: UUID(uuidString: logID) ?? UUID(),
+            logID: logID,
+            date: date,
+            mealType: mealType,
+            name: name,
+            entryDescription: entryDescription,
+            calories: calories,
+            protein: protein,
+            carbs: carbs,
+            fat: fat,
+            source: source,
+            createdAt: createdAt,
+            modifiedAt: modifiedAt
+        )
+
+        let persistence = PersistenceManager.shared
+        let localLog = persistence.loadFoodLog(by: remoteLog.id)
+
+        if let localLog {
+            // Merge: last-write-wins based on modifiedAt
+            if remoteLog.modifiedAt > localLog.modifiedAt {
+                persistence.saveFoodLog(remoteLog)
+                logger.info("📥 Updated FoodLog from CloudKit: \(remoteLog.name)")
+            }
+        } else {
+            // No local log — insert the remote one
+            persistence.saveFoodLog(remoteLog)
+            logger.info("📥 Restored FoodLog from CloudKit: \(remoteLog.name)")
+        }
+    }
+
     // MARK: - Fetch Helpers
 
     private func fetchAllRecords(
@@ -1014,6 +1115,7 @@ class CloudKitSyncManager {
             // Reload managers with fresh data from persistence
             StreakManager.shared.streakData = persistence.loadStreakData()
             ShieldManager.shared.shieldData = persistence.loadShieldData()
+            FoodLogManager.shared.refreshFromPersistence()
 
             // Post notification so UI can refresh (e.g., walk history, day details)
             NotificationCenter.default.post(name: .didCompleteCloudSync, object: nil)

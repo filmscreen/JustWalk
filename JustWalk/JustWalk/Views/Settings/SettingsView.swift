@@ -431,7 +431,7 @@ struct SettingsView: View {
                             Text("\(subscriptionManager.proAnnualProduct?.displayPrice ?? "$29.99")/year")
                                 .foregroundStyle(.secondary)
                         }
-                        Text("Unlimited Walks · More Protection · Full History")
+                        Text("Unlimited Walks · AI Food Logging · Full Protection")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

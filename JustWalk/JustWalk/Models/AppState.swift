@@ -11,6 +11,7 @@ import SwiftUI
 enum AppTab: String, CaseIterable {
     case today
     case walks = "intervals" // renamed from "intervals", raw value preserved for stored state
+    case eat
     case settings
 }
 

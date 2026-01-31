@@ -17,6 +17,7 @@ extension Notification.Name {
     static let didSaveDailyLog = Notification.Name("didSaveDailyLog")
     static let didSaveTrackedWalk = Notification.Name("didSaveTrackedWalk")
     static let didSaveProfile = Notification.Name("didSaveProfile")
+    static let didSaveFoodLog = Notification.Name("didSaveFoodLog")
 }
 
 @Observable
@@ -37,6 +38,7 @@ class PersistenceManager: ObservableObject {
         static let intervalUsage = "interval_usage"
         static let fatBurnUsage = "fat_burn_usage"
         static let walkPatternData = "walk_pattern_data_v1"
+        static let foodLogs = "food_logs"
     }
 
     /// Incremented whenever daily logs change, so views observing this
@@ -54,6 +56,7 @@ class PersistenceManager: ObservableObject {
     // UI reactivity is driven by `dailyLogVersion` instead.
     @ObservationIgnored private var _cachedTrackedWalks: [TrackedWalk]?
     @ObservationIgnored private var _cachedDailyLogs: [String: DailyLog]?
+    @ObservationIgnored private var _cachedFoodLogs: [FoodLog]?
 
     private init() {
         cachedUseMetric = (load(forKey: Keys.profile) as UserProfile?)?.useMetricUnits ?? false
@@ -320,6 +323,50 @@ class PersistenceManager: ObservableObject {
         return usage
     }
 
+    // MARK: - Food Log Methods
+
+    func saveFoodLog(_ log: FoodLog) {
+        var logs = _cachedFoodLogs ?? load(forKey: Keys.foodLogs) ?? []
+        if let index = logs.firstIndex(where: { $0.id == log.id }) {
+            logs[index] = log
+        } else {
+            logs.append(log)
+        }
+        save(logs, forKey: Keys.foodLogs)
+        _cachedFoodLogs = logs
+        NotificationCenter.default.post(name: .didSaveFoodLog, object: nil)
+    }
+
+    func loadAllFoodLogs() -> [FoodLog] {
+        if _cachedFoodLogs == nil {
+            _cachedFoodLogs = load(forKey: Keys.foodLogs) ?? []
+        }
+        return _cachedFoodLogs ?? []
+    }
+
+    func loadFoodLogs(for date: Date) -> [FoodLog] {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+            return []
+        }
+        return loadAllFoodLogs().filter { log in
+            log.date >= startOfDay && log.date < endOfDay
+        }.sorted { $0.createdAt < $1.createdAt }
+    }
+
+    func loadFoodLog(by id: UUID) -> FoodLog? {
+        loadAllFoodLogs().first { $0.id == id }
+    }
+
+    func deleteFoodLog(_ log: FoodLog) {
+        var logs = _cachedFoodLogs ?? load(forKey: Keys.foodLogs) ?? []
+        logs.removeAll { $0.id == log.id }
+        save(logs, forKey: Keys.foodLogs)
+        _cachedFoodLogs = logs
+        NotificationCenter.default.post(name: .didSaveFoodLog, object: nil)
+    }
+
     // MARK: - Utility Methods
 
     func clearAllData() {
@@ -331,7 +378,8 @@ class PersistenceManager: ObservableObject {
             Keys.trackedWalks,
             Keys.intervalUsage,
             Keys.fatBurnUsage,
-            Keys.walkPatternData
+            Keys.walkPatternData,
+            Keys.foodLogs
         ]
         keys.forEach { defaults.removeObject(forKey: $0) }
         invalidateCaches()
@@ -341,6 +389,7 @@ class PersistenceManager: ObservableObject {
     func invalidateCaches() {
         _cachedTrackedWalks = nil
         _cachedDailyLogs = nil
+        _cachedFoodLogs = nil
         cachedUseMetric = loadProfile().useMetricUnits
         // Increment version to trigger UI refresh for views observing this property
         dailyLogVersion += 1

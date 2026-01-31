@@ -14,14 +14,15 @@ struct OnboardingContainerView: View {
     @Binding var isComplete: Bool
     enum OnboardingStep: Int, CaseIterable {
         case welcome           // Screen 1: More Than a Pedometer
-        case consistency       // Screen 2: Set a daily goal. Hit it. Repeat.
-        case shields           // Screen 3: Life Happens
-        case walksPreview      // Screen 4: Ready for More?
-        case permissions       // Screen 5: Health permissions
-        case notifications     // Screen 6: Notification setup
-        case goalSelection     // Screen 7: Your Daily Goal
-        case proUpgrade        // Screen 8: Pro Upgrade
-        case healthKitSync     // Screen 9: Import HealthKit history (final step)
+        case ninetyFivePercent // Screen 2: Two habits. 95% of your wellbeing.
+        case consistency       // Screen 3: Set a daily goal. Hit it. Repeat.
+        case shields           // Screen 4: Life Happens
+        case walksPreview      // Screen 5: Ready for More?
+        case permissions       // Screen 6: Health permissions
+        case notifications     // Screen 7: Notification setup
+        case goalSelection     // Screen 8: Your Daily Goal
+        case proUpgrade        // Screen 9: Pro Upgrade
+        case healthKitSync     // Screen 10: Import HealthKit history (final step)
     }
 
     @State private var currentStep: OnboardingStep = .welcome
@@ -37,6 +38,10 @@ struct OnboardingContainerView: View {
                 switch currentStep {
                 case .welcome:
                     MoreThanPedometerView(onContinue: { advanceToNextStep() })
+                        .transition(.onboardingSlide)
+
+                case .ninetyFivePercent:
+                    NinetyFivePercentView(onContinue: { advanceToNextStep() })
                         .transition(.onboardingSlide)
 
                 case .consistency:
@@ -99,6 +104,8 @@ struct OnboardingContainerView: View {
         let animation: Animation = switch nextStep {
         case .welcome:
             .easeOut(duration: 0.5)
+        case .ninetyFivePercent:
+            JustWalkAnimation.presentation
         case .consistency:
             JustWalkAnimation.presentation
         case .shields:

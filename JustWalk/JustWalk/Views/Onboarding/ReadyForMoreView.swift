@@ -46,7 +46,7 @@ struct ReadyForMoreView: View {
 
                 // Feature hints
                 VStack(spacing: JW.Spacing.sm) {
-                    Text("When you want to take your walks\nto the next level, Walks is there.")
+                    Text("Guided walks make your 15-20%\neven more effective.")
                         .font(JW.Font.body)
                         .foregroundStyle(JW.Color.textSecondary)
                         .multilineTextAlignment(.center)
