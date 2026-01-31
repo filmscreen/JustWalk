@@ -11,27 +11,32 @@ struct SupportLegalView: View {
     let profile: UserProfile
 
     private var subscriptionManager: SubscriptionManager { SubscriptionManager.shared }
-
     @State private var versionTapCount = 0
     @State private var showTesterModeAlert = false
 
     var body: some View {
         List {
             Section("Support") {
-                Link(destination: URL(string: "https://www.getjustwalk.com/privacy")!) {
-                    Label("Privacy Policy", systemImage: "hand.raised")
+                if let url = URL(string: "https://getjustwalk.com/privacy") {
+                    Link(destination: url) {
+                        Label("Privacy Policy", systemImage: "hand.raised")
+                    }
+                    .listRowBackground(JW.Color.backgroundCard)
                 }
-                .listRowBackground(JW.Color.backgroundCard)
 
-                Link(destination: URL(string: "https://www.getjustwalk.com/terms")!) {
-                    Label("Terms of Service", systemImage: "doc.text")
+                if let url = URL(string: "https://getjustwalk.com/terms") {
+                    Link(destination: url) {
+                        Label("Terms of Service", systemImage: "doc.text")
+                    }
+                    .listRowBackground(JW.Color.backgroundCard)
                 }
-                .listRowBackground(JW.Color.backgroundCard)
 
-                Link(destination: URL(string: "mailto:info@onworld.tech")!) {
-                    Label("Contact Support", systemImage: "envelope")
+                if let url = URL(string: "mailto:info@onworld.tech") {
+                    Link(destination: url) {
+                        Label("Contact Support", systemImage: "envelope")
+                    }
+                    .listRowBackground(JW.Color.backgroundCard)
                 }
-                .listRowBackground(JW.Color.backgroundCard)
             }
 
             if !profile.legacyBadges.isEmpty {
@@ -54,7 +59,7 @@ struct SupportLegalView: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     versionTapCount += 1
-                    if versionTapCount >= 10 {
+                    if versionTapCount >= 7 {
                         versionTapCount = 0
                         if subscriptionManager.isTesterModeEnabled {
                             subscriptionManager.disableTesterMode()

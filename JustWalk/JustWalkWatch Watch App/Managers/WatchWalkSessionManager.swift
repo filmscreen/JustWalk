@@ -102,8 +102,10 @@ class WatchWalkSessionManager {
     private var zoneEntryDate: Date?
     private var lastHapticZoneStatus: FatBurnZoneStatus?
     private var lastZoneHapticTime: Date?
+    private var outOfRangeSeconds: Int = 0
     private static let zoneHysteresisBPM = 3
     private static let zoneHapticCooldown: TimeInterval = 5
+    private static let outOfRangeHapticInterval = 10
 
     // MARK: - Interval Computed Properties
 
@@ -190,6 +192,7 @@ class WatchWalkSessionManager {
 
         // Read real age from HealthKit off the main thread
         Task.detached { [weak self] in
+            guard let self else { return }
             do {
                 let dobComponents = try HKHealthStore().dateOfBirthComponents()
                 let calendar = Calendar.current
@@ -198,9 +201,9 @@ class WatchWalkSessionManager {
                     let maxHR = 220 - age
                     let low = Int(Double(maxHR) * 0.60)
                     let high = Int(Double(maxHR) * 0.70)
-                    await MainActor.run {
-                        self?.fatBurnZoneLow = low
-                        self?.fatBurnZoneHigh = high
+                    await MainActor.run { [self] in
+                        self.fatBurnZoneLow = low
+                        self.fatBurnZoneHigh = high
                     }
                     WatchWalkSessionManager.logger.info("Fat burn zone calculated: \(low)-\(high) BPM (age \(age))")
                 }
@@ -302,13 +305,20 @@ class WatchWalkSessionManager {
 
     // MARK: - Walk Control
 
-    func startWalk(interval: WatchIntervalProgram? = nil, transferData: IntervalTransferData? = nil, mode: WalkMode = .standard) {
+    func startWalk(interval: WatchIntervalProgram? = nil, transferData: IntervalTransferData? = nil, mode: WalkMode = .standard, zoneLow: Int? = nil, zoneHigh: Int? = nil, startTime providedStartTime: Date? = nil) {
         guard !isWalking else { return }
 
         isWalking = true
         isPaused = false
-        startTime = Date()
-        elapsedSeconds = 0
+
+        // Use provided start time from initiating device, or current time for Watch-initiated walks
+        let actualStartTime = providedStartTime ?? Date()
+        startTime = actualStartTime
+
+        // Calculate elapsed seconds if start time is in the past (iPhone started before Watch received message)
+        let elapsed = Date().timeIntervalSince(actualStartTime)
+        elapsedSeconds = elapsed > 0 ? Int(elapsed) : 0
+
         currentSteps = 0
         currentDistance = 0
         totalPausedDuration = 0
@@ -331,12 +341,20 @@ class WatchWalkSessionManager {
 
         // Fat burn zone setup
         if walkMode == .fatBurn {
-            calculateFatBurnZone()
+            // If iPhone provided zone bounds, use them; otherwise calculate from age
+            if let low = zoneLow, let high = zoneHigh, low > 0, high > low {
+                fatBurnZoneLow = low
+                fatBurnZoneHigh = high
+                Self.logger.info("Using iPhone-provided fat burn zone: \(low)-\(high) BPM")
+            } else {
+                calculateFatBurnZone()
+            }
             fatBurnZoneStatus = .below
             timeInZone = 0
             zoneEntryDate = nil
             lastHapticZoneStatus = nil
             lastZoneHapticTime = nil
+            outOfRangeSeconds = 0
         }
 
         // If we have transfer data from iPhone, use it. Otherwise generate phases from WatchIntervalProgram.
@@ -352,9 +370,28 @@ class WatchWalkSessionManager {
         startTimer()
 
         // Start HK workout session for HR, calories, and iPhone connectivity
+        // Convert Watch's WalkMode to iPhone's expected raw value
+        let modeRawForSummary: String
+        switch walkMode {
+        case .standard:
+            modeRawForSummary = "free"  // iPhone uses "free" not "standard"
+        case .interval:
+            modeRawForSummary = "interval"
+        case .fatBurn:
+            modeRawForSummary = "fatBurn"
+        case .postMeal:
+            modeRawForSummary = "postMeal"
+        }
+
+        let intervalProgramRawForSummary = intervalTransferData?.programName ?? activeInterval?.rawValue
+
         Task { @MainActor in
             do {
-                try await workoutManager.startWorkout(walkId: UUID())
+                try await workoutManager.startWorkout(
+                    walkId: UUID(),
+                    modeRaw: modeRawForSummary,
+                    intervalProgramRaw: intervalProgramRawForSummary
+                )
             } catch {
                 Self.logger.warning("HK workout session failed to start — walk continues without HR: \(error.localizedDescription)")
             }
@@ -519,6 +556,7 @@ class WatchWalkSessionManager {
             zoneEntryDate = nil
             lastHapticZoneStatus = nil
             lastZoneHapticTime = nil
+            outOfRangeSeconds = 0
         }
 
         return record
@@ -577,6 +615,23 @@ class WatchWalkSessionManager {
         // Evaluate fat burn zone status on each HR update
         if isFatBurnMode {
             evaluateZoneStatus()
+
+            // Track time out of zone for periodic reminder haptics
+            if fatBurnZoneStatus != .inZone {
+                outOfRangeSeconds += 1
+                // Haptic reminder every 10 seconds when out of zone
+                if outOfRangeSeconds % Self.outOfRangeHapticInterval == 0 {
+                    if fatBurnZoneStatus == .below {
+                        WatchHaptics.fatBurnOutOfRangeLow()
+                        WatchConnectivityManager.shared.sendFatBurnOutOfRangeLow()
+                    } else {
+                        WatchHaptics.fatBurnOutOfRangeHigh()
+                        WatchConnectivityManager.shared.sendFatBurnOutOfRangeHigh()
+                    }
+                }
+            } else {
+                outOfRangeSeconds = 0
+            }
         }
 
         // Poll HealthKit every 5 seconds

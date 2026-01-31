@@ -48,7 +48,7 @@ struct NotificationSetupView: View {
                     .opacity(showHeadline ? 1 : 0)
                     .offset(y: showHeadline ? 0 : 20)
 
-                Text("Get a gentle reminder if you\nhaven't hit your goal yet.")
+                Text("Get reminders to hit your goal, plus\nlive coaching during guided walks.")
                     .font(JW.Font.body)
                     .foregroundStyle(JW.Color.textSecondary)
                     .multilineTextAlignment(.center)
@@ -59,15 +59,15 @@ struct NotificationSetupView: View {
 
             Spacer()
 
-            // Turn On Reminders button
+            // Turn On Notifications button
             VStack(spacing: JW.Spacing.lg) {
                 Button(action: { handleTurnOn() }) {
-                    Text("Turn On Reminders")
+                    Text("Turn On Notifications")
                         .font(JW.Font.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(JW.Color.accent)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.black)
                         .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
                 }
                 .buttonPressEffect()
@@ -98,6 +98,8 @@ struct NotificationSetupView: View {
         Task {
             let granted = await notificationManager.requestAuthorization()
             notificationManager.isEnabled = granted
+            WalkNotificationManager.shared.notificationsEnabled = granted
+            WalkNotificationManager.shared.scheduleNotificationIfNeeded(force: true)
             if granted {
                 JustWalkHaptics.success()
             }
@@ -108,6 +110,8 @@ struct NotificationSetupView: View {
     private func handleSkip() {
         JustWalkHaptics.buttonTap()
         notificationManager.isEnabled = false
+        WalkNotificationManager.shared.notificationsEnabled = false
+        WalkNotificationManager.shared.cancelPendingNotifications()
         advance()
     }
 

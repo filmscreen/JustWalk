@@ -11,14 +11,39 @@ struct MilestoneFullscreenView: View {
     let event: MilestoneEvent
     var onDismiss: () -> Void
 
-    @State private var showConfetti = false
     @State private var hasAppeared = false
+
+    private var accentOpacity: Double {
+        // Stronger accent for bigger milestones
+        switch event.headline {
+        case let h where h.contains("Year"):
+            return 0.20
+        case let h where h.contains("Month"):
+            return 0.15
+        default:
+            return 0.10
+        }
+    }
 
     var body: some View {
         ZStack {
-            // Dark background
-            Color.black
+            // Background - app's dark background with subtle radial gradient
+            ZStack {
+                JW.Color.backgroundPrimary
+                    .ignoresSafeArea()
+
+                // Subtle radial gradient - accent glow behind content
+                RadialGradient(
+                    colors: [
+                        JW.Color.accent.opacity(accentOpacity),
+                        Color.clear
+                    ],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 300
+                )
                 .ignoresSafeArea()
+            }
 
             VStack(spacing: 24) {
                 Spacer()
@@ -47,35 +72,23 @@ struct MilestoneFullscreenView: View {
 
                 Spacer()
 
-                // Continue button
+                // Continue button - understated, brand green text
                 Button {
                     onDismiss()
                 } label: {
                     Text("Continue")
-                        .font(JW.Font.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Capsule().fill(JW.Color.accent))
+                        .font(JW.Font.body)
+                        .foregroundStyle(JW.Color.accent)
                 }
-                .padding(.horizontal, 32)
-                .padding(.bottom, 48)
+                .padding(.bottom, 60)
                 .opacity(hasAppeared ? 1.0 : 0.0)
             }
-        }
-        .overlay {
-            ConfettiView.streakMilestone(isActive: $showConfetti)
         }
         .onAppear {
             JustWalkHaptics.milestone()
 
             withAnimation(JustWalkAnimation.dramatic) {
                 hasAppeared = true
-            }
-
-            // Trigger confetti slightly after entrance
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                showConfetti = true
             }
         }
     }

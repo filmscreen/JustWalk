@@ -33,26 +33,26 @@ struct PermissionsView: View {
             // Health icon
             ZStack {
                 Circle()
-                    .fill(Color.green.opacity(0.15))
+                    .fill(JW.Color.streak.opacity(0.15))
                     .frame(width: 120, height: 120)
 
                 Image(systemName: "heart.fill")
                     .font(.system(size: 48, weight: .medium))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(JW.Color.streak)
             }
             .scaleEffect(showIcon ? 1 : 0.8)
             .opacity(showIcon ? 1 : 0)
 
             // Copy
             VStack(spacing: JW.Spacing.md) {
-                Text("One Quick Thing.")
+                Text("See Your Walking Progress")
                     .font(JW.Font.title1)
                     .foregroundStyle(JW.Color.textPrimary)
                     .multilineTextAlignment(.center)
                     .opacity(showHeadline ? 1 : 0)
                     .offset(y: showHeadline ? 0 : 20)
 
-                Text("Just Walk needs access to health data and\nmotion sensors to track your steps.")
+                Text("Just Walk reads your steps from Apple Health\nto track your daily progress.")
                     .font(JW.Font.body)
                     .foregroundStyle(JW.Color.textSecondary)
                     .multilineTextAlignment(.center)
@@ -63,12 +63,39 @@ struct PermissionsView: View {
 
             Spacer()
 
+            // Privacy reassurance
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(JW.Color.textSecondary)
+                    .padding(.top, 2)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Your data stays on your device.")
+                        .font(JW.Font.subheadline.weight(.semibold))
+                        .foregroundStyle(JW.Color.textPrimary)
+                    Text("No account. No tracking. We never see your steps.")
+                        .font(JW.Font.caption)
+                        .foregroundStyle(JW.Color.textSecondary)
+                        .lineLimit(2)
+                }
+            }
+            .padding(.vertical, JW.Spacing.md)
+            .padding(.horizontal, JW.Spacing.lg)
+            .background(
+                RoundedRectangle(cornerRadius: JW.Radius.lg)
+                    .fill(JW.Color.backgroundCard)
+            )
+            .padding(.horizontal, JW.Spacing.xl)
+            .opacity(showBody ? 1 : 0)
+            .offset(y: showBody ? 0 : 20)
+
             // Action button — state-driven label
             Button(action: { handleButtonTap() }) {
                 Group {
                     if isRequesting {
                         ProgressView()
-                            .tint(.white)
+                            .tint(.black)
                     } else {
                         Text(buttonTitle)
                             .contentTransition(.interpolate)
@@ -78,22 +105,15 @@ struct PermissionsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(JW.Color.accent)
-                .foregroundStyle(.white)
+                .foregroundStyle(.black)
                 .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
             }
             .disabled(isRequesting)
             .buttonPressEffect()
             .padding(.horizontal, JW.Spacing.xl)
+            .padding(.bottom, 40)
             .opacity(showButton ? 1 : 0)
             .offset(y: showButton ? 0 : 20)
-
-            // Trust message
-            Text("We read steps, workouts, and motion data.\nWe never share your data.")
-                .font(JW.Font.caption)
-                .foregroundStyle(JW.Color.textTertiary)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 40)
-                .opacity(showButton ? 1 : 0)
         }
         .onAppear {
             runEntrance()

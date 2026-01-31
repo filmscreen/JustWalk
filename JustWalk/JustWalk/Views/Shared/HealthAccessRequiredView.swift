@@ -34,7 +34,7 @@ struct HealthAccessRequiredView: View {
                         .foregroundStyle(JW.Color.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    Text("JustWalk needs access to Health data to track your steps and progress.")
+                    Text("JustWalk needs access to Health data to see your walking progress.")
                         .font(JW.Font.body)
                         .foregroundStyle(JW.Color.textSecondary)
                         .multilineTextAlignment(.center)
@@ -51,7 +51,7 @@ struct HealthAccessRequiredView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(JW.Color.accent)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.black)
                             .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
                     }
                     .buttonPressEffect()

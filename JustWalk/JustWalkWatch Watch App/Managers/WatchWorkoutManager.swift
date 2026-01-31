@@ -9,6 +9,7 @@ import Foundation
 import HealthKit
 import Combine
 import os
+import WidgetKit
 
 /// Manages workout sessions on Apple Watch
 @MainActor
@@ -47,6 +48,10 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
     private var heartRateSamples: [Int] = []
     private var timer: Timer?
 
+    // Walk mode tracking for summary
+    private var modeRaw: String?
+    private var intervalProgramRaw: String?
+
     // MARK: - Initialization
 
     private override init() {
@@ -78,10 +83,18 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
     }
 
     /// Start a walking workout
-    func startWorkout(walkId: UUID) async throws {
+    /// - Parameters:
+    ///   - walkId: Unique identifier for this walk
+    ///   - modeRaw: Raw string value of WalkMode (e.g., "fatBurn", "interval", "postMeal", "free")
+    ///   - intervalProgramRaw: Raw string value of interval program if applicable
+    func startWorkout(walkId: UUID, modeRaw: String? = nil, intervalProgramRaw: String? = nil) async throws {
         guard await requestAuthorization() else {
             throw WorkoutError.authorizationFailed
         }
+
+        // Store mode for summary
+        self.modeRaw = modeRaw
+        self.intervalProgramRaw = intervalProgramRaw
 
         let configuration = HKWorkoutConfiguration()
         configuration.activityType = .walking
@@ -173,7 +186,9 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
             totalActiveCalories: activeCalories,
             averageHeartRate: heartRateSamples.isEmpty ? nil : averageHeartRate,
             maxHeartRate: heartRateSamples.isEmpty ? nil : maxHeartRate,
-            minHeartRate: heartRateSamples.isEmpty ? nil : (minHeartRate == Int.max ? nil : minHeartRate)
+            minHeartRate: heartRateSamples.isEmpty ? nil : (minHeartRate == Int.max ? nil : minHeartRate),
+            modeRaw: self.modeRaw,
+            intervalProgramRaw: self.intervalProgramRaw
         )
 
         workoutState = .idle
@@ -181,6 +196,8 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
         self.workoutBuilder = nil
         self.currentWalkId = nil
         self.startTime = nil
+        self.modeRaw = nil
+        self.intervalProgramRaw = nil
 
         WatchConnectivityManager.shared.sendWorkoutEnded(summary: summary)
 
@@ -206,8 +223,9 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
     private func startTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                guard let self = self, let startTime = self.startTime else { return }
+            guard let self else { return }
+            Task { @MainActor [self] in
+                guard let startTime = self.startTime else { return }
                 self.elapsedSeconds = Date().timeIntervalSince(startTime)
 
                 // Send stats update to iPhone periodically
@@ -232,6 +250,27 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
         )
 
         WatchConnectivityManager.shared.sendStatsUpdate(stats: stats)
+
+        // During active workouts, aggressively update complications every 30 seconds.
+        // This is industry-leading refresh since the app is actively running and has
+        // more runtime. Users expect to see live step counts during walks.
+        if Int(elapsedSeconds) % 30 == 0 {
+            updateWidgetsForWorkout()
+        }
+    }
+
+    /// Update widget data during active workout (aggressive refresh)
+    private func updateWidgetsForWorkout() {
+        let defaults = UserDefaults(suiteName: "group.com.justwalk.shared")
+
+        // Get today's total steps (watch health data + current workout steps)
+        let todaySteps = WatchHealthKitManager.shared.todaySteps
+
+        defaults?.set(todaySteps, forKey: "widget_todaySteps")
+        defaults?.set(steps, forKey: "widget_workoutSteps") // Current workout steps
+
+        // Reload immediately - during active workout we have runtime budget
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     private func updateHeartRate(_ value: Int) {

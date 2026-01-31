@@ -1,9 +1,19 @@
 import Foundation
 import Combine
 import WatchConnectivity
+import WidgetKit
 
 /// Manages communication with iPhone from Apple Watch
 final class WatchConnectivityManager: NSObject, ObservableObject {
+
+    // MARK: - Complication Push Keys (must match iPhone)
+    private enum ComplicationKey {
+        static let isComplicationUpdate = "isComplicationUpdate"
+        static let todaySteps = "complication_todaySteps"
+        static let stepGoal = "complication_stepGoal"
+        static let currentStreak = "complication_currentStreak"
+        static let timestamp = "complication_timestamp"
+    }
 
     // MARK: - Singleton
     static let shared = WatchConnectivityManager()
@@ -12,7 +22,8 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
     @Published private(set) var isPhoneReachable = false
 
     // MARK: - Callbacks
-    var onStartWorkoutCommand: ((UUID, IntervalTransferData?) -> Void)?
+    /// Callback for starting workout: (walkId, startTime, intervalData, modeRaw, zoneLow, zoneHigh)
+    var onStartWorkoutCommand: ((UUID, Date?, IntervalTransferData?, String?, Int?, Int?) -> Void)?
     var onPauseWorkoutCommand: (() -> Void)?
     var onResumeWorkoutCommand: (() -> Void)?
     var onEndWorkoutCommand: (() -> Void)?
@@ -99,6 +110,24 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
         session?.sendMessage(message, replyHandler: nil, errorHandler: nil)
     }
 
+    /// Send fat burn out-of-range (below zone) haptic trigger to iPhone
+    func sendFatBurnOutOfRangeLow() {
+        let message: [String: Any] = [
+            WatchMessage.Key.command.rawValue: WatchMessage.Event.fatBurnOutOfRangeLow.rawValue
+        ]
+        // Best-effort send for haptic trigger
+        session?.sendMessage(message, replyHandler: nil, errorHandler: nil)
+    }
+
+    /// Send fat burn out-of-range (above zone) haptic trigger to iPhone
+    func sendFatBurnOutOfRangeHigh() {
+        let message: [String: Any] = [
+            WatchMessage.Key.command.rawValue: WatchMessage.Event.fatBurnOutOfRangeHigh.rawValue
+        ]
+        // Best-effort send for haptic trigger
+        session?.sendMessage(message, replyHandler: nil, errorHandler: nil)
+    }
+
     // MARK: - Private
 
     private func sendMessage(_ message: [String: Any]) {
@@ -116,6 +145,52 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Streak Info Sync
+
+    private func handleStreakInfoSync(_ message: [String: Any]) {
+        let currentStreak = message[WatchMessage.Key.streakCurrent.rawValue] as? Int ?? 0
+        let longestStreak = message[WatchMessage.Key.streakLongest.rawValue] as? Int ?? 0
+        let dailyGoal = message[WatchMessage.Key.dailyGoal.rawValue] as? Int ?? 5000
+
+        let streakInfo = WatchStreakInfo(
+            currentStreak: currentStreak,
+            longestStreak: longestStreak,
+            lastGoalMetDate: nil,
+            dailyStepGoal: dailyGoal
+        )
+
+        WatchPersistenceManager.shared.saveStreakInfo(streakInfo)
+        print("Watch: Synced streak info - streak: \(currentStreak), goal: \(dailyGoal)")
+    }
+
+    // MARK: - Complication Push Handler (Industry-Leading Refresh)
+
+    /// Handle complication data pushed from iPhone via transferCurrentComplicationUserInfo().
+    /// This is the fastest path to update complications - it has priority delivery and
+    /// uses a separate budget from WidgetKit reloads.
+    private func handleComplicationPush(_ userInfo: [String: Any]) -> Bool {
+        // Check if this is a complication update
+        guard userInfo[ComplicationKey.isComplicationUpdate] as? Bool == true else {
+            return false
+        }
+
+        let todaySteps = userInfo[ComplicationKey.todaySteps] as? Int ?? 0
+        let stepGoal = userInfo[ComplicationKey.stepGoal] as? Int ?? 5000
+        let currentStreak = userInfo[ComplicationKey.currentStreak] as? Int ?? 0
+
+        // Update shared App Group data for widgets
+        let defaults = UserDefaults(suiteName: "group.com.justwalk.shared")
+        defaults?.set(todaySteps, forKey: "widget_todaySteps")
+        defaults?.set(stepGoal, forKey: "widget_stepGoal")
+        defaults?.set(currentStreak, forKey: "widget_currentStreak")
+
+        // Immediately reload all widget timelines - this is the key to fast updates!
+        WidgetCenter.shared.reloadAllTimelines()
+
+        print("Watch: Complication push received - \(todaySteps) steps, reloading widgets immediately")
+        return true
+    }
+
     private func handleReceivedMessage(_ message: [String: Any]) {
         guard let commandString = message[WatchMessage.Key.command.rawValue] as? String,
               let command = WatchMessage.Command(rawValue: commandString) else { return }
@@ -125,12 +200,23 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
             case .startWorkout:
                 if let walkIdString = message[WatchMessage.Key.walkId.rawValue] as? String,
                    let walkId = UUID(uuidString: walkIdString) {
+                    // Parse authoritative start time from initiating device
+                    var startTime: Date?
+                    if let timestamp = message[WatchMessage.Key.startTime.rawValue] as? TimeInterval {
+                        startTime = Date(timeIntervalSince1970: timestamp)
+                    }
                     // Parse interval data if present
                     var intervalData: IntervalTransferData?
                     if let data = message[WatchMessage.Key.intervalData.rawValue] as? Data {
                         intervalData = try? JSONDecoder().decode(IntervalTransferData.self, from: data)
                     }
-                    self.onStartWorkoutCommand?(walkId, intervalData)
+                    // Extract mode and fat burn zone data
+                    let modeRaw = message[WatchMessage.Key.modeRaw.rawValue] as? String
+                    let zoneLow = message[WatchMessage.Key.zoneLow.rawValue] as? Int
+                    let zoneHigh = message[WatchMessage.Key.zoneHigh.rawValue] as? Int
+
+                    print("Watch: Received startWorkout - mode: \(modeRaw ?? "nil"), startTime: \(startTime?.description ?? "nil")")
+                    self.onStartWorkoutCommand?(walkId, startTime, intervalData, modeRaw, zoneLow, zoneHigh)
                 }
 
             case .pauseWorkout:
@@ -145,6 +231,18 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
             case .syncState:
                 // Handle state sync request
                 break
+
+            case .phaseChangeHaptic:
+                WatchHaptics.phaseChange()
+
+            case .countdownWarningHaptic:
+                WatchHaptics.countdownWarning()
+
+            case .milestoneHaptic:
+                WatchHaptics.progressMilestone()
+
+            case .syncStreakInfo:
+                self.handleStreakInfoSync(message)
             }
         }
     }
@@ -176,6 +274,10 @@ extension WatchConnectivityManager: WCSessionDelegate {
     }
 
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        // Priority: Check for complication push first (from transferCurrentComplicationUserInfo)
+        if handleComplicationPush(userInfo) {
+            return // Complication update handled, don't process as regular message
+        }
         handleReceivedMessage(userInfo)
     }
 

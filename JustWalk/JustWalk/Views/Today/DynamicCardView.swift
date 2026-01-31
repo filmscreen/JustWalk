@@ -14,6 +14,7 @@ enum CardAction: Equatable {
     case navigateToWalksTab
     case startPostMealWalk
     case startIntervalWalk
+    case startFatBurnWalk
     case openWatchSetup
 }
 
@@ -36,6 +37,29 @@ struct DynamicCardView: View {
     var body: some View {
         Group {
             switch cardType {
+            // P0 — Smart Walk Cards
+            case .smartWalkPattern(let preferredMode):
+                SmartWalkPatternCard(preferredMode: preferredMode, onAction: onAction)
+
+            case .smartWalkPostMeal:
+                SmartWalkPostMealCard(onAction: onAction)
+
+            case .smartWalkEveningRescue(let stepsRemaining):
+                SmartWalkEveningRescueCard(stepsRemaining: stepsRemaining, onAction: onAction)
+
+            case .smartWalkCloseToGoal(let stepsRemaining):
+                SmartWalkCloseToGoalCard(stepsRemaining: stepsRemaining, onAction: onAction)
+
+            case .smartWalkMorning:
+                SmartWalkMorningCard(onAction: onAction)
+
+            case .smartWalkGoalMet:
+                SmartWalkGoalMetCard(onAction: onAction)
+
+            case .smartWalkDefault:
+                SmartWalkDefaultCard(onAction: onAction)
+
+            // P1 — Urgent Cards
             case .streakAtRisk(let stepsRemaining):
                 StreakAtRiskCard(stepsRemaining: stepsRemaining, onAction: onAction)
 
@@ -65,18 +89,21 @@ struct DynamicCardView: View {
 
             case .newWeekNewGoal:
                 NewWeekNewGoalCard {
-                    onAction?(.navigateToIntervals)
+                    onAction?(.navigateToWalksTab)
                 }
 
             case .weekendWarrior:
                 WeekendWarriorCard {
-                    onAction?(.navigateToIntervals)
+                    onAction?(.navigateToWalksTab)
                 }
 
             case .eveningNudge(let stepsRemaining):
                 EveningNudgeCard(stepsRemaining: stepsRemaining) {
-                    onAction?(.navigateToIntervals)
+                    onAction?(.navigateToWalksTab)
                 }
+
+            case .insight(let card):
+                InsightCardView(card: card)
 
             case .tip(let tip):
                 TipCard(tip: tip)
@@ -91,6 +118,260 @@ struct DynamicCardView: View {
             RoundedRectangle(cornerRadius: JW.Radius.xl)
                 .stroke(Color.white.opacity(0.06), lineWidth: 1)
         )
+    }
+}
+
+// MARK: - Weather-Enhanced Secondary Text
+
+/// Appends weather phrase to secondary text when conditions are pleasant
+private func weatherEnhancedText(_ baseText: String) -> String {
+    guard let weatherPhrase = WeatherManager.shared.weatherPhrase() else {
+        return baseText
+    }
+    return "\(baseText) \(weatherPhrase)"
+}
+
+// MARK: - Smart Walk Pattern Card
+
+private struct SmartWalkPatternCard: View {
+    let preferredMode: WalkMode
+    var onAction: ((CardAction) -> Void)?
+
+    private var modeLabel: String {
+        switch preferredMode {
+        case .interval: return "Interval walk"
+        case .fatBurn: return "Fat burn walk"
+        case .postMeal: return "Post-meal walk"
+        case .free: return "Walk"
+        }
+    }
+
+    private var actionForMode: CardAction {
+        switch preferredMode {
+        case .interval: return .startIntervalWalk
+        case .fatBurn: return .startFatBurnWalk
+        case .postMeal: return .startPostMealWalk
+        case .free: return .navigateToWalksTab
+        }
+    }
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(weatherEnhancedText("You usually walk around now."))
+                    .font(JW.Font.headline)
+                    .foregroundStyle(JW.Color.textPrimary)
+
+                Text("\(modeLabel)?")
+                    .font(JW.Font.subheadline)
+                    .foregroundStyle(JW.Color.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                onAction?(actionForMode)
+            } label: {
+                Text("Let's Go →")
+                    .font(JW.Font.subheadline.weight(.semibold))
+                    .foregroundStyle(JW.Color.accent)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+// MARK: - Smart Walk Post-Meal Card
+
+private struct SmartWalkPostMealCard: View {
+    var onAction: ((CardAction) -> Void)?
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(weatherEnhancedText("Good time for a post-meal walk."))
+                    .font(JW.Font.headline)
+                    .foregroundStyle(JW.Color.textPrimary)
+
+                Text("10 minutes helps regulate blood sugar.")
+                    .font(JW.Font.subheadline)
+                    .foregroundStyle(JW.Color.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                onAction?(.startPostMealWalk)
+            } label: {
+                Text("Start →")
+                    .font(JW.Font.subheadline.weight(.semibold))
+                    .foregroundStyle(JW.Color.accent)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+// MARK: - Smart Walk Evening Rescue Card
+
+private struct SmartWalkEveningRescueCard: View {
+    let stepsRemaining: Int
+    var onAction: ((CardAction) -> Void)?
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(weatherEnhancedText("A 20-minute walk closes out your day."))
+                    .font(JW.Font.headline)
+                    .foregroundStyle(JW.Color.textPrimary)
+
+                Text("You're \(stepsRemaining.formatted()) steps away.")
+                    .font(JW.Font.subheadline)
+                    .foregroundStyle(JW.Color.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                onAction?(.navigateToWalksTab)
+            } label: {
+                Text("Let's Go →")
+                    .font(JW.Font.subheadline.weight(.semibold))
+                    .foregroundStyle(JW.Color.accent)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+// MARK: - Smart Walk Close to Goal Card
+
+private struct SmartWalkCloseToGoalCard: View {
+    let stepsRemaining: Int
+    var onAction: ((CardAction) -> Void)?
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(weatherEnhancedText("You're almost there."))
+                    .font(JW.Font.headline)
+                    .foregroundStyle(JW.Color.textPrimary)
+
+                Text("A 10-minute walk wraps it up.")
+                    .font(JW.Font.subheadline)
+                    .foregroundStyle(JW.Color.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                onAction?(.navigateToWalksTab)
+            } label: {
+                Text("Finish Strong →")
+                    .font(JW.Font.subheadline.weight(.semibold))
+                    .foregroundStyle(JW.Color.accent)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+// MARK: - Smart Walk Morning Card
+
+private struct SmartWalkMorningCard: View {
+    var onAction: ((CardAction) -> Void)?
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(weatherEnhancedText("Start your day with a walk?"))
+                    .font(JW.Font.headline)
+                    .foregroundStyle(JW.Color.textPrimary)
+
+                Text("15 minutes to clear your head.")
+                    .font(JW.Font.subheadline)
+                    .foregroundStyle(JW.Color.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                onAction?(.navigateToWalksTab)
+            } label: {
+                Text("Let's Go →")
+                    .font(JW.Font.subheadline.weight(.semibold))
+                    .foregroundStyle(JW.Color.accent)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+// MARK: - Smart Walk Goal Met Card
+
+private struct SmartWalkGoalMetCard: View {
+    var onAction: ((CardAction) -> Void)?
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text("You hit your goal.")
+                        .font(JW.Font.headline)
+                        .foregroundStyle(JW.Color.textPrimary)
+
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(JW.Color.success)
+                }
+
+                Text("Bonus walk? Every step counts.")
+                    .font(JW.Font.subheadline)
+                    .foregroundStyle(JW.Color.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                onAction?(.navigateToWalksTab)
+            } label: {
+                Text("Why Not →")
+                    .font(JW.Font.subheadline.weight(.semibold))
+                    .foregroundStyle(JW.Color.accent)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+// MARK: - Smart Walk Default Card
+
+private struct SmartWalkDefaultCard: View {
+    var onAction: ((CardAction) -> Void)?
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(weatherEnhancedText("Ready for a walk?"))
+                    .font(JW.Font.headline)
+                    .foregroundStyle(JW.Color.textPrimary)
+
+                Text("Pick one and let's go.")
+                    .font(JW.Font.subheadline)
+                    .foregroundStyle(JW.Color.textSecondary)
+            }
+
+            Spacer()
+
+            Button {
+                onAction?(.navigateToWalksTab)
+            } label: {
+                Text("See Walks →")
+                    .font(JW.Font.subheadline.weight(.semibold))
+                    .foregroundStyle(JW.Color.accent)
+            }
+            .buttonStyle(.plain)
+        }
     }
 }
 
@@ -191,7 +472,7 @@ private struct WelcomeBackCard: View {
             }
 
             Button {
-                onAction?(.navigateToIntervals)
+                onAction?(.navigateToWalksTab)
             } label: {
                 Text("Start Walking")
                     .font(JW.Font.subheadline.weight(.bold))
@@ -462,6 +743,25 @@ private struct EveningNudgeCard: View {
     }
 }
 
+// MARK: - Insight Card (pattern-based personalization)
+
+private struct InsightCardView: View {
+    let card: InsightCard
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(card.primaryText)
+                .font(JW.Font.headline)
+
+            Text(card.secondaryText)
+                .font(JW.Font.subheadline)
+                .foregroundStyle(JW.Color.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 // MARK: - Tip Card (reusable for all P3 tips)
 
 private struct TipCard: View {
@@ -496,12 +796,21 @@ private struct TipCard: View {
 #Preview("All Card Types") {
     ScrollView {
         VStack(spacing: 16) {
-            // P1 Cards
+            // P0 Smart Walk Cards
+            DynamicCardView(cardType: .smartWalkPattern(preferredMode: .interval))
+            DynamicCardView(cardType: .smartWalkPostMeal)
+            DynamicCardView(cardType: .smartWalkEveningRescue(stepsRemaining: 2500))
+            DynamicCardView(cardType: .smartWalkCloseToGoal(stepsRemaining: 800))
+            DynamicCardView(cardType: .smartWalkMorning)
+            DynamicCardView(cardType: .smartWalkGoalMet)
+            DynamicCardView(cardType: .smartWalkDefault)
+
+            // P1 Urgent Cards
             DynamicCardView(cardType: .streakAtRisk(stepsRemaining: 2300))
             DynamicCardView(cardType: .shieldDeployed(remainingShields: 2, nextRefill: "Feb 1"))
             DynamicCardView(cardType: .welcomeBack)
 
-            // P2 Cards
+            // P2 Contextual Cards
             DynamicCardView(cardType: .almostThere(stepsRemaining: 800))
             DynamicCardView(cardType: .tryIntervals)
             DynamicCardView(cardType: .trySyncWithWatch)

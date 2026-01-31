@@ -36,6 +36,7 @@ class PersistenceManager: ObservableObject {
         static let trackedWalks = "tracked_walks"
         static let intervalUsage = "interval_usage"
         static let fatBurnUsage = "fat_burn_usage"
+        static let walkPatternData = "walk_pattern_data_v1"
     }
 
     /// Incremented whenever daily logs change, so views observing this
@@ -53,12 +54,6 @@ class PersistenceManager: ObservableObject {
     // UI reactivity is driven by `dailyLogVersion` instead.
     @ObservationIgnored private var _cachedTrackedWalks: [TrackedWalk]?
     @ObservationIgnored private var _cachedDailyLogs: [String: DailyLog]?
-
-    private static let dailyLogDateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
 
     private init() {
         cachedUseMetric = (load(forKey: Keys.profile) as UserProfile?)?.useMetricUnits ?? false
@@ -82,7 +77,9 @@ class PersistenceManager: ObservableObject {
     func saveProfile(_ profile: UserProfile) {
         save(profile, forKey: Keys.profile)
         cachedUseMetric = profile.useMetricUnits
+        UserDefaults.standard.set(profile.dailyStepGoal, forKey: "dailyStepGoal")
         NotificationCenter.default.post(name: .didSaveProfile, object: nil)
+        PhoneConnectivityManager.shared.syncStreakInfoToWatch()
     }
 
     func loadProfile() -> UserProfile {
@@ -94,6 +91,7 @@ class PersistenceManager: ObservableObject {
     func saveStreakData(_ data: StreakData) {
         save(data, forKey: Keys.streakData)
         NotificationCenter.default.post(name: .didSaveStreakData, object: nil)
+        PhoneConnectivityManager.shared.syncStreakInfoToWatch()
     }
 
     func loadStreakData() -> StreakData {
@@ -126,7 +124,7 @@ class PersistenceManager: ObservableObject {
         if _cachedDailyLogs == nil {
             _cachedDailyLogs = load(forKey: Keys.dailyLogs) ?? [:]
         }
-        let key = Self.dailyLogDateFormatter.string(from: date)
+        let key = DailyLog.makeDayKey(for: date)
         return _cachedDailyLogs?[key]
     }
 
@@ -144,6 +142,89 @@ class PersistenceManager: ObservableObject {
         }
     }
 
+    // MARK: - Migrations
+
+    func migrateDailyLogGoalTargetsIfNeeded() {
+        let migrationKey = "daily_log_goal_target_migrated_v1"
+        guard !defaults.bool(forKey: migrationKey) else { return }
+
+        var logs: [String: DailyLog] = load(forKey: Keys.dailyLogs) ?? [:]
+        var changed = false
+
+        for (key, var log) in logs {
+            if log.goalTarget == nil {
+                if log.goalMet {
+                    log.goalTarget = log.steps > 0 ? log.steps : 0
+                } else {
+                    log.goalTarget = max(log.steps + 1, 1)
+                }
+                logs[key] = log
+                changed = true
+            }
+        }
+
+        if changed {
+            save(logs, forKey: Keys.dailyLogs)
+            _cachedDailyLogs = logs
+            dailyLogVersion += 1
+        }
+
+        defaults.set(true, forKey: migrationKey)
+    }
+
+    /// Repair migration: fixes goalTarget values that were corrupted by HealthKit sync bug.
+    /// Only fixes cases where goalTarget CONTRADICTS goalMet (clearly wrong data).
+    /// Does NOT try to infer goals for missing data - we can't know what the goal was.
+    func repairCorruptedGoalTargets() {
+        let migrationKey = "daily_log_goal_target_repair_v2"
+        guard !defaults.bool(forKey: migrationKey) else { return }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        var logs: [String: DailyLog] = load(forKey: Keys.dailyLogs) ?? [:]
+        var changed = false
+
+        for (key, var log) in logs {
+            // Skip today - today's goal can still change
+            guard calendar.startOfDay(for: log.date) < today else { continue }
+            // Skip if no goalTarget set - we can't fix missing data
+            guard let goalTarget = log.goalTarget else { continue }
+            // Skip shielded days - goalMet might be true even with low steps
+            guard !log.shieldUsed else { continue }
+
+            // Only fix clearly corrupted data where goalTarget contradicts goalMet
+            let isCorrupted: Bool
+            if log.goalMet && goalTarget > log.steps && log.steps > 0 {
+                // Claimed to meet goal but goalTarget > steps - impossible
+                // This means goalTarget was corrupted (overwritten with higher current goal)
+                // We don't know the original goal, but we know it was <= steps
+                isCorrupted = true
+            } else if !log.goalMet && goalTarget <= log.steps && log.steps > 0 {
+                // Claimed to miss goal but goalTarget <= steps - should have met it
+                // This means goalTarget was corrupted (overwritten with lower current goal)
+                isCorrupted = true
+            } else {
+                isCorrupted = false
+            }
+
+            if isCorrupted {
+                // Clear the corrupted goalTarget - views will fall back to current goal
+                // This is better than showing clearly wrong data
+                log.goalTarget = nil
+                logs[key] = log
+                changed = true
+            }
+        }
+
+        if changed {
+            save(logs, forKey: Keys.dailyLogs)
+            _cachedDailyLogs = logs
+            dailyLogVersion += 1
+        }
+
+        defaults.set(true, forKey: migrationKey)
+    }
+
     // MARK: - Tracked Walk Methods
 
     func saveTrackedWalk(_ walk: TrackedWalk) {
@@ -152,6 +233,16 @@ class PersistenceManager: ObservableObject {
         save(walks, forKey: Keys.trackedWalks)
         _cachedTrackedWalks = walks
         NotificationCenter.default.post(name: .didSaveTrackedWalk, object: nil)
+    }
+
+    // MARK: - Walk Pattern Data
+
+    func saveWalkPatternData(_ data: WalkPatternData) {
+        save(data, forKey: Keys.walkPatternData)
+    }
+
+    func loadWalkPatternData() -> WalkPatternData {
+        load(forKey: Keys.walkPatternData) ?? .empty
     }
 
     func loadAllTrackedWalks() -> [TrackedWalk] {
@@ -168,6 +259,13 @@ class PersistenceManager: ObservableObject {
         }
     }
 
+    func loadTrackedWalks(forDay date: Date) -> [TrackedWalk] {
+        let calendar = Calendar.current
+        return loadAllTrackedWalks().filter {
+            calendar.isDate($0.startTime, equalTo: date, toGranularity: .day)
+        }
+    }
+
     func loadTrackedWalk(by id: UUID) -> TrackedWalk? {
         loadAllTrackedWalks().first { $0.id == id }
     }
@@ -179,6 +277,23 @@ class PersistenceManager: ObservableObject {
             save(walks, forKey: Keys.trackedWalks)
             _cachedTrackedWalks = walks
         }
+    }
+
+    func deleteTrackedWalk(_ walk: TrackedWalk) {
+        var walks = _cachedTrackedWalks ?? load(forKey: Keys.trackedWalks) ?? []
+        walks.removeAll { $0.id == walk.id }
+        save(walks, forKey: Keys.trackedWalks)
+        _cachedTrackedWalks = walks
+
+        // Also remove walk ID from any DailyLog that references it
+        let calendar = Calendar.current
+        let walkDate = calendar.startOfDay(for: walk.startTime)
+        if var dailyLog = loadDailyLog(for: walkDate) {
+            dailyLog.trackedWalkIDs.removeAll { $0 == walk.id }
+            saveDailyLog(dailyLog)
+        }
+
+        NotificationCenter.default.post(name: .didSaveTrackedWalk, object: nil)
     }
 
     // MARK: - Interval Usage Methods
@@ -215,7 +330,8 @@ class PersistenceManager: ObservableObject {
             Keys.dailyLogs,
             Keys.trackedWalks,
             Keys.intervalUsage,
-            Keys.fatBurnUsage
+            Keys.fatBurnUsage,
+            Keys.walkPatternData
         ]
         keys.forEach { defaults.removeObject(forKey: $0) }
         invalidateCaches()
@@ -226,6 +342,8 @@ class PersistenceManager: ObservableObject {
         _cachedTrackedWalks = nil
         _cachedDailyLogs = nil
         cachedUseMetric = loadProfile().useMetricUnits
+        // Increment version to trigger UI refresh for views observing this property
+        dailyLogVersion += 1
     }
 
     /// Load all app state from persistence

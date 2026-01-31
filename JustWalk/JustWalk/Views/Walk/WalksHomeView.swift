@@ -47,7 +47,6 @@ struct WalksHomeView: View {
     @State private var navigateToPostMeal = false
     @State private var navigateToIntervals = false
     @State private var navigateToFatBurn = false
-    @State private var selectedIntervalDuration: IntervalDuration = .quick
 
     // Paywall
     @State private var showPaywallSheet = false
@@ -90,6 +89,36 @@ struct WalksHomeView: View {
         return allWalks
             .filter { $0.startTime >= cutoff }
             .sorted { $0.startTime > $1.startTime }
+    }
+
+    // MARK: - Summary Stats (for WalksSummaryCard)
+
+    private var summaryPeriodText: String {
+        let activeFilter = (!isPro && selectedHistoryFilter.requiresPro) ? .week : selectedHistoryFilter
+        switch activeFilter {
+        case .week: return "This Week"
+        case .month: return "This Month"
+        case .year: return "This Year"
+        case .allTime: return "All Time"
+        }
+    }
+
+    private var summaryTotalSteps: Int {
+        filteredWalks.reduce(0) { $0 + $1.steps }
+    }
+
+    private var summaryTotalMinutes: Int {
+        filteredWalks.reduce(0) { $0 + $1.durationMinutes }
+    }
+
+    private var emptyStatePeriodText: String {
+        let activeFilter = (!isPro && selectedHistoryFilter.requiresPro) ? .week : selectedHistoryFilter
+        switch activeFilter {
+        case .week: return "this week"
+        case .month: return "this month"
+        case .year: return "this year"
+        case .allTime: return "yet"
+        }
     }
 
     var body: some View {
@@ -226,13 +255,13 @@ struct WalksHomeView: View {
 
     private var startAWalkView: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 // Intervals card
                 WalkTypeCard(
                     walkType: .intervals,
                     isPro: isPro,
                     freeWalksRemaining: intervalsRemaining,
-                    onStart: handleCardStart
+                    onTap: handleIntervalsTap
                 )
                 .staggeredAppearance(index: 0)
 
@@ -241,7 +270,7 @@ struct WalksHomeView: View {
                     walkType: .fatBurn,
                     isPro: isPro,
                     freeWalksRemaining: fatBurnRemaining,
-                    onStart: handleCardStart
+                    onTap: handleFatBurnTap
                 )
                 .staggeredAppearance(index: 1)
 
@@ -250,58 +279,13 @@ struct WalksHomeView: View {
                     walkType: .postMeal,
                     isPro: true, // Always free
                     freeWalksRemaining: 999,
-                    onStart: handleCardStart
+                    onTap: handlePostMealTap
                 )
                 .staggeredAppearance(index: 2)
-
-                Spacer()
-                    .frame(height: JW.Spacing.xxxl)
             }
             .padding(.horizontal, JW.Spacing.lg)
             .padding(.top, JW.Spacing.md)
-        }
-    }
-
-    // MARK: - Card Start Handler
-
-    private func handleCardStart(_ walkType: FeatureCardWalkType, _ duration: IntervalDuration?) {
-        JustWalkHaptics.buttonTap()
-
-        switch walkType {
-        case .intervals:
-            if intervalsExhausted && !isPro {
-                paywallMode = .interval
-                showPaywallSheet = true
-                return
-            }
-            // Store selected duration for use when navigating
-            if let duration = duration {
-                selectedIntervalDuration = duration
-            }
-            if !hasSeenIntervalsEducation {
-                showIntervalsEducation = true
-            } else {
-                navigateToIntervals = true
-            }
-
-        case .fatBurn:
-            if fatBurnExhausted && !isPro {
-                paywallMode = .fatBurn
-                showPaywallSheet = true
-                return
-            }
-            if !hasSeenFatBurnEducation {
-                showFatBurnEducation = true
-            } else {
-                navigateToFatBurn = true
-            }
-
-        case .postMeal:
-            if !hasSeenPostMealEducation {
-                showPostMealEducation = true
-            } else {
-                navigateToPostMeal = true
-            }
+            .padding(.bottom, 24)
         }
     }
 
@@ -337,6 +321,16 @@ struct WalksHomeView: View {
                     .padding(.horizontal, JW.Spacing.lg)
                     .padding(.bottom, JW.Spacing.md)
 
+                // Summary card at top
+                WalksSummaryCard(
+                    period: summaryPeriodText,
+                    walkCount: filteredWalks.count,
+                    totalSteps: summaryTotalSteps,
+                    totalMinutes: summaryTotalMinutes
+                )
+                .padding(.horizontal, JW.Spacing.lg)
+                .padding(.bottom, JW.Spacing.md)
+
                 if filteredWalks.isEmpty {
                     emptyHistoryView
                 } else {
@@ -349,7 +343,13 @@ struct WalksHomeView: View {
         }
         .sheet(item: $selectedHistoryWalk) { walk in
             NavigationStack {
-                PostWalkSummaryView(walk: walk)
+                PostWalkSummaryView(
+                    walk: walk,
+                    showDeleteOption: true,
+                    onDelete: {
+                        loadRecentWalks()
+                    }
+                )
             }
         }
     }
@@ -394,17 +394,17 @@ struct WalksHomeView: View {
     private var emptyHistoryView: some View {
         VStack(spacing: JW.Spacing.md) {
             Spacer()
-                .frame(height: 80)
+                .frame(height: 60)
 
             Image(systemName: "figure.walk")
                 .font(.system(size: 48))
-                .foregroundStyle(JW.Color.textTertiary)
+                .foregroundStyle(JW.Color.textSecondary.opacity(0.5))
 
-            Text("No walks yet")
+            Text("No walks \(emptyStatePeriodText)")
                 .font(JW.Font.headline)
                 .foregroundStyle(JW.Color.textPrimary)
 
-            Text("Your walk history will appear here")
+            Text("Start a guided walk to see it here")
                 .font(JW.Font.subheadline)
                 .foregroundStyle(JW.Color.textSecondary)
 
@@ -412,6 +412,7 @@ struct WalksHomeView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, JW.Spacing.lg)
+        .padding(.vertical, 60)
     }
 
     private var historyListView: some View {
@@ -432,7 +433,7 @@ struct WalksHomeView: View {
                         if index < walks.count - 1 {
                             Divider()
                                 .overlay(Color.white.opacity(0.06))
-                                .padding(.leading, 52)
+                                .padding(.leading, 64)
                         }
                     }
                 } header: {
@@ -457,7 +458,7 @@ struct WalksHomeView: View {
     }
 
     private var hasReachedHistoryLimit: Bool {
-        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
         let oldestWalk = recentWalks.min { $0.startTime < $1.startTime }
         guard let oldest = oldestWalk else { return false }
         return oldest.startTime < thirtyDaysAgo
@@ -493,8 +494,8 @@ struct WalksHomeView: View {
     private func groupWalksByTime(_ walks: [TrackedWalk]) -> [(String, [TrackedWalk])] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-        let thirtyDaysAgo = calendar.date(byAdding: .day, value: -30, to: today)!
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        let thirtyDaysAgo = calendar.date(byAdding: .day, value: -30, to: today) ?? today
 
         // Filter for free users (30 days), Pro users get all
         let filteredWalks = subscriptionManager.isPro
@@ -508,9 +509,7 @@ struct WalksHomeView: View {
             } else if walkDay == yesterday {
                 return "Yesterday"
             } else {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "EEEE, MMM d"
-                return formatter.string(from: walk.startTime)
+                return Self.groupByDayFormatter.string(from: walk.startTime)
             }
         }
 
@@ -549,6 +548,12 @@ struct WalksHomeView: View {
     private static let dayOfWeekFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "EEEE"
+        return f
+    }()
+
+    private static let groupByDayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE, MMM d"
         return f
     }()
 
@@ -683,6 +688,9 @@ struct WalksHomeView: View {
         case .startPostMealWalk:
             selectedTab = .start
             navigateToPostMeal = true
+        case .startFatBurnWalk:
+            selectedTab = .start
+            navigateToFatBurn = true
         case .openWatchSetup:
             // Open the Apple Watch app on paired device
             if let url = URL(string: "itms-watchs://") {
@@ -740,19 +748,19 @@ enum FeatureCardWalkType {
     var description: String {
         switch self {
         case .intervals:
-            return "Alternate between easy and brisk paces. Builds endurance without burnout."
+            return "Japanese Walking Method — Alternate fast and slow to boost metabolism."
         case .fatBurn:
-            return "Stay in your optimal heart rate zone. Real-time audio cues guide your pace."
+            return "Walk in your fat-burning heart rate zone with real-time guidance. No time limit."
         case .postMeal:
-            return "A quick walk after eating helps regulate blood sugar and aids digestion."
+            return "A 10-minute walk after eating helps regulate blood sugar."
         }
     }
 
-    var durationText: String {
+    var badge: String? {
         switch self {
-        case .intervals: return "18 or 30 min"
-        case .fatBurn: return "Open-ended"
-        case .postMeal: return "10 minutes"
+        case .intervals: return nil
+        case .fatBurn: return "Apple Watch"
+        case .postMeal: return nil
         }
     }
 
@@ -781,176 +789,102 @@ enum FeatureCardWalkType {
     }
 }
 
-enum IntervalDuration: String, CaseIterable {
-    case quick = "quick"
-    case standard = "standard"
-
-    var minutes: Int {
-        switch self {
-        case .quick: return 18
-        case .standard: return 30
-        }
-    }
-
-    var label: String {
-        switch self {
-        case .quick: return "Quick"
-        case .standard: return "Standard"
-        }
-    }
-
-    var durationText: String {
-        "\(minutes) min"
-    }
-}
-
-struct DurationPill: View {
-    let duration: String
-    let label: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 2) {
-                Text(duration)
-                    .font(JW.Font.subheadline.weight(.medium))
-                Text(label)
-                    .font(JW.Font.caption2)
-                    .foregroundStyle(isSelected ? Color.white.opacity(0.8) : JW.Color.textSecondary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(isSelected ? JW.Color.accent : JW.Color.backgroundTertiary)
-            .foregroundStyle(isSelected ? Color.white : JW.Color.textPrimary)
-            .clipShape(RoundedRectangle(cornerRadius: 10))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 struct WalkTypeCard: View {
     let walkType: FeatureCardWalkType
     let isPro: Bool
     let freeWalksRemaining: Int
-    let onStart: (FeatureCardWalkType, IntervalDuration?) -> Void
-
-    @State private var selectedDuration: IntervalDuration = .quick
+    let onTap: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header row: Icon + Title + Badge
-            HStack(alignment: .center, spacing: 12) {
-                // Icon
-                ZStack {
-                    Circle()
-                        .fill(walkType.iconBackgroundColor)
-                        .frame(width: 44, height: 44)
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 8) {
+                // Header: Icon + Title + Free Badge + Right Badge + Chevron
+                HStack(alignment: .center, spacing: 10) {
+                    // Icon
+                    ZStack {
+                        Circle()
+                            .fill(walkType.iconBackgroundColor)
+                            .frame(width: 36, height: 36)
 
-                    Image(systemName: walkType.iconName)
-                        .font(.system(size: 20))
-                        .foregroundStyle(walkType.iconColor)
-                }
+                        Image(systemName: walkType.iconName)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(walkType.iconColor)
+                    }
 
-                // Title
-                Text(walkType.title)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(JW.Color.textPrimary)
+                    // Title
+                    Text(walkType.title)
+                        .font(.headline)
+                        .foregroundStyle(JW.Color.textPrimary)
 
-                Spacer()
-
-                // Badges
-                badgeView
-            }
-
-            // Description
-            Text(walkType.description)
-                .font(JW.Font.subheadline)
-                .foregroundStyle(JW.Color.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            // Duration + Start button row
-            HStack(alignment: .center) {
-                // Duration options
-                if walkType == .intervals {
-                    HStack(spacing: 8) {
-                        DurationPill(
-                            duration: IntervalDuration.quick.durationText,
-                            label: IntervalDuration.quick.label,
-                            isSelected: selectedDuration == .quick
-                        ) {
-                            selectedDuration = .quick
-                        }
-
-                        DurationPill(
-                            duration: IntervalDuration.standard.durationText,
-                            label: IntervalDuration.standard.label,
-                            isSelected: selectedDuration == .standard
-                        ) {
-                            selectedDuration = .standard
+                    // Free user badge (inline after title)
+                    if !isPro && walkType != .postMeal {
+                        if freeWalksRemaining > 0 {
+                            Text("\(freeWalksRemaining) free")
+                                .font(JW.Font.caption.weight(.medium))
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(JW.Color.accent.opacity(0.2))
+                                .foregroundStyle(JW.Color.accent)
+                                .clipShape(RoundedRectangle(cornerRadius: 4))
+                        } else {
+                            Text("Mon")
+                                .font(JW.Font.caption)
+                                .foregroundStyle(JW.Color.textSecondary)
                         }
                     }
-                } else {
-                    Text(walkType.durationText)
-                        .font(JW.Font.subheadline)
+
+                    Spacer()
+
+                    // Right badge (Apple Watch / Always Free)
+                    if let badge = walkType.badge {
+                        if walkType == .fatBurn {
+                            HStack(spacing: 4) {
+                                Image(systemName: "applewatch")
+                                    .font(.caption2)
+                                Text(badge)
+                            }
+                            .font(JW.Font.caption)
+                            .foregroundStyle(JW.Color.textSecondary)
+                        } else {
+                            Text(badge)
+                                .font(JW.Font.caption.weight(.medium))
+                                .foregroundStyle(JW.Color.accent)
+                        }
+                    }
+
+                    // Chevron
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(JW.Color.textSecondary)
                 }
 
-                Spacer()
-
-                // Start button
-                Button {
-                    onStart(walkType, walkType == .intervals ? selectedDuration : nil)
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Start")
-                        Image(systemName: "chevron.right")
-                    }
-                    .font(JW.Font.subheadline.weight(.semibold))
-                    .foregroundStyle(JW.Color.accent)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(JW.Color.accent.opacity(0.15))
-                    .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.top, 4)
-        }
-        .padding(20)
-        .background(JW.Color.backgroundCard)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
-    }
-
-    @ViewBuilder
-    private var badgeView: some View {
-        if walkType == .fatBurn {
-            HStack(spacing: 4) {
-                Image(systemName: "applewatch")
-                Text("Apple Watch")
-            }
-            .font(JW.Font.caption)
-            .foregroundStyle(JW.Color.textSecondary)
-        } else if walkType == .postMeal {
-            Text("Always Free")
-                .font(JW.Font.caption.weight(.medium))
-                .foregroundStyle(JW.Color.accent)
-        } else if !isPro && walkType != .postMeal {
-            // Free user badge
-            if freeWalksRemaining > 0 {
-                Text("\(freeWalksRemaining) free left")
-                    .font(JW.Font.caption.weight(.medium))
-                    .foregroundStyle(JW.Color.accent)
-            } else {
-                Text("Available Mon")
-                    .font(JW.Font.caption)
+                // Description
+                Text(walkType.description)
+                    .font(JW.Font.subheadline)
                     .foregroundStyle(JW.Color.textSecondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
             }
+            .padding(16)
+            .background(JW.Color.backgroundCard)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
         }
+        .buttonStyle(CardPressButtonStyle())
+    }
+}
+
+// MARK: - Card Press Button Style
+
+struct CardPressButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.7 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
@@ -1039,14 +973,28 @@ struct CompactWalkRow: View {
 
     private var walkIcon: String {
         switch walk.mode {
-        case .interval:
-            return "bolt.fill"
-        case .fatBurn:
-            return "heart.fill"
-        case .postMeal:
-            return "fork.knife"
-        case .free:
-            return "figure.walk"
+        case .interval: return "bolt.fill"
+        case .fatBurn: return "heart.fill"
+        case .postMeal: return "fork.knife"
+        case .free: return "figure.walk"
+        }
+    }
+
+    private var iconColor: Color {
+        switch walk.mode {
+        case .interval: return JW.Color.accent
+        case .fatBurn: return JW.Color.streak
+        case .postMeal: return JW.Color.streak
+        case .free: return JW.Color.accentBlue
+        }
+    }
+
+    private var iconBackgroundColor: Color {
+        switch walk.mode {
+        case .interval: return JW.Color.accent.opacity(0.2)
+        case .fatBurn: return JW.Color.streak.opacity(0.2)
+        case .postMeal: return JW.Color.streak.opacity(0.2)
+        case .free: return JW.Color.accentBlue.opacity(0.2)
         }
     }
 
@@ -1064,33 +1012,38 @@ struct CompactWalkRow: View {
     }
 
     var body: some View {
-        HStack(spacing: JW.Spacing.md) {
-            // Icon
+        HStack(spacing: 12) {
+            // Icon with colored background
             ZStack {
                 Circle()
-                    .fill(JW.Color.backgroundTertiary)
+                    .fill(iconBackgroundColor)
                     .frame(width: 36, height: 36)
 
                 Image(systemName: walkIcon)
-                    .font(.system(size: 14))
-                    .foregroundStyle(JW.Color.textSecondary)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(iconColor)
             }
 
             // Walk info
             VStack(alignment: .leading, spacing: 2) {
                 Text(walkTypeLabel)
-                    .font(JW.Font.subheadline.weight(.medium))
+                    .font(.body.weight(.medium))
                     .foregroundStyle(JW.Color.textPrimary)
 
-                Text(Self.timeFormatter.string(from: walk.startTime))
-                    .font(JW.Font.caption)
-                    .foregroundStyle(JW.Color.textTertiary)
+                HStack(spacing: 0) {
+                    Text(Self.timeFormatter.string(from: walk.startTime))
+                    Text("  ·  ")
+                        .foregroundStyle(JW.Color.textTertiary)
+                    Text(formattedDuration)
+                }
+                .font(JW.Font.subheadline)
+                .foregroundStyle(JW.Color.textSecondary)
             }
 
             Spacer()
 
-            // Duration
-            Text(formattedDuration)
+            // Steps count (primary metric)
+            Text("\(walk.steps.formatted()) steps")
                 .font(JW.Font.subheadline)
                 .foregroundStyle(JW.Color.textSecondary)
 
@@ -1098,10 +1051,47 @@ struct CompactWalkRow: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(JW.Color.textTertiary)
         }
-        .padding(.vertical, JW.Spacing.sm)
+        .padding(.vertical, 12)
         .padding(.horizontal, JW.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Walks Summary Card
+
+struct WalksSummaryCard: View {
+    let period: String
+    let walkCount: Int
+    let totalSteps: Int
+    let totalMinutes: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(period)
+                .font(JW.Font.subheadline.weight(.medium))
+                .foregroundStyle(JW.Color.textPrimary)
+
+            HStack(spacing: 0) {
+                Text("\(walkCount) walks")
+                Text("  ·  ")
+                    .foregroundStyle(JW.Color.textTertiary)
+                Text("\(totalSteps.formatted()) steps")
+                Text("  ·  ")
+                    .foregroundStyle(JW.Color.textTertiary)
+                Text("\(totalMinutes) min")
+            }
+            .font(JW.Font.subheadline)
+            .foregroundStyle(JW.Color.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(JW.Color.backgroundCard)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 }
 
@@ -1137,14 +1127,6 @@ struct PaywallSheet: View {
         NavigationStack {
             ProUpgradeView(onComplete: onComplete)
                 .navigationTitle("")
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Close") {
-                            onComplete()
-                        }
-                        .foregroundStyle(JW.Color.textSecondary)
-                    }
-                }
         }
     }
 }

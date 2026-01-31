@@ -32,6 +32,8 @@ class FatBurnZoneManager: ObservableObject {
     var zoneState: ZoneState = .inZone
     var timeInZoneSeconds: Int = 0
     var totalActiveSeconds: Int = 0
+    var outOfRangeSeconds: Int = 0
+    var shouldTriggerOutOfRangeHaptic: ZoneState?
 
     // MARK: - Hysteresis
 
@@ -131,11 +133,15 @@ class FatBurnZoneManager: ObservableObject {
         zoneState = .inZone
         timeInZoneSeconds = 0
         totalActiveSeconds = 0
+        outOfRangeSeconds = 0
+        shouldTriggerOutOfRangeHaptic = nil
         // Heart rate will come from Apple Watch via PhoneConnectivityManager
     }
 
     func stopSession() {
         currentHR = 0
+        outOfRangeSeconds = 0
+        shouldTriggerOutOfRangeHaptic = nil
     }
 
     /// Updates the current heart rate from Apple Watch.
@@ -156,6 +162,19 @@ class FatBurnZoneManager: ObservableObject {
         if zoneState == .inZone {
             timeInZoneSeconds += 1
         }
+
+        // Track time out of zone for haptics (only when HR is valid)
+        if currentHR > 0 {
+            switch zoneState {
+            case .belowZone, .aboveZone:
+                outOfRangeSeconds += 1
+                if outOfRangeSeconds % 10 == 0 {
+                    shouldTriggerOutOfRangeHaptic = zoneState
+                }
+            case .inZone:
+                outOfRangeSeconds = 0
+            }
+        }
     }
 
     // MARK: - Hysteresis Logic
@@ -163,6 +182,8 @@ class FatBurnZoneManager: ObservableObject {
     private func updateZoneState() {
         let hr = currentHR
         guard hr > 0 else { return }
+
+        let previousState = zoneState
 
         switch zoneState {
         case .inZone:
@@ -192,6 +213,12 @@ class FatBurnZoneManager: ObservableObject {
                     zoneState = .inZone
                 }
             }
+        }
+
+        // Reset out-of-range timer if we re-entered zone
+        if previousState != zoneState, zoneState == .inZone {
+            outOfRangeSeconds = 0
+            shouldTriggerOutOfRangeHaptic = nil
         }
     }
 

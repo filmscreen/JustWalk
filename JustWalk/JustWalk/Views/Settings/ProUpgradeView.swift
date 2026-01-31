@@ -10,6 +10,12 @@ import StoreKit
 
 struct ProUpgradeView: View {
     let onComplete: () -> Void
+    let showsCloseButton: Bool
+
+    init(onComplete: @escaping () -> Void, showsCloseButton: Bool = true) {
+        self.onComplete = onComplete
+        self.showsCloseButton = showsCloseButton
+    }
 
     @StateObject private var subscriptionManager = SubscriptionManager.shared
     @State private var selectedPlan: String = SubscriptionManager.proAnnualID
@@ -77,67 +83,48 @@ struct ProUpgradeView: View {
             VStack(spacing: 0) {
                 // MARK: Scrollable content (title + benefit cards)
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: JW.Spacing.xl) {
-                        // Dismiss button
-                        HStack {
-                            Button {
-                                dismiss()
-                                onComplete()
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.body.weight(.semibold))
-                                    .foregroundStyle(JW.Color.textSecondary)
-                                    .frame(width: 32, height: 32)
-                                    .background(JW.Color.backgroundCard)
-                                    .clipShape(Circle())
-                            }
-                            Spacer()
-                        }
-                        .padding(.horizontal, JW.Spacing.lg)
-                        .padding(.top, JW.Spacing.md)
-
+                    VStack(spacing: 0) {
                         // Hero section
                         VStack(spacing: JW.Spacing.md) {
-                            Text("Build Your Habit,\nYour Way.")
+                            Text("Just Walk Pro")
                                 .font(JW.Font.largeTitle)
                                 .foregroundStyle(JW.Color.textPrimary)
                                 .multilineTextAlignment(.center)
 
-                            Text("The free app works forever.\nPro gives you more flexibility.")
+                            Text("More walks. More protection. Full history.")
                                 .font(JW.Font.subheadline)
                                 .foregroundStyle(JW.Color.textSecondary)
                                 .multilineTextAlignment(.center)
                         }
                         .padding(.horizontal, JW.Spacing.xl)
+                        .padding(.top, JW.Spacing.xl)
+                        .padding(.bottom, 24)
                         .opacity(showHero ? 1 : 0)
                         .offset(y: showHero ? 0 : 20)
 
                         // Feature cards
-                        VStack(spacing: JW.Spacing.md) {
+                        VStack(spacing: 16) {
                             FeatureComparisonCard(
                                 icon: "bolt.fill",
                                 iconColor: JW.Color.accent,
                                 title: "Unlimited Guided Walks",
-                                proDescription: "No weekly limits on Intervals or Fat Burn Zone.",
-                                freeDescription: "Free: 1 of each per week"
+                                description: "Intervals, Fat Burn, Post-Meal — as many as you want."
                             )
                             .staggeredAppearance(index: 0)
 
                             FeatureComparisonCard(
                                 icon: "shield.fill",
                                 iconColor: JW.Color.streak,
-                                title: "Keep Your Streak Safer",
-                                proDescription: "4 shields per month. Bank up to 8 for busy seasons.",
-                                freeDescription: "Free: 2 shields to start"
+                                title: "4 Shields Every Month",
+                                description: "Life happens. Shields protect your streak when you can't walk."
                             )
                             .staggeredAppearance(index: 1)
 
                             FeatureComparisonCard(
                                 icon: "chart.bar.fill",
                                 iconColor: JW.Color.accentPurple,
-                                title: "Full History",
-                                proDescription: "See your complete journey. Every walk, every streak.",
-                                freeDescription: "Free: 30 days"
+                                title: "Complete Walk History",
+                                description: "See every walk, every streak, from day one."
                             )
                             .staggeredAppearance(index: 2)
                         }
@@ -155,6 +142,30 @@ struct ProUpgradeView: View {
             // Success overlay
             if showSuccess {
                 successOverlay
+            }
+
+            if showsCloseButton {
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button {
+                            onComplete()
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(JW.Color.textSecondary)
+                                .frame(width: 32, height: 32)
+                                .background(JW.Color.backgroundCard.opacity(0.95))
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 3)
+                        }
+                        .accessibilityLabel("Close")
+                    }
+                    .padding(.top, JW.Spacing.lg)
+                    .padding(.trailing, JW.Spacing.lg)
+                    Spacer()
+                }
             }
         }
         .onAppear { runEntrance() }
@@ -209,6 +220,7 @@ struct ProUpgradeView: View {
                     JustWalkHaptics.selectionChanged()
                 }
             }
+            .padding(.top, 24)
             .padding(.horizontal, JW.Spacing.lg)
             .opacity(showPricing ? 1 : 0)
             .offset(y: showPricing ? 0 : 10)
@@ -243,17 +255,6 @@ struct ProUpgradeView: View {
             .padding(.horizontal, JW.Spacing.lg)
             .opacity(showCTA ? 1 : 0)
             .offset(y: showCTA ? 0 : 10)
-
-            // Continue with Free
-            Button {
-                dismiss()
-                onComplete()
-            } label: {
-                Text("Continue with Free")
-                    .font(JW.Font.subheadline)
-                    .foregroundStyle(JW.Color.textSecondary)
-            }
-            .opacity(showCTA ? 1 : 0)
 
             // Restore + Terms
             VStack(spacing: JW.Spacing.xs) {
@@ -444,8 +445,7 @@ private struct FeatureComparisonCard: View {
     let icon: String
     let iconColor: Color
     let title: String
-    let proDescription: String
-    let freeDescription: String
+    let description: String
 
     var body: some View {
         HStack(alignment: .top, spacing: JW.Spacing.lg) {
@@ -463,16 +463,14 @@ private struct FeatureComparisonCard: View {
             // Text
             VStack(alignment: .leading, spacing: JW.Spacing.xs) {
                 Text(title)
-                    .font(JW.Font.headline)
+                    .font(JW.Font.headline.bold())
                     .foregroundStyle(JW.Color.textPrimary)
+                    .lineLimit(1)
 
-                Text(proDescription)
+                Text(description)
                     .font(JW.Font.subheadline)
                     .foregroundStyle(JW.Color.textSecondary)
-
-                Text(freeDescription)
-                    .font(JW.Font.caption)
-                    .foregroundStyle(JW.Color.textTertiary)
+                    .lineLimit(2)
             }
 
             Spacer()

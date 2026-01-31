@@ -30,6 +30,8 @@ struct WorkoutSummaryData: Codable {
     let averageHeartRate: Int?
     let maxHeartRate: Int?
     let minHeartRate: Int?
+    let modeRaw: String?
+    let intervalProgramRaw: String?
 
     // Computed properties
 

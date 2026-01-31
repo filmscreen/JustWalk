@@ -4,6 +4,10 @@
 <dict>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Just Walk reads your steps and walking data to show your progress on Apple Watch.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Just Walk writes workout summaries to Apple Health when you finish a walk.</string>
 	<key>WKBackgroundModes</key>
 	<array>
 		<string>workout-processing</string>

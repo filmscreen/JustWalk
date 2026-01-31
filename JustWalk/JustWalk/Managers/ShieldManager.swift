@@ -6,6 +6,9 @@
 //
 
 import Foundation
+import os.log
+
+private let shieldLogger = Logger(subsystem: "onworldtech.JustWalk", category: "ShieldManager")
 
 @Observable
 class ShieldManager {
@@ -24,16 +27,29 @@ class ShieldManager {
     // MARK: - Initialization
 
     func load() {
-        shieldData = persistence.loadShieldData()
+        let beforeLoad = persistence.loadShieldData()
+        shieldLogger.info("🛡️ ShieldManager.load() - BEFORE refill: availableShields=\(beforeLoad.availableShields), lastRefillDate=\(String(describing: beforeLoad.lastRefillDate))")
+
+        shieldData = beforeLoad
         refillIfNeeded()
+
+        shieldLogger.info("🛡️ ShieldManager.load() - AFTER refill: availableShields=\(self.shieldData.availableShields), lastRefillDate=\(String(describing: self.shieldData.lastRefillDate))")
     }
 
     // MARK: - Monthly Refill
 
     func refillIfNeeded() {
         let isPro = SubscriptionManager.shared.isPro
+        let beforeRefill = shieldData.availableShields
         shieldData.refillIfNeeded(isPro: isPro)
+        let afterRefill = shieldData.availableShields
+
+        if beforeRefill != afterRefill {
+            shieldLogger.info("🛡️ refillIfNeeded() - Shields changed: \(beforeRefill) → \(afterRefill) (isPro=\(isPro))")
+        }
+
         persistence.saveShieldData(shieldData)
+        shieldLogger.info("🛡️ refillIfNeeded() - Saved shieldData with availableShields=\(self.shieldData.availableShields)")
     }
 
     // MARK: - Auto-Deploy
@@ -43,6 +59,8 @@ class ShieldManager {
     /// When `silent == true`, skips notification and haptics (used for batch deployment on app open)
     @discardableResult
     func autoDeployIfAvailable(forDate date: Date, silent: Bool = false) -> Bool {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return false }
         guard shieldData.availableShields > 0 else { return false }
 
         // Use a shield
@@ -60,8 +78,9 @@ class ShieldManager {
             persistence.saveDailyLog(log)
         } else {
             // Create log for missed day (user didn't open app)
+            let goal = persistence.loadProfile().dailyStepGoal
             let newLog = DailyLog(id: UUID(), date: date, steps: 0, goalMet: false,
-                                  shieldUsed: true, trackedWalkIDs: [])
+                                  shieldUsed: true, trackedWalkIDs: [], goalTarget: goal)
             persistence.saveDailyLog(newLog)
         }
 
@@ -92,7 +111,7 @@ class ShieldManager {
     /// Check for missed days since last goal and auto-deploy shields.
     /// Called on app open to retroactively protect the streak.
     @discardableResult
-    func checkAndDeployForMissedDays() -> MissedDayResult {
+    func checkAndDeployForMissedDays() async -> MissedDayResult {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
@@ -116,6 +135,17 @@ class ShieldManager {
         var shieldsDeployed = 0
         var streakBroken = false
 
+        // Pull HealthKit history for the gap to avoid consuming shields on delayed data.
+        var hkStepsByDayKey: [String: Int] = [:]
+        let historyDays = min(max(daysBetween, 0), 30)
+        if historyDays > 0 {
+            let history = await HealthKitManager.shared.fetchDailyStepCounts(days: historyDays)
+            for (date, steps) in history {
+                let key = DailyLog.makeDayKey(for: calendar.startOfDay(for: date))
+                hkStepsByDayKey[key] = steps
+            }
+        }
+
         // Iterate each missed day: day after lastGoalDate through yesterday
         for offset in 1..<daysBetween {
             guard let missedDate = calendar.date(byAdding: .day, value: offset, to: lastGoalDay) else { continue }
@@ -123,6 +153,31 @@ class ShieldManager {
             // Skip if goal was actually met (HealthKit sync lag) or shield already used
             if let log = persistence.loadDailyLog(for: missedDate) {
                 if log.goalMet || log.shieldUsed { continue }
+            }
+
+            // Skip if HealthKit already shows goal met for that day.
+            let goal = persistence.loadDailyLog(for: missedDate)?.goalTarget
+                ?? persistence.loadProfile().dailyStepGoal
+            let missedKey = DailyLog.makeDayKey(for: missedDate)
+            if let hkSteps = hkStepsByDayKey[missedKey], hkSteps >= goal {
+                // Ensure the log reflects HK data to prevent future false positives.
+                if var existing = persistence.loadDailyLog(for: missedDate) {
+                    existing.steps = hkSteps
+                    existing.goalMet = true
+                    persistence.saveDailyLog(existing)
+                } else {
+                    let newLog = DailyLog(
+                        id: UUID(),
+                        date: missedDate,
+                        steps: hkSteps,
+                        goalMet: true,
+                        shieldUsed: false,
+                        trackedWalkIDs: [],
+                        goalTarget: goal
+                    )
+                    persistence.saveDailyLog(newLog)
+                }
+                continue
             }
 
             // Try to deploy shield (silent — user is in-app, DynamicCard handles UX)
@@ -182,6 +237,23 @@ class ShieldManager {
         persistence.saveShieldData(shieldData)
     }
 
+    func addShields(_ count: Int) {
+        shieldData.purchasedShields += count
+        shieldData.availableShields = min(
+            shieldData.availableShields + count,
+            ShieldData.maxBanked(isPro: SubscriptionManager.shared.isPro)
+        )
+        persistence.saveShieldData(shieldData)
+    }
+
+    func grantProUpgradeShields() {
+        shieldData.availableShields = min(
+            shieldData.availableShields + ShieldData.proMonthlyAllocation,
+            ShieldData.maxBanked(isPro: SubscriptionManager.shared.isPro)
+        )
+        persistence.saveShieldData(shieldData)
+    }
+
     // MARK: - Event Flag Clearing
 
     func clearLastDeployedOvernight() {
@@ -191,14 +263,14 @@ class ShieldManager {
     // MARK: - Retroactive Repair API
 
     /// Returns true if the given date is eligible for repair with a shield.
-    /// Rules: within the last 7 days (not today), and the day is missing or not already marked as goalMet/shieldUsed.
+    /// Rules: within the last 7 days (including today), and the day is not already marked as goalMet/shieldUsed.
     func canRepairDate(_ date: Date) -> Bool {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let target = calendar.startOfDay(for: date)
 
         guard let days = calendar.dateComponents([.day], from: target, to: today).day else { return false }
-        guard days > 0 && days <= 7 else { return false }
+        guard days >= 0 && days <= 7 else { return false }
 
         if let log = persistence.loadDailyLog(for: target) {
             if log.goalMet || log.shieldUsed { return false }
@@ -221,7 +293,8 @@ class ShieldManager {
             log.shieldUsed = true
             persistence.saveDailyLog(log)
         } else {
-            let newLog = DailyLog(id: UUID(), date: target, steps: 0, goalMet: true, shieldUsed: true, trackedWalkIDs: [])
+            let goal = persistence.loadProfile().dailyStepGoal
+            let newLog = DailyLog(id: UUID(), date: target, steps: 0, goalMet: true, shieldUsed: true, trackedWalkIDs: [], goalTarget: goal)
             persistence.saveDailyLog(newLog)
         }
 
@@ -231,8 +304,8 @@ class ShieldManager {
         shieldData.totalShieldsUsed += 1
         persistence.saveShieldData(shieldData)
 
-        // Update streak state to reflect a repaired day
-        streakManager.recordShieldUsed(forDate: target)
+        // Recalculate streak from daily logs to include the repaired day
+        streakManager.recalculateStreak()
 
         return true
     }

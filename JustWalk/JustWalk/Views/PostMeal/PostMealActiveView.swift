@@ -9,7 +9,9 @@
 import SwiftUI
 
 struct PostMealActiveView: View {
+    @Environment(AppState.self) private var appState
     @StateObject private var walkSession = WalkSessionManager.shared
+    @StateObject private var watchConnectivity = PhoneConnectivityManager.shared
 
     @State private var showEndConfirmation = false
     @State private var countdownTimer: Timer?
@@ -103,15 +105,18 @@ struct PostMealActiveView: View {
         }
         .onAppear {
             startCompletionMonitor()
+            appState.isViewingActiveWalk = true
         }
         .onDisappear {
             countdownTimer?.invalidate()
             countdownTimer = nil
+            appState.isViewingActiveWalk = false
         }
         .onChange(of: walkSession.elapsedSeconds) { _, newValue in
-            // Halfway chime at 5:00
+            // Halfway chime at 5:00 - sync to Watch
             if newValue == totalDuration / 2 {
                 JustWalkHaptics.progressMilestone()
+                watchConnectivity.triggerMilestoneHapticOnWatch()
             }
         }
     }

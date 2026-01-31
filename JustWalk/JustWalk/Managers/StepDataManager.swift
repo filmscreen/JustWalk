@@ -10,6 +10,7 @@ import Foundation
 @Observable
 @MainActor
 final class StepDataManager {
+    static let shared = StepDataManager()
     // MARK: - Published State
 
     var todayLog: DailyLog?
@@ -22,7 +23,7 @@ final class StepDataManager {
 
     private var hasPlayedApproachingHaptic = false
 
-    init() {}
+    private init() {}
 
     // MARK: - Today's Log
 
@@ -37,13 +38,15 @@ final class StepDataManager {
         if let existing = persistence.loadDailyLog(for: today) {
             todayLog = existing
         } else {
+            let goal = persistence.loadProfile().dailyStepGoal
             let newLog = DailyLog(
                 id: UUID(),
                 date: today,
                 steps: 0,
                 goalMet: false,
                 shieldUsed: false,
-                trackedWalkIDs: []
+                trackedWalkIDs: [],
+                goalTarget: goal
             )
             persistence.saveDailyLog(newLog)
             todayLog = newLog
@@ -51,14 +54,31 @@ final class StepDataManager {
     }
 
     func updateTodaySteps(_ steps: Int, goalTarget: Int) {
-        guard var today = todayLog else {
+        if todayLog == nil {
             fetchToday()
-            return
+        }
+        guard var today = todayLog else { return }
+        let calendar = Calendar.current
+        if !calendar.isDateInToday(today.date) {
+            fetchToday()
+            guard let refreshed = todayLog else { return }
+            today = refreshed
         }
 
         let wasGoalMet = today.goalMet
+        let previousSteps = today.steps
+        let previousGoalTarget = today.goalTarget
+
         today.steps = steps
+        today.goalTarget = goalTarget
         today.goalMet = steps >= goalTarget
+
+        // Avoid unnecessary writes that can trigger UI loops.
+        let didChange = previousSteps != today.steps ||
+            previousGoalTarget != today.goalTarget ||
+            wasGoalMet != today.goalMet
+
+        guard didChange else { return }
 
         persistence.saveDailyLog(today)
         todayLog = today
@@ -72,7 +92,12 @@ final class StepDataManager {
         // First time goal met today — trigger gamification rewards
         if today.goalMet && !wasGoalMet {
             onDailyGoalMet(dailyGoal: goalTarget, currentSteps: steps)
+        } else if wasGoalMet && !today.goalMet {
+            // Handle goal corrections (e.g., HK corrections or goal changes).
+            StreakManager.shared.recalculateStreak()
         }
+
+        WalkNotificationManager.shared.scheduleNotificationIfNeeded()
     }
 
     /// Called when the daily step goal is met for the first time today.
@@ -85,6 +110,8 @@ final class StepDataManager {
         // Record goal met → increments streak
         streakManager.recordGoalMet()
 
+        triggerClutchAndComebackIfNeeded()
+
         // Send goal achieved notification
         NotificationManager.shared.sendGoalAchievedNotification(streak: streakManager.streakData.currentStreak)
 
@@ -93,6 +120,54 @@ final class StepDataManager {
 
         // Refresh dynamic card engine to show celebration cards immediately
         DynamicCardEngine.shared.refresh(dailyGoal: dailyGoal, currentSteps: currentSteps)
+    }
+
+    private func triggerClutchAndComebackIfNeeded() {
+        let defaults = UserDefaults.standard
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Clutch save / under the wire (once per day)
+        let lastClutchKey = "lastClutchMomentDate"
+        if let last = defaults.object(forKey: lastClutchKey) as? Date,
+           calendar.isDateInToday(last) == false {
+            defaults.removeObject(forKey: lastClutchKey)
+        }
+        let hour = calendar.component(.hour, from: now)
+        let minute = calendar.component(.minute, from: now)
+        if defaults.object(forKey: lastClutchKey) == nil {
+            if hour == 23 && minute >= 30 {
+                EmotionalMomentTrigger.shared.post(.underTheWire)
+                defaults.set(now, forKey: lastClutchKey)
+            } else if hour >= 23 || (hour == 22 && minute >= 30) {
+                EmotionalMomentTrigger.shared.post(.clutchSave)
+                defaults.set(now, forKey: lastClutchKey)
+            }
+        }
+
+        // Comeback (3+ days inactive)
+        let lastGoalKey = "lastGoalMetDate"
+        let lastComebackKey = "lastComebackMomentDate"
+        if let last = defaults.object(forKey: lastComebackKey) as? Date,
+           calendar.isDateInToday(last) == false {
+            defaults.removeObject(forKey: lastComebackKey)
+        }
+
+        if let lastActive = defaults.object(forKey: lastGoalKey) as? Date {
+            let daysSinceActive = calendar.dateComponents([.day], from: lastActive, to: now).day ?? 0
+            if daysSinceActive >= 3, defaults.object(forKey: lastComebackKey) == nil {
+                let longest = StreakManager.shared.streakData.longestStreak
+                if longest > 14 {
+                    EmotionalMomentTrigger.shared.post(.comebackWithRecord(days: longest))
+                } else {
+                    EmotionalMomentTrigger.shared.post(.comeback)
+                }
+                defaults.set(now, forKey: lastComebackKey)
+            }
+        }
+
+        // Update last active date
+        defaults.set(now, forKey: lastGoalKey)
     }
 
     // MARK: - Step Milestones

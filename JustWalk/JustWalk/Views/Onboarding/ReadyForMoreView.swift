@@ -25,12 +25,12 @@ struct ReadyForMoreView: View {
             // Illustration — walking figure
             ZStack {
                 Circle()
-                    .fill(Color.green.opacity(0.15))
+                    .fill(JW.Color.streak.opacity(0.15))
                     .frame(width: 120, height: 120)
 
                 Image(systemName: "figure.walk")
                     .font(.system(size: 48))
-                    .foregroundColor(.green)
+                    .foregroundColor(JW.Color.streak)
             }
             .opacity(showIcon ? 1 : 0)
             .scaleEffect(showIcon ? 1 : 0.8)
@@ -84,7 +84,7 @@ struct ReadyForMoreView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(JW.Color.accent)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
             }
             .buttonPressEffect()

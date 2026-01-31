@@ -81,7 +81,7 @@ struct PostMealSetupView: View {
                 }
             }
 
-            // Bottom: Start button + always free
+            // Bottom: Start button
             VStack {
                 Spacer()
 
@@ -92,14 +92,10 @@ struct PostMealSetupView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(JW.Color.accent)
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.black)
                             .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
                     }
                     .buttonPressEffect()
-
-                    Text("Always free")
-                        .font(JW.Font.caption)
-                        .foregroundStyle(JW.Color.accent)
                 }
                 .padding(.horizontal, JW.Spacing.xl)
                 .padding(.bottom, 40)

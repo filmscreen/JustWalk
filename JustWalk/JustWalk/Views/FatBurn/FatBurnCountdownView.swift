@@ -36,6 +36,7 @@ struct FatBurnCountdownView: View {
                 FatBurnCompletionView(walk: walk) {
                     onFlowComplete()
                 }
+                .id(walk.id) // Stable identity prevents view recreation during parent re-renders
                 .transition(.scaleUp)
             } else {
                 FatBurnActiveView()
@@ -47,6 +48,15 @@ struct FatBurnCountdownView: View {
         .navigationBarBackButtonHidden(true)
         .onChange(of: walkSession.completedWalk != nil) { _, hasWalk in
             if hasWalk && walkSession.completedWalk?.mode == .fatBurn {
+                // Save walk to persistence
+                if let walk = walkSession.completedWalk {
+                    PersistenceManager.shared.saveTrackedWalk(walk)
+
+                    // Record usage for free users (only for walks >= 5 minutes)
+                    if walk.durationMinutes >= 5 && !subscriptionManager.isPro {
+                        usageManager.recordUsage(for: .fatBurn)
+                    }
+                }
                 showCompletion = true
             }
         }
@@ -59,6 +69,20 @@ struct FatBurnCountdownView: View {
         zoneManager.recalculateZone()
         zoneManager.startSession()
         walkSession.startWalk(mode: .fatBurn)
+
+        // Ensure Watch starts the fat burn workout (HR source)
+        let watchConnectivity = PhoneConnectivityManager.shared
+        if watchConnectivity.canCommunicateWithWatch, let walkId = walkSession.currentWalkId {
+            let zoneLow = zoneManager.zoneLow
+            let zoneHigh = zoneManager.zoneHigh
+            watchConnectivity.startWorkoutOnWatch(
+                walkId: walkId,
+                startTime: walkSession.startTime,
+                modeRaw: "fatBurn",
+                zoneLow: zoneLow,
+                zoneHigh: zoneHigh
+            )
+        }
     }
 }
 

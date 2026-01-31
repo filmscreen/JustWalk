@@ -98,6 +98,10 @@ struct JustWalkEntry: TimelineEntry {
     let weekSteps: [Int]
     let shieldCount: Int
 
+    /// Relevance score tells WidgetKit how important this entry is.
+    /// Higher scores increase chances of widget being shown in Smart Stack.
+    let relevance: TimelineEntryRelevance?
+
     var stepProgress: Double {
         guard stepGoal > 0 else { return 0 }
         return min(Double(todaySteps) / Double(stepGoal), 1.0)
@@ -117,13 +121,21 @@ struct JustWalkEntry: TimelineEntry {
         stepGoal: 5000,
         currentStreak: 12,
         weekSteps: [3200, 5100, 4800, 6200, 5000, 3800, 4200],
-        shieldCount: 2
+        shieldCount: 2,
+        relevance: nil
     )
 }
 
 // MARK: - Timeline Provider
 
 struct JustWalkTimelineProvider: TimelineProvider {
+    /// Refresh interval in minutes - 2 minutes is the most aggressive viable option.
+    /// Apple allows this for health/fitness apps where timely data matters.
+    private static let refreshIntervalMinutes = 2
+    /// Number of entries to batch - 30 entries = 1 hour of coverage at 2-min intervals.
+    /// Batching doesn't count against the daily budget - only reloadAllTimelines() calls do.
+    private static let batchedEntryCount = 30
+
     func placeholder(in context: Context) -> JustWalkEntry {
         .placeholder
     }
@@ -132,28 +144,90 @@ struct JustWalkTimelineProvider: TimelineProvider {
         if context.isPreview {
             completion(.placeholder)
         } else {
-            completion(currentEntry())
+            completion(currentEntry(for: Date(), index: 0))
         }
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<JustWalkEntry>) -> Void) {
-        let entry = currentEntry()
+        // Generate batched entries for the next hour at 2-minute intervals.
+        // This maximizes refresh frequency without using the daily reload budget.
+        // Timeline entries don't count against budget - only reloadAllTimelines() calls do.
+        var entries: [JustWalkEntry] = []
+        let now = Date()
+        let calendar = Calendar.current
 
-        // Refresh every 15 minutes
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date()
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
+        for i in 0..<Self.batchedEntryCount {
+            guard let entryDate = calendar.date(byAdding: .minute, value: i * Self.refreshIntervalMinutes, to: now) else {
+                continue
+            }
+            entries.append(currentEntry(for: entryDate, index: i))
+        }
+
+        // Use .atEnd so WidgetKit requests new timeline only after all entries are used.
+        // This is more budget-efficient than .after(date) for batched entries.
+        let timeline = Timeline(entries: entries, policy: .atEnd)
         completion(timeline)
     }
 
-    private func currentEntry() -> JustWalkEntry {
-        JustWalkEntry(
-            date: Date(),
-            todaySteps: JustWalkWidgetData.todaySteps(),
-            stepGoal: JustWalkWidgetData.stepGoal(),
-            currentStreak: JustWalkWidgetData.currentStreak(),
+    private func currentEntry(for date: Date, index: Int) -> JustWalkEntry {
+        let steps = JustWalkWidgetData.todaySteps()
+        let goal = JustWalkWidgetData.stepGoal()
+        let streak = JustWalkWidgetData.currentStreak()
+
+        // Calculate relevance score for Smart Stack prioritization
+        let relevance = calculateRelevance(steps: steps, goal: goal, streak: streak, entryIndex: index)
+
+        return JustWalkEntry(
+            date: date,
+            todaySteps: steps,
+            stepGoal: goal,
+            currentStreak: streak,
             weekSteps: JustWalkWidgetData.weekSteps(),
-            shieldCount: JustWalkWidgetData.shieldCount()
+            shieldCount: JustWalkWidgetData.shieldCount(),
+            relevance: relevance
         )
+    }
+
+    /// Calculate relevance score for Smart Stack prioritization.
+    /// Higher scores make the widget more likely to appear at the top of Smart Stack.
+    private func calculateRelevance(steps: Int, goal: Int, streak: Int, entryIndex: Int) -> TimelineEntryRelevance {
+        var score: Float = 0.0
+
+        // Base score: entries closer to now are more relevant
+        // First entry (index 0) gets highest base score, decreasing over time
+        let timeDecay = max(0, 1.0 - Float(entryIndex) * 0.03)
+        score += timeDecay * 0.3
+
+        // Progress boost: higher relevance when close to goal (80-99%)
+        let progress = goal > 0 ? Float(steps) / Float(goal) : 0
+        if progress >= 0.8 && progress < 1.0 {
+            score += 0.4 // Close to goal - very relevant!
+        } else if progress >= 1.0 {
+            score += 0.3 // Goal achieved - still relevant
+        } else if progress >= 0.5 {
+            score += 0.2 // Good progress
+        }
+
+        // Streak boost: active streaks are more engaging
+        if streak >= 7 {
+            score += 0.2 // Week+ streak
+        } else if streak >= 3 {
+            score += 0.1 // Building streak
+        }
+
+        // Time-of-day boost: higher relevance during typical activity hours
+        let hour = Calendar.current.component(.hour, from: Date())
+        if (7...9).contains(hour) || (17...20).contains(hour) {
+            score += 0.1 // Morning or evening - common activity times
+        }
+
+        // Clamp to valid range [0, 1]
+        score = min(max(score, 0), 1)
+
+        // Duration: how long this entry remains highly relevant (in seconds)
+        let duration: TimeInterval = TimeInterval(Self.refreshIntervalMinutes * 60)
+
+        return TimelineEntryRelevance(score: score, duration: duration)
     }
 }
 
@@ -182,8 +256,8 @@ struct TodayWidgetView: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(WidgetColors.ringStart.opacity(0.15), lineWidth: 8)
-                .padding(16)
+                .stroke(WidgetColors.ringStart.opacity(0.15), lineWidth: 10)
+                .padding(10)
 
             Circle()
                 .trim(from: 0, to: entry.stepProgress)
@@ -191,18 +265,18 @@ struct TodayWidgetView: View {
                     entry.goalComplete
                         ? AnyShapeStyle(WidgetColors.success)
                         : AnyShapeStyle(WidgetColors.ringGradient),
-                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                    style: StrokeStyle(lineWidth: 10, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .padding(16)
+                .padding(10)
 
             VStack(spacing: 4) {
                 Image(systemName: "figure.walk")
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.system(size: 24, weight: .medium))
                     .foregroundStyle(WidgetColors.accent)
 
                 Text(entry.todaySteps.formatted())
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
@@ -236,20 +310,20 @@ struct StreakWidgetView: View {
     var body: some View {
         VStack(spacing: 4) {
             Image(systemName: "flame.fill")
-                .font(.system(size: 36))
+                .font(.system(size: 40))
                 .foregroundStyle(flameGradient)
 
             Text("\(entry.currentStreak)")
-                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .font(.system(size: 44, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
 
             Text(entry.currentStreak == 1 ? "day" : "days")
-                .font(.system(size: 14))
+                .font(.system(size: 15))
                 .foregroundStyle(.secondary)
         }
-        .padding(16)
+        .padding(12)
     }
 
     private var flameGradient: some ShapeStyle {
@@ -294,7 +368,7 @@ struct TodayStreakWidgetView: View {
             // Ring
             ZStack {
                 Circle()
-                    .stroke(WidgetColors.ringStart.opacity(0.15), lineWidth: 8)
+                    .stroke(WidgetColors.ringStart.opacity(0.15), lineWidth: 9)
 
                 Circle()
                     .trim(from: 0, to: entry.stepProgress)
@@ -302,17 +376,24 @@ struct TodayStreakWidgetView: View {
                         entry.goalComplete
                             ? AnyShapeStyle(WidgetColors.success)
                             : AnyShapeStyle(WidgetColors.ringGradient),
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
 
-                Text(entry.todaySteps.formatted())
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .minimumScaleFactor(0.6)
-                    .lineLimit(1)
+                VStack(spacing: 2) {
+                    Image(systemName: "figure.walk")
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundStyle(WidgetColors.accent)
+
+                    Text(entry.todaySteps.formatted())
+                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                }
+                .padding(.top, 2)
             }
-            .frame(width: 90, height: 90)
+            .frame(width: 104, height: 104)
 
             VStack(alignment: .leading, spacing: 8) {
                 // Streak
@@ -329,10 +410,25 @@ struct TodayStreakWidgetView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                // Dynamic goal status
-                Text(dynamicStatusText)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(dynamicStatusColor)
+                // Shields status
+                HStack(spacing: 4) {
+                    Image(systemName: entry.shieldCount > 0 ? "shield.fill" : "shield")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(WidgetColors.shield)
+
+                    if entry.shieldCount == 0 {
+                        Text("No shields")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("\(entry.shieldCount)")
+                            .font(.system(.title3, design: .rounded).bold().monospacedDigit())
+
+                        Text(entry.shieldCount == 1 ? "shield" : "shields")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             Spacer(minLength: 0)
@@ -341,25 +437,6 @@ struct TodayStreakWidgetView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var dynamicStatusText: String {
-        if entry.goalComplete {
-            return "Goal hit"
-        } else if entry.todaySteps == 0 {
-            return "Keep moving"
-        } else if entry.stepsRemaining == 1 {
-            return "1 step to go"
-        } else {
-            return "\(entry.stepsRemaining.formatted()) steps to go"
-        }
-    }
-
-    private var dynamicStatusColor: Color {
-        if entry.goalComplete {
-            return WidgetColors.success
-        } else {
-            return .secondary
-        }
-    }
 }
 
 // ============================================================================
@@ -407,12 +484,12 @@ struct ThisWeekWidgetView: View {
                             .frame(height: barHeight(for: steps))
 
                         Text(dayLabels[index % dayLabels.count])
-                            .font(.system(size: 9))
+                            .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                     }
                 }
             }
-            .frame(maxHeight: 80)
+            .frame(maxHeight: 86)
 
             // Goal line label
             HStack {
@@ -420,7 +497,7 @@ struct ThisWeekWidgetView: View {
                     .fill(Color.secondary.opacity(0.3))
                     .frame(height: 1)
                 Text("\(entry.stepGoal.formatted()) goal")
-                    .font(.system(size: 8))
+                    .font(.system(size: 9))
                     .foregroundStyle(.secondary)
                     .fixedSize()
             }
@@ -463,7 +540,7 @@ struct ShieldsWidgetView: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: entry.shieldCount > 0 ? "shield.fill" : "shield")
-                .font(.system(size: 36))
+                .font(.system(size: 40))
                 .foregroundStyle(entry.shieldCount > 0 ? WidgetColors.shield : .gray)
 
             VStack(spacing: 2) {
@@ -700,7 +777,7 @@ struct WalkLiveActivity: Widget {
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(formatDuration(context.state.elapsedSeconds))
+                    intervalAwareTimer(context)
                         .font(.title2.monospacedDigit())
                 }
                 DynamicIslandExpandedRegion(.bottom) {
@@ -715,6 +792,11 @@ struct WalkLiveActivity: Widget {
                             Label("Paused", systemImage: "pause.fill")
                                 .font(.subheadline)
                                 .foregroundStyle(.orange)
+                        } else if context.attributes.mode == "interval",
+                                  let label = context.state.intervalPhaseType {
+                            Text(label)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
                         } else {
                             Text(walkModeLabel(context.attributes.mode))
                                 .font(.subheadline)
@@ -724,13 +806,21 @@ struct WalkLiveActivity: Widget {
                 }
             } compactLeading: {
                 Image(systemName: context.state.isPaused ? "pause.fill" : "figure.walk")
+                    .font(.system(size: 14))
                     .foregroundStyle(context.state.isPaused ? .orange : WidgetColors.accent)
+                    .frame(width: 20, height: 20)
             } compactTrailing: {
-                Text(formatDuration(context.state.elapsedSeconds))
-                    .font(.caption.monospacedDigit())
+                compactTimerText(context)
+                    .font(.system(size: 12, weight: .medium).monospacedDigit())
+                    .foregroundStyle(WidgetColors.accent)
+                    .frame(minWidth: 32, maxWidth: 44)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             } minimal: {
                 Image(systemName: "figure.walk")
+                    .font(.system(size: 12))
                     .foregroundStyle(WidgetColors.accent)
+                    .frame(width: 16, height: 16)
             }
         }
     }
@@ -758,6 +848,92 @@ struct WalkLiveActivity: Widget {
         default: return "Walking"
         }
     }
+
+    @ViewBuilder
+    private func intervalAwareTimer(_ context: ActivityViewContext<WalkActivityAttributes>) -> some View {
+        let isCountdownMode = context.attributes.mode == "interval" || context.attributes.mode == "postMeal"
+        if isCountdownMode {
+            if context.state.isPaused {
+                Text(formatDuration(context.state.intervalPhaseRemaining ?? 0))
+            } else if let endDate = context.state.intervalPhaseEndDate, endDate > Date() {
+                Text(timerInterval: Date()...endDate, countsDown: true)
+            } else {
+                Text(formatDuration(context.state.intervalPhaseRemaining ?? 0))
+            }
+        } else {
+            if context.state.isPaused {
+                Text(formatDuration(context.state.elapsedSeconds))
+            } else {
+                Text(context.state.startDate, style: .timer)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func intervalAwareCompactTimer(_ context: ActivityViewContext<WalkActivityAttributes>) -> some View {
+        let isCountdownMode = context.attributes.mode == "interval" || context.attributes.mode == "postMeal"
+        if isCountdownMode {
+            if context.state.isPaused {
+                Text(formatDuration(context.state.intervalPhaseRemaining ?? 0))
+            } else if let endDate = context.state.intervalPhaseEndDate, endDate > Date() {
+                Text(timerInterval: Date()...endDate, countsDown: true)
+            } else {
+                Text(formatDuration(context.state.intervalPhaseRemaining ?? 0))
+            }
+        } else {
+            if context.state.isPaused {
+                Text(formatDuration(context.state.elapsedSeconds))
+            } else {
+                Text(context.state.startDate, style: .timer)
+            }
+        }
+    }
+
+    /// Compact timer text for Dynamic Island compact trailing view.
+    /// Uses abbreviated format to fit within ~44pt width constraint.
+    @ViewBuilder
+    private func compactTimerText(_ context: ActivityViewContext<WalkActivityAttributes>) -> some View {
+        let isCountdownMode = context.attributes.mode == "interval" || context.attributes.mode == "postMeal"
+        if isCountdownMode {
+            // For countdown modes, show remaining time in short format
+            if context.state.isPaused {
+                Text(formatCompactDuration(context.state.intervalPhaseRemaining ?? 0))
+            } else if let endDate = context.state.intervalPhaseEndDate, endDate > Date() {
+                // Use timerInterval for live countdown, but with short format
+                Text(timerInterval: Date()...endDate, countsDown: true)
+                    .contentTransition(.numericText())
+            } else {
+                Text(formatCompactDuration(context.state.intervalPhaseRemaining ?? 0))
+            }
+        } else {
+            // For regular mode, show elapsed time in short format (e.g., "5m" or "1:23")
+            if context.state.isPaused {
+                Text(formatCompactDuration(context.state.elapsedSeconds))
+            } else {
+                // Show minutes only for compact view to save space
+                let minutes = max(0, context.state.elapsedSeconds / 60)
+                Text("\(minutes)m")
+            }
+        }
+    }
+
+    /// Format duration for compact view - shorter format to fit width constraints
+    private func formatCompactDuration(_ seconds: Int) -> String {
+        let mins = seconds / 60
+        let secs = seconds % 60
+        if mins >= 60 {
+            // For 1+ hours, show "1h5m" format
+            let hours = mins / 60
+            let remainingMins = mins % 60
+            return "\(hours)h\(remainingMins)m"
+        } else if mins >= 10 {
+            // For 10+ minutes, show just minutes
+            return "\(mins)m"
+        } else {
+            // For under 10 minutes, show m:ss
+            return "\(mins):\(String(format: "%02d", secs))"
+        }
+    }
 }
 
 // MARK: - Lock Screen View
@@ -782,7 +958,7 @@ private struct WalkLockScreenView: View {
                     }
                 }
 
-                Text(formatDuration(context.state.elapsedSeconds))
+                intervalAwareLockScreenTimer(context)
                     .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
             }
 
@@ -806,6 +982,10 @@ private struct WalkLockScreenView: View {
     }
 
     private var walkModeLabel: String {
+        if context.attributes.mode == "interval",
+           let label = context.state.intervalPhaseType {
+            return "\(label) Interval"
+        }
         switch context.attributes.mode {
         case "interval": return "Interval Walk"
         case "fatBurn": return "Fat Burn"
@@ -826,6 +1006,24 @@ private struct WalkLockScreenView: View {
             return "\(Int(meters))m"
         }
         return String(format: "%.2f mi", miles)
+    }
+
+    @ViewBuilder
+    private func intervalAwareLockScreenTimer(_ context: ActivityViewContext<WalkActivityAttributes>) -> some View {
+        let isCountdownMode = context.attributes.mode == "interval" || context.attributes.mode == "postMeal"
+        if isCountdownMode {
+            if context.state.isPaused {
+                Text(formatDuration(context.state.intervalPhaseRemaining ?? 0))
+            } else if let endDate = context.state.intervalPhaseEndDate, endDate > Date() {
+                Text(timerInterval: Date()...endDate, countsDown: true)
+            } else {
+                Text(formatDuration(context.state.intervalPhaseRemaining ?? 0))
+            }
+        } else if context.state.isPaused {
+            Text(formatDuration(context.state.elapsedSeconds))
+        } else {
+            Text(context.state.startDate, style: .timer)
+        }
     }
 }
 

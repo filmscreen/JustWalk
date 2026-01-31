@@ -16,7 +16,10 @@ struct JustWalkWatch_Watch_AppApp: App {
             ContentView()
                 .environmentObject(appState)
                 .task {
-                    _ = await WatchHealthKitManager.shared.requestAuthorization()
+                    await WatchHealthKitManager.shared.requestAuthorizationAndFetch()
+                    if WatchHealthKitManager.shared.isAuthorized {
+                        WatchHealthKitManager.shared.setupStepObserver()
+                    }
                 }
         }
     }

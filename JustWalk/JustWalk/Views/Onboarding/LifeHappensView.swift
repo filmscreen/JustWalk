@@ -27,7 +27,7 @@ struct LifeHappensView: View {
             ZStack {
                 // Glow ring
                 Circle()
-                    .fill(JW.Color.accent.opacity(glowActive ? 0.15 : 0))
+                    .fill(JW.Color.accentBlue.opacity(glowActive ? 0.15 : 0))
                     .frame(width: 130, height: 130)
                     .animation(
                         reduceMotion ? nil : .easeInOut(duration: 1.5).repeatForever(autoreverses: true),
@@ -36,7 +36,7 @@ struct LifeHappensView: View {
 
                 Image(systemName: "shield.fill")
                     .font(.system(size: 56, weight: .medium))
-                    .foregroundStyle(JW.Color.accent)
+                    .foregroundStyle(JW.Color.accentBlue)
             }
             .opacity(showShield ? 1 : 0)
             .scaleEffect(showShield ? 1 : 0.5)
@@ -70,9 +70,9 @@ struct LifeHappensView: View {
             VStack(spacing: JW.Spacing.md) {
                 HStack(spacing: JW.Spacing.xs) {
                     Image(systemName: "shield.fill")
-                        .foregroundStyle(JW.Color.accent)
+                        .foregroundStyle(JW.Color.accentBlue)
                     Image(systemName: "shield.fill")
-                        .foregroundStyle(JW.Color.accent)
+                        .foregroundStyle(JW.Color.accentBlue)
                 }
                 .font(.system(size: 24))
 
@@ -80,7 +80,7 @@ struct LifeHappensView: View {
                     .font(JW.Font.headline)
                     .foregroundStyle(JW.Color.textPrimary)
 
-                Text("These are your safety net — if you miss a day, a shield keeps your streak alive. Pro members get more, but these 2 are on us.")
+                Text("These are your safety net — if you miss a day, a shield keeps your streak alive. These 2 are on us.")
                     .font(JW.Font.subheadline)
                     .foregroundStyle(JW.Color.textSecondary)
                     .multilineTextAlignment(.center)
@@ -89,13 +89,14 @@ struct LifeHappensView: View {
             .padding(.horizontal, JW.Spacing.xl)
             .background(
                 RoundedRectangle(cornerRadius: JW.Radius.lg)
-                    .fill(JW.Color.accent.opacity(0.1))
+                    .fill(JW.Color.accentBlue.opacity(0.1))
                     .overlay(
                         RoundedRectangle(cornerRadius: JW.Radius.lg)
-                            .stroke(JW.Color.accent.opacity(0.3), lineWidth: 1)
+                            .stroke(JW.Color.accentBlue.opacity(0.3), lineWidth: 1)
                     )
             )
-            .shadow(color: JW.Color.accent.opacity(showGift ? 0.3 : 0), radius: 12)
+            .padding(.horizontal, JW.Spacing.xl)
+            .shadow(color: JW.Color.accentBlue.opacity(showGift ? 0.3 : 0), radius: 12)
             .opacity(showGift ? 1 : 0)
             .scaleEffect(showGift ? 1 : 0.8)
 
@@ -111,7 +112,7 @@ struct LifeHappensView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(JW.Color.accent)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
             }
             .buttonPressEffect()

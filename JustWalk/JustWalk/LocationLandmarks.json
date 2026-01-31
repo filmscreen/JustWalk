@@ -3,254 +3,569 @@
     "san_francisco": {
       "name": "San Francisco",
       "landmarks": [
+        { "miles": 1, "text": "across the Embarcadero" },
+        { "miles": 2, "text": "the length of Fisherman's Wharf" },
+        { "miles": 3, "text": "Dolores Park to the Castro and back" },
+        { "miles": 4, "text": "around the Marina District" },
         { "miles": 5, "text": "Golden Gate to Fisherman's Wharf" },
+        { "miles": 6, "text": "the Presidio loop trail" },
+        { "miles": 7, "text": "Haight-Ashbury to North Beach" },
         { "miles": 8, "text": "the length of Golden Gate Park" },
+        { "miles": 10, "text": "the Lands End Trail, twice" },
         { "miles": 13, "text": "the Ferry Building to Ocean Beach" },
+        { "miles": 16, "text": "around the city's waterfront" },
         { "miles": 20, "text": "across the city and back" },
+        { "miles": 25, "text": "to Sausalito and back" },
+        { "miles": 30, "text": "across the Golden Gate to Mill Valley" },
         { "miles": 35, "text": "to Oakland and halfway back" },
-        { "miles": 50, "text": "almost to San Jose" }
+        { "miles": 42, "text": "around the entire SF Bay shoreline" },
+        { "miles": 50, "text": "almost to San Jose" },
+        { "miles": 65, "text": "to Napa Valley" },
+        { "miles": 80, "text": "to Santa Cruz" }
       ]
     },
     "new_york": {
       "name": "New York",
       "landmarks": [
+        { "miles": 1, "text": "through Times Square" },
+        { "miles": 2, "text": "the High Line end to end" },
+        { "miles": 3, "text": "SoHo to the East Village" },
+        { "miles": 4, "text": "a Central Park loop" },
         { "miles": 5, "text": "Central Park end to end" },
+        { "miles": 6, "text": "the Brooklyn Bridge and back" },
+        { "miles": 7, "text": "Hudson River Park, tip to tip" },
         { "miles": 8, "text": "Brooklyn Bridge to Times Square" },
+        { "miles": 10, "text": "Prospect Park to the Manhattan Bridge" },
         { "miles": 13, "text": "the length of Manhattan" },
+        { "miles": 16, "text": "the full Manhattan waterfront" },
         { "miles": 20, "text": "Manhattan tip to tip, plus some" },
+        { "miles": 25, "text": "across the Bronx" },
+        { "miles": 30, "text": "Queens to the Statue of Liberty" },
         { "miles": 35, "text": "the Bronx to Brooklyn" },
-        { "miles": 50, "text": "to Newark and back" }
+        { "miles": 42, "text": "around all five boroughs" },
+        { "miles": 50, "text": "to Newark and back" },
+        { "miles": 65, "text": "to the Hamptons" },
+        { "miles": 80, "text": "to Philadelphia" }
       ]
     },
     "los_angeles": {
       "name": "Los Angeles",
       "landmarks": [
+        { "miles": 1, "text": "the Hollywood Walk of Fame" },
+        { "miles": 2, "text": "Venice Boardwalk end to end" },
+        { "miles": 3, "text": "the Griffith Observatory loop" },
+        { "miles": 4, "text": "Rodeo Drive to the Beverly Center" },
         { "miles": 5, "text": "Santa Monica Pier to Venice Beach and back" },
+        { "miles": 7, "text": "the Silver Lake Reservoir, three times" },
         { "miles": 10, "text": "LAX to Hollywood" },
+        { "miles": 12, "text": "Malibu Pier to Santa Monica" },
+        { "miles": 15, "text": "Hollywood to the Getty Center" },
         { "miles": 20, "text": "Santa Monica to Downtown" },
+        { "miles": 25, "text": "the LA River Trail" },
+        { "miles": 30, "text": "Pasadena to the beach" },
         { "miles": 35, "text": "the Sunset Strip to Long Beach" },
-        { "miles": 50, "text": "LA to Disneyland" }
+        { "miles": 42, "text": "Malibu to Downtown LA" },
+        { "miles": 50, "text": "LA to Disneyland" },
+        { "miles": 65, "text": "to Palm Springs" },
+        { "miles": 80, "text": "to San Diego" }
       ]
     },
     "chicago": {
       "name": "Chicago",
       "landmarks": [
+        { "miles": 1, "text": "through Millennium Park" },
+        { "miles": 2, "text": "the Magnificent Mile" },
+        { "miles": 3, "text": "the Riverwalk end to end" },
+        { "miles": 4, "text": "around Lincoln Park Zoo" },
         { "miles": 5, "text": "the Magnificent Mile, twice" },
+        { "miles": 7, "text": "Wicker Park to the Loop" },
         { "miles": 10, "text": "Wrigley Field to the Loop" },
+        { "miles": 12, "text": "the 606 Trail, three times" },
+        { "miles": 15, "text": "Navy Pier to Hyde Park" },
         { "miles": 18, "text": "the Lakefront Trail" },
+        { "miles": 22, "text": "the Lakefront Trail and back to Wrigley" },
+        { "miles": 26, "text": "the Chicago Marathon route" },
         { "miles": 30, "text": "the Loop to Evanston" },
-        { "miles": 50, "text": "to the Indiana border" }
+        { "miles": 40, "text": "to Oak Park and back twice" },
+        { "miles": 50, "text": "to the Indiana border" },
+        { "miles": 65, "text": "to Milwaukee" },
+        { "miles": 80, "text": "across Lake Michigan by ferry" }
       ]
     },
     "houston": {
       "name": "Houston",
       "landmarks": [
+        { "miles": 1, "text": "through Discovery Green" },
+        { "miles": 2, "text": "the Buffalo Bayou boardwalk" },
+        { "miles": 3, "text": "around Rice University" },
+        { "miles": 4, "text": "through the Houston Zoo" },
         { "miles": 5, "text": "Hermann Park to the Museum District" },
+        { "miles": 7, "text": "the Heights Bike Trail" },
         { "miles": 10, "text": "the Galleria to Downtown" },
+        { "miles": 12, "text": "Buffalo Bayou Park end to end twice" },
+        { "miles": 15, "text": "Memorial Park trails" },
         { "miles": 20, "text": "across the Inner Loop" },
+        { "miles": 25, "text": "the Energy Corridor to Downtown" },
+        { "miles": 30, "text": "to the Woodlands" },
         { "miles": 35, "text": "Downtown to NASA" },
-        { "miles": 50, "text": "to Galveston" }
+        { "miles": 45, "text": "across the Greater Houston area" },
+        { "miles": 50, "text": "to Galveston" },
+        { "miles": 65, "text": "to Beaumont" },
+        { "miles": 80, "text": "to Austin" }
       ]
     },
     "phoenix": {
       "name": "Phoenix",
       "landmarks": [
+        { "miles": 1, "text": "through the Desert Botanical Garden" },
+        { "miles": 2, "text": "around Papago Park" },
+        { "miles": 3, "text": "the Arizona Canal path" },
+        { "miles": 4, "text": "Old Town Scottsdale loop" },
         { "miles": 5, "text": "a loop around Camelback Mountain" },
+        { "miles": 7, "text": "South Mountain summit trail" },
         { "miles": 10, "text": "Downtown to Scottsdale" },
+        { "miles": 12, "text": "the Tempe Town Lake, four times" },
+        { "miles": 15, "text": "Piestewa Peak and back" },
         { "miles": 20, "text": "Tempe to North Phoenix" },
+        { "miles": 25, "text": "the entire Arizona Canal" },
+        { "miles": 30, "text": "Mesa to Glendale" },
         { "miles": 35, "text": "across the Valley" },
-        { "miles": 50, "text": "to Sedona" }
+        { "miles": 45, "text": "to Cave Creek" },
+        { "miles": 50, "text": "to Sedona" },
+        { "miles": 65, "text": "to Prescott" },
+        { "miles": 80, "text": "to Tucson" }
       ]
     },
     "philadelphia": {
       "name": "Philadelphia",
       "landmarks": [
+        { "miles": 1, "text": "through Reading Terminal Market" },
+        { "miles": 2, "text": "the Rocky Steps to Love Park" },
+        { "miles": 3, "text": "Old City to South Street" },
+        { "miles": 4, "text": "along Boathouse Row" },
         { "miles": 5, "text": "the Art Museum to Independence Hall" },
+        { "miles": 7, "text": "Fairmount Park loop" },
         { "miles": 10, "text": "along the Schuylkill River Trail" },
+        { "miles": 12, "text": "University City to Northern Liberties" },
         { "miles": 15, "text": "Center City to Manayunk" },
+        { "miles": 18, "text": "the full Wissahickon Trail" },
+        { "miles": 22, "text": "Chestnut Hill to the stadiums" },
+        { "miles": 26, "text": "the Philadelphia Marathon route" },
         { "miles": 30, "text": "Philly to Cherry Hill" },
-        { "miles": 50, "text": "almost to Wilmington" }
+        { "miles": 40, "text": "to Valley Forge" },
+        { "miles": 50, "text": "almost to Wilmington" },
+        { "miles": 65, "text": "to Atlantic City" },
+        { "miles": 80, "text": "to New York City" }
       ]
     },
     "san_antonio": {
       "name": "San Antonio",
       "landmarks": [
+        { "miles": 1, "text": "the Alamo Plaza" },
+        { "miles": 2, "text": "a River Walk loop" },
+        { "miles": 3, "text": "La Villita to the Pearl" },
+        { "miles": 4, "text": "Brackenridge Park trails" },
         { "miles": 5, "text": "the River Walk end to end" },
+        { "miles": 7, "text": "Mission Reach trail" },
         { "miles": 10, "text": "the Alamo to the Missions" },
+        { "miles": 12, "text": "the full Mission Trail" },
+        { "miles": 15, "text": "Hardberger Park to Downtown" },
         { "miles": 20, "text": "across the city" },
+        { "miles": 25, "text": "to SeaWorld and back" },
+        { "miles": 30, "text": "the Leon Creek Greenway" },
         { "miles": 35, "text": "to New Braunfels" },
-        { "miles": 50, "text": "halfway to Austin" }
+        { "miles": 45, "text": "to Fredericksburg" },
+        { "miles": 50, "text": "halfway to Austin" },
+        { "miles": 65, "text": "to Corpus Christi" },
+        { "miles": 80, "text": "to Austin" }
       ]
     },
     "san_diego": {
       "name": "San Diego",
       "landmarks": [
+        { "miles": 1, "text": "along the Coronado Beach" },
+        { "miles": 2, "text": "through the Gaslamp Quarter" },
+        { "miles": 3, "text": "the Embarcadero waterfront" },
+        { "miles": 4, "text": "around Mission Bay" },
         { "miles": 5, "text": "Balboa Park end to end" },
+        { "miles": 7, "text": "Pacific Beach to Ocean Beach" },
         { "miles": 10, "text": "Pacific Beach to the Gaslamp" },
+        { "miles": 12, "text": "the Bayshore Bikeway" },
         { "miles": 15, "text": "the coast from La Jolla to Coronado" },
+        { "miles": 18, "text": "Torrey Pines to Mission Beach" },
+        { "miles": 22, "text": "the Silver Strand and back" },
+        { "miles": 26, "text": "the San Diego Marathon route" },
         { "miles": 30, "text": "Downtown to Carlsbad" },
-        { "miles": 50, "text": "to the Mexican border and back" }
+        { "miles": 40, "text": "to Temecula" },
+        { "miles": 50, "text": "to the Mexican border and back" },
+        { "miles": 65, "text": "to Palm Springs" },
+        { "miles": 80, "text": "to Los Angeles" }
       ]
     },
     "dallas": {
       "name": "Dallas",
       "landmarks": [
+        { "miles": 1, "text": "through Klyde Warren Park" },
+        { "miles": 2, "text": "the Arts District loop" },
+        { "miles": 3, "text": "Deep Ellum to the West End" },
+        { "miles": 4, "text": "White Rock Lake trail segment" },
         { "miles": 5, "text": "the Katy Trail end to end" },
+        { "miles": 7, "text": "Bishop Arts to Downtown" },
         { "miles": 10, "text": "Deep Ellum to Highland Park" },
+        { "miles": 12, "text": "the full White Rock Lake loop" },
+        { "miles": 15, "text": "the Trinity Skyline Trail" },
         { "miles": 20, "text": "across the city" },
+        { "miles": 25, "text": "to Plano and back" },
+        { "miles": 30, "text": "the full Trinity Forest Trail" },
         { "miles": 35, "text": "Dallas to Fort Worth" },
-        { "miles": 50, "text": "to Denton and back" }
+        { "miles": 45, "text": "across the Metroplex" },
+        { "miles": 50, "text": "to Denton and back" },
+        { "miles": 65, "text": "to Tyler" },
+        { "miles": 80, "text": "to Austin" }
       ]
     },
     "austin": {
       "name": "Austin",
       "landmarks": [
+        { "miles": 1, "text": "across the Congress Avenue Bridge" },
+        { "miles": 2, "text": "through Zilker Park" },
+        { "miles": 3, "text": "the South Congress strip" },
+        { "miles": 4, "text": "Barton Springs to Downtown" },
         { "miles": 5, "text": "Lady Bird Lake, all the way around" },
+        { "miles": 7, "text": "the Shoal Creek Trail" },
         { "miles": 10, "text": "SoCo to the Domain" },
+        { "miles": 12, "text": "the full Barton Creek Greenbelt" },
         { "miles": 15, "text": "Downtown to Barton Creek" },
+        { "miles": 18, "text": "Mount Bonnell and the Lake" },
+        { "miles": 22, "text": "the full 360 loop" },
+        { "miles": 26, "text": "the Austin Marathon route" },
         { "miles": 30, "text": "to Round Rock" },
-        { "miles": 50, "text": "halfway to San Antonio" }
+        { "miles": 40, "text": "to San Marcos" },
+        { "miles": 50, "text": "halfway to San Antonio" },
+        { "miles": 65, "text": "to Waco" },
+        { "miles": 80, "text": "to San Antonio" }
       ]
     },
     "seattle": {
       "name": "Seattle",
       "landmarks": [
+        { "miles": 1, "text": "through Pike Place Market" },
+        { "miles": 2, "text": "the Olympic Sculpture Park loop" },
+        { "miles": 3, "text": "Capitol Hill to Pioneer Square" },
+        { "miles": 4, "text": "around Green Lake" },
         { "miles": 5, "text": "Pike Place to Capitol Hill and back" },
+        { "miles": 7, "text": "the Fremont to Ballard loop" },
         { "miles": 10, "text": "the Burke-Gilman Trail" },
+        { "miles": 12, "text": "Discovery Park and Magnolia" },
         { "miles": 15, "text": "Green Lake to the waterfront" },
+        { "miles": 18, "text": "the Lake Washington loop segment" },
+        { "miles": 22, "text": "Alki Beach to the University District" },
+        { "miles": 26, "text": "the Seattle Marathon route" },
         { "miles": 30, "text": "Seattle to Bellevue and back" },
-        { "miles": 50, "text": "to Tacoma" }
+        { "miles": 40, "text": "to Redmond and back" },
+        { "miles": 50, "text": "to Tacoma" },
+        { "miles": 65, "text": "to Mount Rainier" },
+        { "miles": 80, "text": "to Portland" }
       ]
     },
     "denver": {
       "name": "Denver",
       "landmarks": [
+        { "miles": 1, "text": "through Larimer Square" },
+        { "miles": 2, "text": "the 16th Street Mall" },
+        { "miles": 3, "text": "around Sloan's Lake" },
+        { "miles": 4, "text": "the RiNo Art District loop" },
         { "miles": 5, "text": "a loop around City Park" },
+        { "miles": 7, "text": "the South Platte River Trail" },
         { "miles": 10, "text": "LoDo to Cherry Creek" },
+        { "miles": 12, "text": "Washington Park to Union Station" },
         { "miles": 15, "text": "the Cherry Creek Trail" },
+        { "miles": 18, "text": "the High Line Canal" },
+        { "miles": 22, "text": "the full Cherry Creek Greenway" },
+        { "miles": 26, "text": "the Denver Marathon route" },
         { "miles": 30, "text": "Downtown to Boulder" },
-        { "miles": 50, "text": "to the foothills and back" }
+        { "miles": 40, "text": "to Golden and back" },
+        { "miles": 50, "text": "to the foothills and back" },
+        { "miles": 65, "text": "to Estes Park" },
+        { "miles": 80, "text": "to Colorado Springs" }
       ]
     },
     "boston": {
       "name": "Boston",
       "landmarks": [
+        { "miles": 1, "text": "across Boston Common" },
+        { "miles": 2, "text": "the Freedom Trail core" },
+        { "miles": 3, "text": "Harvard Yard to MIT" },
+        { "miles": 4, "text": "the Esplanade along the Charles" },
         { "miles": 5, "text": "the Freedom Trail, twice" },
+        { "miles": 7, "text": "Beacon Hill to Southie" },
         { "miles": 8, "text": "Fenway to the Harbor" },
+        { "miles": 10, "text": "the Emerald Necklace" },
         { "miles": 13, "text": "across the Charles and back" },
+        { "miles": 16, "text": "the Boston Harbor walk" },
+        { "miles": 20, "text": "Cambridge to Dorchester" },
         { "miles": 26, "text": "the Boston Marathon" },
-        { "miles": 50, "text": "to Plymouth" }
+        { "miles": 32, "text": "Hopkinton to Boston" },
+        { "miles": 40, "text": "to Salem" },
+        { "miles": 50, "text": "to Plymouth" },
+        { "miles": 65, "text": "to Providence" },
+        { "miles": 80, "text": "to Cape Cod" }
       ]
     },
     "atlanta": {
       "name": "Atlanta",
       "landmarks": [
+        { "miles": 1, "text": "through Piedmont Park" },
+        { "miles": 2, "text": "the BeltLine Eastside segment" },
+        { "miles": 3, "text": "Little Five Points to Ponce City" },
+        { "miles": 4, "text": "Grant Park to Oakland Cemetery" },
         { "miles": 5, "text": "the BeltLine Eastside Trail" },
+        { "miles": 7, "text": "Midtown to Decatur" },
         { "miles": 10, "text": "Midtown to the airport" },
+        { "miles": 12, "text": "the Westside BeltLine to Buckhead" },
+        { "miles": 15, "text": "Stone Mountain trails" },
+        { "miles": 18, "text": "the Silver Comet Trail segment" },
         { "miles": 22, "text": "the full BeltLine loop" },
+        { "miles": 26, "text": "the Atlanta Marathon route" },
         { "miles": 35, "text": "to Marietta" },
-        { "miles": 50, "text": "to Athens" }
+        { "miles": 45, "text": "to Stone Mountain and back" },
+        { "miles": 50, "text": "to Athens" },
+        { "miles": 65, "text": "to Macon" },
+        { "miles": 80, "text": "to Chattanooga" }
       ]
     },
     "miami": {
       "name": "Miami",
       "landmarks": [
+        { "miles": 1, "text": "along Ocean Drive" },
+        { "miles": 2, "text": "through Wynwood Walls" },
+        { "miles": 3, "text": "the Art Deco District loop" },
+        { "miles": 4, "text": "Brickell to Bayside" },
         { "miles": 5, "text": "South Beach end to end" },
+        { "miles": 7, "text": "the Venetian Causeway and back" },
         { "miles": 10, "text": "Coconut Grove to Wynwood" },
+        { "miles": 12, "text": "Key Biscayne loop" },
         { "miles": 15, "text": "Miami Beach to Coral Gables" },
+        { "miles": 18, "text": "the M-Path Trail" },
+        { "miles": 22, "text": "North Beach to Coconut Grove" },
+        { "miles": 26, "text": "the Miami Marathon route" },
         { "miles": 30, "text": "Downtown to Fort Lauderdale" },
-        { "miles": 50, "text": "to the Everglades" }
+        { "miles": 40, "text": "to Hollywood Beach and back" },
+        { "miles": 50, "text": "to the Everglades" },
+        { "miles": 65, "text": "to Key Largo" },
+        { "miles": 80, "text": "to West Palm Beach" }
       ]
     },
     "portland": {
       "name": "Portland",
       "landmarks": [
+        { "miles": 1, "text": "through Powell's City of Books" },
+        { "miles": 2, "text": "the Waterfront Park loop" },
+        { "miles": 3, "text": "across the Hawthorne Bridge" },
+        { "miles": 4, "text": "the Pearl District to Alberta" },
         { "miles": 5, "text": "a loop through Forest Park" },
+        { "miles": 7, "text": "the Springwater Corridor segment" },
         { "miles": 10, "text": "the Pearl District to Hawthorne" },
+        { "miles": 12, "text": "Mount Tabor and back" },
         { "miles": 15, "text": "across the bridges and back" },
+        { "miles": 18, "text": "the Wildwood Trail" },
+        { "miles": 22, "text": "the full 40-Mile Loop segment" },
+        { "miles": 26, "text": "the Portland Marathon route" },
         { "miles": 30, "text": "to Beaverton and back" },
-        { "miles": 50, "text": "to the Columbia Gorge" }
+        { "miles": 40, "text": "to Lake Oswego and back" },
+        { "miles": 50, "text": "to the Columbia Gorge" },
+        { "miles": 65, "text": "to Mount Hood" },
+        { "miles": 80, "text": "to the coast" }
       ]
     },
     "las_vegas": {
       "name": "Las Vegas",
       "landmarks": [
+        { "miles": 1, "text": "through the Bellagio Conservatory" },
+        { "miles": 2, "text": "the Fremont Street Experience" },
+        { "miles": 3, "text": "from Luxor to the Venetian" },
+        { "miles": 4, "text": "around the LINQ Promenade" },
         { "miles": 5, "text": "the length of the Strip" },
+        { "miles": 7, "text": "Downtown to the Stratosphere" },
         { "miles": 10, "text": "the Strip to Fremont Street and back" },
+        { "miles": 12, "text": "the Wetlands Park trails" },
         { "miles": 15, "text": "to Red Rock Canyon" },
+        { "miles": 18, "text": "the Red Rock scenic loop" },
+        { "miles": 22, "text": "Lake Las Vegas loop" },
+        { "miles": 26, "text": "the Las Vegas Marathon route" },
         { "miles": 30, "text": "to Henderson and back" },
-        { "miles": 50, "text": "to the Hoover Dam" }
+        { "miles": 40, "text": "to Boulder City" },
+        { "miles": 50, "text": "to the Hoover Dam" },
+        { "miles": 65, "text": "to Valley of Fire" },
+        { "miles": 80, "text": "to Zion National Park" }
       ]
     },
     "minneapolis": {
       "name": "Minneapolis",
       "landmarks": [
+        { "miles": 1, "text": "across the Stone Arch Bridge" },
+        { "miles": 2, "text": "around Lake Harriet" },
+        { "miles": 3, "text": "the Nicollet Mall" },
+        { "miles": 4, "text": "around Lake Calhoun" },
         { "miles": 5, "text": "around the Chain of Lakes" },
+        { "miles": 7, "text": "the Cedar Lake Trail" },
         { "miles": 10, "text": "the Midtown Greenway" },
+        { "miles": 12, "text": "the Grand Rounds segment" },
         { "miles": 15, "text": "Minneapolis to St. Paul" },
+        { "miles": 18, "text": "the Mississippi River Trail" },
+        { "miles": 22, "text": "the full Midtown Greenway loop" },
+        { "miles": 26, "text": "the Twin Cities Marathon route" },
         { "miles": 30, "text": "around both downtowns" },
-        { "miles": 50, "text": "to Stillwater and back" }
+        { "miles": 40, "text": "to Bloomington and back" },
+        { "miles": 50, "text": "to Stillwater and back" },
+        { "miles": 65, "text": "to Duluth" },
+        { "miles": 80, "text": "to Rochester" }
       ]
     },
     "detroit": {
       "name": "Detroit",
       "landmarks": [
+        { "miles": 1, "text": "through Campus Martius" },
+        { "miles": 2, "text": "the Dequindre Cut" },
+        { "miles": 3, "text": "Corktown to Downtown" },
+        { "miles": 4, "text": "around Belle Isle" },
         { "miles": 5, "text": "the RiverWalk end to end" },
+        { "miles": 7, "text": "Eastern Market to Midtown" },
         { "miles": 10, "text": "Downtown to Midtown and back" },
+        { "miles": 12, "text": "the Dequindre Cut extended" },
         { "miles": 15, "text": "Belle Isle and the riverfront" },
+        { "miles": 18, "text": "the Iron Belle Trail segment" },
+        { "miles": 22, "text": "Detroit to Royal Oak" },
+        { "miles": 26, "text": "the Detroit Marathon route" },
         { "miles": 30, "text": "to Ann Arbor" },
-        { "miles": 50, "text": "to Toledo" }
+        { "miles": 40, "text": "to Dearborn and back twice" },
+        { "miles": 50, "text": "to Toledo" },
+        { "miles": 65, "text": "to Lansing" },
+        { "miles": 80, "text": "to Grand Rapids" }
       ]
     }
   },
 
   "regions": {
     "northeast": [
+      { "miles": 1, "text": "a quick stroll through town" },
+      { "miles": 2, "text": "around the village green" },
+      { "miles": 3, "text": "the main street loop" },
       { "miles": 5, "text": "a brisk walk through downtown" },
+      { "miles": 7, "text": "through the historic district" },
       { "miles": 10, "text": "across the neighborhood" },
+      { "miles": 13, "text": "along the river trail" },
+      { "miles": 16, "text": "through the state park" },
       { "miles": 20, "text": "a scenic trail, end to end" },
+      { "miles": 25, "text": "to the next village" },
+      { "miles": 30, "text": "across the county" },
       { "miles": 35, "text": "to the next town over" },
-      { "miles": 50, "text": "between neighboring cities" }
+      { "miles": 45, "text": "a good stretch of highway" },
+      { "miles": 50, "text": "between neighboring cities" },
+      { "miles": 65, "text": "across the state line" },
+      { "miles": 80, "text": "a New England road trip" }
     ],
     "southeast": [
+      { "miles": 1, "text": "a stroll through the town square" },
+      { "miles": 2, "text": "along the waterfront" },
+      { "miles": 3, "text": "through the historic district" },
       { "miles": 5, "text": "a warm morning stroll" },
+      { "miles": 7, "text": "along the beach boardwalk" },
       { "miles": 10, "text": "across downtown" },
+      { "miles": 13, "text": "through the nature preserve" },
+      { "miles": 16, "text": "along the coastal trail" },
       { "miles": 20, "text": "a coastal walk" },
+      { "miles": 25, "text": "along the river" },
+      { "miles": 30, "text": "across the bay" },
       { "miles": 35, "text": "to the next county" },
-      { "miles": 50, "text": "between neighboring cities" }
+      { "miles": 45, "text": "through the lowcountry" },
+      { "miles": 50, "text": "between neighboring cities" },
+      { "miles": 65, "text": "to the coast" },
+      { "miles": 80, "text": "a southern road trip" }
     ],
     "midwest": [
+      { "miles": 1, "text": "around the town square" },
+      { "miles": 2, "text": "through the park" },
+      { "miles": 3, "text": "along the riverfront" },
       { "miles": 5, "text": "a lakeside walk" },
+      { "miles": 7, "text": "the rail trail segment" },
       { "miles": 10, "text": "across downtown" },
+      { "miles": 13, "text": "through the prairie" },
+      { "miles": 16, "text": "along the canal path" },
       { "miles": 20, "text": "a lakefront trail, twice" },
+      { "miles": 25, "text": "to the farmlands" },
+      { "miles": 30, "text": "across the county" },
       { "miles": 35, "text": "to the next town over" },
-      { "miles": 50, "text": "across the metro area" }
+      { "miles": 45, "text": "through the heartland" },
+      { "miles": 50, "text": "across the metro area" },
+      { "miles": 65, "text": "to the state line" },
+      { "miles": 80, "text": "a Great Lakes road trip" }
     ],
     "southwest": [
+      { "miles": 1, "text": "through the plaza" },
+      { "miles": 2, "text": "a desert garden trail" },
+      { "miles": 3, "text": "around the pueblo" },
       { "miles": 5, "text": "a desert morning trail" },
+      { "miles": 7, "text": "along the arroyo" },
       { "miles": 10, "text": "across downtown" },
+      { "miles": 13, "text": "through the foothills" },
+      { "miles": 16, "text": "along the mesa" },
       { "miles": 20, "text": "a canyon rim walk" },
+      { "miles": 25, "text": "to the mountains" },
+      { "miles": 30, "text": "across the desert" },
       { "miles": 35, "text": "a good chunk of highway" },
-      { "miles": 50, "text": "between neighboring cities" }
+      { "miles": 45, "text": "through the badlands" },
+      { "miles": 50, "text": "between neighboring cities" },
+      { "miles": 65, "text": "to the national park" },
+      { "miles": 80, "text": "a southwest road trip" }
     ],
     "west": [
+      { "miles": 1, "text": "along the beach" },
+      { "miles": 2, "text": "through the redwoods" },
+      { "miles": 3, "text": "a harbor walk" },
       { "miles": 5, "text": "a scenic coastal trail" },
+      { "miles": 7, "text": "through the wine country" },
       { "miles": 10, "text": "across downtown" },
+      { "miles": 13, "text": "along the Pacific" },
+      { "miles": 16, "text": "through the valley" },
       { "miles": 20, "text": "a good stretch of coastline" },
+      { "miles": 25, "text": "to the mountains" },
+      { "miles": 30, "text": "across the valley" },
       { "miles": 35, "text": "a good chunk of highway" },
-      { "miles": 50, "text": "between neighboring cities" }
+      { "miles": 45, "text": "through the wilderness" },
+      { "miles": 50, "text": "between neighboring cities" },
+      { "miles": 65, "text": "to the national forest" },
+      { "miles": 80, "text": "a Pacific Coast road trip" }
     ]
   },
 
   "universal": [
-    { "miles": 5, "text": "a solid morning walk" },
-    { "miles": 10, "text": "further than most walk in a week" },
-    { "miles": 13, "text": "a half marathon" },
-    { "miles": 20, "text": "more than most walk in a month" },
-    { "miles": 26, "text": "a full marathon" },
-    { "miles": 35, "text": "an ultra-walker's week" },
-    { "miles": 50, "text": "a truly impressive distance" },
-    { "miles": 75, "text": "crossing a small state" },
-    { "miles": 100, "text": "a journey" }
+    { "miles": 1, "text": "about 20 city blocks" },
+    { "miles": 2, "text": "twice around a city block" },
+    { "miles": 3, "text": "about 6,000 steps" },
+    { "miles": 4, "text": "roughly a 5K and change" },
+    { "miles": 5, "text": "a typical morning walk" },
+    { "miles": 6, "text": "a 10K distance" },
+    { "miles": 7, "text": "about 14,000 steps" },
+    { "miles": 8, "text": "roughly 30 minutes of walking per day" },
+    { "miles": 10, "text": "about 20,000 steps" },
+    { "miles": 12, "text": "nearly a half marathon" },
+    { "miles": 13, "text": "a half marathon distance" },
+    { "miles": 15, "text": "about 30,000 steps" },
+    { "miles": 18, "text": "almost three-quarters of a marathon" },
+    { "miles": 20, "text": "roughly 40,000 steps" },
+    { "miles": 22, "text": "almost marathon distance" },
+    { "miles": 26, "text": "a full marathon distance" },
+    { "miles": 30, "text": "just past marathon distance" },
+    { "miles": 35, "text": "about 70,000 steps" },
+    { "miles": 40, "text": "roughly 80,000 steps" },
+    { "miles": 45, "text": "almost two marathons" },
+    { "miles": 50, "text": "about 100,000 steps" },
+    { "miles": 60, "text": "over two marathons" },
+    { "miles": 75, "text": "roughly three marathons" },
+    { "miles": 85, "text": "about 170,000 steps" },
+    { "miles": 100, "text": "nearly four marathons" },
+    { "miles": 120, "text": "about a quarter million steps" },
+    { "miles": 150, "text": "almost six marathons" }
   ]
 }

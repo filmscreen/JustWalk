@@ -6,10 +6,12 @@
 //
 
 import SwiftUI
+import os.log
+
+private let onboardingLogger = Logger(subsystem: "onworldtech.JustWalk", category: "Onboarding")
 
 struct OnboardingContainerView: View {
     @Binding var isComplete: Bool
-
     enum OnboardingStep: Int, CaseIterable {
         case welcome           // Screen 1: More Than a Pedometer
         case consistency       // Screen 2: Set a daily goal. Hit it. Repeat.
@@ -19,7 +21,7 @@ struct OnboardingContainerView: View {
         case notifications     // Screen 6: Notification setup
         case goalSelection     // Screen 7: Your Daily Goal
         case proUpgrade        // Screen 8: Pro Upgrade
-        case ready             // Screen 9: You're ready
+        case healthKitSync     // Screen 9: Import HealthKit history (final step)
     }
 
     @State private var currentStep: OnboardingStep = .welcome
@@ -62,11 +64,22 @@ struct OnboardingContainerView: View {
                         .transition(.onboardingSlide)
 
                 case .proUpgrade:
-                    ProUpgradeView(onComplete: { advanceToNextStep() })
-                        .transition(.onboardingSlide)
+                    NavigationStack {
+                        ProUpgradeView(onComplete: { advanceToNextStep() }, showsCloseButton: false)
+                            .navigationTitle("")
+                            .toolbar {
+                                ToolbarItem(placement: .navigationBarLeading) {
+                                    Button("Skip For Now") {
+                                        advanceToNextStep()
+                                    }
+                                    .foregroundStyle(JW.Color.textSecondary)
+                                }
+                            }
+                    }
+                    .transition(.onboardingSlide)
 
-                case .ready:
-                    YoureReadyView(onComplete: { completeOnboarding() })
+                case .healthKitSync:
+                    HealthKitSyncView(onComplete: { completeOnboarding() })
                         .transition(.onboardingSlide)
                 }
             }
@@ -100,36 +113,63 @@ struct OnboardingContainerView: View {
             JustWalkAnimation.presentation
         case .proUpgrade:
             JustWalkAnimation.presentation
-        case .ready:
-            JustWalkAnimation.emphasis
+        case .healthKitSync:
+            JustWalkAnimation.standardSpring
         }
 
+        let resolvedStep = nextStep
+
         withAnimation(animation) {
-            currentStep = nextStep
+            currentStep = resolvedStep
         }
     }
 
     private func completeOnboarding() {
+        onboardingLogger.info("🎓 completeOnboarding() called")
+
         var profile = PersistenceManager.shared.loadProfile()
         profile.hasCompletedOnboarding = true
         PersistenceManager.shared.saveProfile(profile)
 
+        // Set fast-sync flag in iCloud Key-Value Store for reinstall detection
+        CloudKeyValueStore.setHasCompletedOnboarding()
+
+        // Initialize shields immediately so new users see their 2 free shields right away
+        onboardingLogger.info("🛡️ About to call ShieldManager.shared.load()...")
+        ShieldManager.shared.load()
+        onboardingLogger.info("🛡️ After ShieldManager.load(): availableShields=\(ShieldManager.shared.shieldData.availableShields)")
+        StreakManager.shared.load()
+
         // Trigger immediate step fetch and widget update now that permissions are granted
         Task {
-            let steps = await HealthKitManager.shared.fetchTodaySteps()
             let goal = profile.dailyStepGoal
+            let authorized = await HealthKitManager.shared.isCurrentlyAuthorized()
+            if authorized {
+                _ = await HealthKitManager.shared.backfillDailyLogsIfNeeded(days: HealthKitManager.historySyncDays, dailyGoal: goal)
+            }
+            let steps = await HealthKitManager.shared.fetchTodaySteps()
             let streak = StreakManager.shared.streakData.currentStreak
             let shields = ShieldManager.shared.availableShields
+            let weekSteps = buildWeekSteps()
             JustWalkWidgetData.updateWidgetData(
                 todaySteps: steps,
                 stepGoal: goal,
                 currentStreak: streak,
-                weekSteps: [],
+                weekSteps: weekSteps,
                 shieldCount: shields
             )
         }
 
         isComplete = true
+    }
+
+    private func buildWeekSteps() -> [Int] {
+        let calendar = Calendar.current
+        let persistence = PersistenceManager.shared
+        return (-6...0).map { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: Date()) else { return 0 }
+            return persistence.loadDailyLog(for: date)?.steps ?? 0
+        }
     }
 }
 

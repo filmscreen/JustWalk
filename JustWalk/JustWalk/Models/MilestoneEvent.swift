@@ -182,7 +182,16 @@ enum MilestoneRegistry {
 
     /// Look up a personal best milestone, returning a copy with the date-keyed ID.
     static func personalBestEvent(dateString: String) -> MilestoneEvent {
-        let template = stepEvents.first { $0.id == "steps_personal_best" }!
+        guard let template = stepEvents.first(where: { $0.id == "steps_personal_best" }) else {
+            return MilestoneEvent(
+                id: "steps_personal_best_\(dateString)",
+                tier: .tier3,
+                category: .steps,
+                headline: "Personal Best",
+                subtitle: "Your highest step count ever.",
+                sfSymbol: "trophy.circle.fill"
+            )
+        }
         // Use a date-keyed ID so it can fire once per day but across multiple days
         return MilestoneEvent(
             id: "steps_personal_best_\(dateString)",

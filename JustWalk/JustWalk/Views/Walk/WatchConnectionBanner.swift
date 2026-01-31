@@ -10,32 +10,14 @@ import SwiftUI
 struct WatchConnectionBanner: View {
     @ObservedObject private var connectivity = PhoneConnectivityManager.shared
 
-    private var state: ConnectionState {
-        if !connectivity.canCommunicateWithWatch {
-            return .notPaired
-        } else if connectivity.isWatchReachable {
-            return .connected
-        } else {
-            return .notReachable
-        }
-    }
-
     var body: some View {
-        switch state {
-        case .connected:
+        // Only show banner when watch is paired and app is installed
+        if connectivity.isWatchConnectedStable {
             banner(
                 icon: "applewatch",
                 dot: JW.Color.accent,
                 text: "Apple Watch Connected"
             )
-        case .notReachable:
-            banner(
-                icon: "applewatch",
-                dot: JW.Color.streak,
-                text: "Watch Not Reachable"
-            )
-        case .notPaired:
-            EmptyView()
         }
     }
 
@@ -68,11 +50,6 @@ struct WatchConnectionBanner: View {
         )
     }
 
-    private enum ConnectionState {
-        case connected
-        case notReachable
-        case notPaired
-    }
 }
 
 #Preview {

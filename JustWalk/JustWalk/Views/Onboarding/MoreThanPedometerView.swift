@@ -72,7 +72,7 @@ struct MoreThanPedometerView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(JW.Color.accent)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
             }
             .buttonPressEffect()

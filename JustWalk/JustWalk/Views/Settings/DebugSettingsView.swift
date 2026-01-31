@@ -5,6 +5,7 @@
 //  Debug settings for simulation, test personas, and testing
 //
 
+#if DEBUG
 import SwiftUI
 
 struct DebugSettingsView: View {
@@ -205,9 +206,14 @@ struct DebugSettingsView: View {
                     persistence.saveShieldData(shieldData)
                     shieldManager.shieldData = shieldData
                 }
+
+                Button("Reset Keychain Shield Flag", role: .destructive) {
+                    KeychainManager.shared.resetInitialShieldsFlag()
+                }
             }
             #endif
         }
         .navigationTitle("Debug")
     }
 }
+#endif

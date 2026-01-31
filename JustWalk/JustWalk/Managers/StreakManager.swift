@@ -28,7 +28,8 @@ class StreakManager: ObservableObject {
 
     func load() {
         streakData = persistence.loadStreakData()
-        checkAndUpdateStreak()
+        // Recalculate streak from daily logs to ensure accuracy
+        recalculateStreak()
     }
 
     // MARK: - Streak Logic
@@ -112,6 +113,58 @@ class StreakManager: ObservableObject {
         // Streak count stays same, just update the last date
         streakData.lastGoalMetDate = today
         streakData.consecutiveGoalDays = 0 // Reset weekly jackpot progress
+
+        persistence.saveStreakData(streakData)
+    }
+
+    /// Recalculates the streak from daily logs (useful after retroactive shield repairs)
+    func recalculateStreak() {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        var currentDate = today
+        var streakCount = 0
+        var streakStart: Date? = nil
+        var lastGoalDate: Date? = nil
+
+        // Check if today has goal met
+        let todayLog = persistence.loadDailyLog(for: today)
+        let todayGoalMet = todayLog?.goalMet ?? false
+
+        // If today's goal isn't met yet, start counting from yesterday
+        if !todayGoalMet {
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else {
+                persistence.saveStreakData(streakData)
+                return
+            }
+            currentDate = yesterday
+        }
+
+        // Walk backwards counting consecutive goal-met days
+        while true {
+            if let log = persistence.loadDailyLog(for: currentDate), log.goalMet {
+                streakCount += 1
+                streakStart = currentDate
+                if lastGoalDate == nil {
+                    lastGoalDate = currentDate
+                }
+            } else {
+                // Gap found - streak ends here
+                break
+            }
+
+            // Move to previous day
+            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: currentDate) else {
+                break
+            }
+            currentDate = previousDay
+        }
+
+        // Update streak data
+        streakData.currentStreak = streakCount
+        streakData.streakStartDate = streakStart
+        streakData.lastGoalMetDate = lastGoalDate
+        streakData.longestStreak = max(streakData.longestStreak, streakCount)
 
         persistence.saveStreakData(streakData)
     }

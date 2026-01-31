@@ -63,9 +63,30 @@ struct ShieldData: Codable {
             return // Already refilled this month
         }
 
-        // First launch: give new free-tier users the initial gift of 2 shields
-        if lastRefillDate == nil && !isPro {
-            availableShields = Self.freeMaxBanked
+        // First launch / fresh install handling
+        if lastRefillDate == nil {
+            // This is a first-time initialization of shield data.
+            // Could be:
+            // 1. True fresh install (never had app)
+            // 2. Reinstall where UserDefaults was cleared but Keychain persists
+            // 3. Reinstall with iCloud data incoming (handled by CloudKit merge)
+            //
+            // For cases 1 & 2, we should grant starter shields.
+            // The Keychain flag was previously used to prevent gaming, but it
+            // caused legitimate returning users to get 0 shields.
+            //
+            // New approach: Always grant starter shields on first init.
+            // CloudKit merge (which takes MIN of availableShields) will correct
+            // any gaming attempts by syncing the lower value from cloud.
+            // This is safe because:
+            // - If user never used shields: cloud has 2, local has 2, MIN = 2 ✓
+            // - If user used shields: cloud has 0-1, local has 2, MIN = 0-1 ✓
+            // - If user tries to game by reinstalling: cloud has low value, MIN wins ✓
+            if !isPro {
+                availableShields = Self.freeMaxBanked
+            } else {
+                availableShields = Self.proMaxBanked
+            }
         } else if isPro {
             // Pro users get monthly refills
             availableShields = min(availableShields + Self.proMonthlyAllocation, Self.proMaxBanked)

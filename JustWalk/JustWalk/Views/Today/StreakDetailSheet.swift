@@ -23,29 +23,35 @@ struct StreakDetailSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Fixed header section (flame, streak count)
-                heroSection
-                    .padding(.horizontal)
-                    .padding(.top, JW.Spacing.sm)
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Fixed header section (flame, streak count)
+                    heroSection
+                        .padding(.horizontal)
+                        .padding(.top, JW.Spacing.sm)
 
-                Divider()
-                    .overlay(JW.Color.backgroundTertiary)
-                    .padding(.horizontal)
-                    .padding(.vertical, JW.Spacing.sm)
+                    Divider()
+                        .overlay(JW.Color.backgroundTertiary)
+                        .padding(.horizontal)
+                        .padding(.vertical, JW.Spacing.sm)
 
-                // Static month-based calendar (no nested scroll)
-                MonthNavigableCalendar(showPaywall: $showPaywall)
-                    .padding(.horizontal)
+                    // Static month-based calendar (no nested scroll)
+                    MonthNavigableCalendar(showPaywall: $showPaywall)
+                        .layoutPriority(1)
+                        .padding(.horizontal)
 
-                // Fixed footer (legend + shield section)
-                VStack(spacing: JW.Spacing.md) {
-                    legendRow
-                    shieldSection
+                    // Fixed footer (legend + shield section)
+                    VStack(spacing: JW.Spacing.md) {
+                        legendRow
+                        shieldSection
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, JW.Spacing.md)
                 }
-                .padding(.horizontal)
-                .padding(.bottom, JW.Spacing.md)
+                .frame(maxWidth: .infinity)
             }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollIndicators(.hidden)
             .navigationTitle("Your Streak")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -54,7 +60,7 @@ struct StreakDetailSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.large, .medium], selection: .constant(.large))
         .presentationDragIndicator(.visible)
         .sheet(isPresented: $showPaywall) {
             ProUpgradeView(onComplete: { showPaywall = false })
@@ -82,6 +88,26 @@ struct StreakDetailSheet: View {
             Text(streakData.currentStreak == 1 ? "day" : "days")
                 .font(JW.Font.subheadline)
                 .foregroundStyle(JW.Color.textSecondary)
+
+            // Trophy: Best streak display
+            if streakData.longestStreak > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "trophy.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.yellow)
+
+                    if streakData.currentStreak == streakData.longestStreak && streakData.currentStreak > 1 {
+                        Text("Best: \(streakData.longestStreak) days — that's now!")
+                            .font(JW.Font.subheadline)
+                            .foregroundStyle(JW.Color.textSecondary)
+                    } else {
+                        Text("Best: \(streakData.longestStreak) day\(streakData.longestStreak == 1 ? "" : "s")")
+                            .font(JW.Font.subheadline)
+                            .foregroundStyle(JW.Color.textSecondary)
+                    }
+                }
+                .padding(.top, JW.Spacing.xs)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, JW.Spacing.sm)
@@ -90,12 +116,29 @@ struct StreakDetailSheet: View {
     // MARK: - Legend
 
     private var legendRow: some View {
-        HStack(spacing: JW.Spacing.lg) {
+        HStack(spacing: JW.Spacing.md) {
             legendItem(color: JW.Color.accent, icon: "checkmark", label: "Goal Met")
-            legendItem(color: JW.Color.accentBlue, icon: "shield.fill", label: "Shield Used")
-            legendItem(color: JW.Color.backgroundTertiary, icon: nil, label: "Missed")
+            legendItem(color: JW.Color.accentBlue, icon: "shield.fill", label: "Shield")
+            legendItemRing(label: "Partial")
         }
         .font(JW.Font.caption)
+    }
+
+    private func legendItemRing(label: String) -> some View {
+        HStack(spacing: 4) {
+            ZStack {
+                Circle()
+                    .stroke(JW.Color.backgroundTertiary, lineWidth: 2)
+                    .frame(width: 14, height: 14)
+                Circle()
+                    .trim(from: 0, to: 0.5)
+                    .stroke(JW.Color.accent.opacity(0.7), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                    .frame(width: 14, height: 14)
+                    .rotationEffect(.degrees(-90))
+            }
+            Text(label)
+                .foregroundStyle(JW.Color.textSecondary)
+        }
     }
 
     private func legendItem(color: Color, icon: String?, label: String) -> some View {
@@ -165,7 +208,20 @@ struct MonthNavigableCalendar: View {
     }
 
     private var canGoBack: Bool {
-        guard isPro else { return false }
+        if !isPro {
+            // Free users can navigate to months within the past 30 days
+            let thirtyDaysAgo = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+            let limitMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: thirtyDaysAgo))
+
+            if let previousMonth = calendar.date(byAdding: .month, value: -1, to: displayedMonth),
+               let limit = limitMonth {
+                // Allow if previous month is >= the month containing the 30-days-ago date
+                return previousMonth >= limit
+            }
+            return false
+        }
+
+        // Pro users can go back to earliest data
         guard let earliest = earliestAllowedMonth else { return true }
         return displayedMonth > earliest
     }
@@ -187,7 +243,7 @@ struct MonthNavigableCalendar: View {
             weekdayHeader(symbols: weekdayHeaders)
 
             // Static calendar grid (no ScrollView)
-            VStack(spacing: JW.Spacing.xs) {
+            VStack(spacing: JW.Spacing.md) {
                 ForEach(weeks) { week in
                     HStack(spacing: JW.Spacing.xs) {
                         ForEach(week.days) { day in
@@ -195,7 +251,7 @@ struct MonthNavigableCalendar: View {
                                 .frame(maxWidth: .infinity)
                                 .contentShape(Circle())
                                 .onTapGesture {
-                                    if day.isInRange {
+                                    if day.isInRange && !day.isLocked {
                                         JustWalkHaptics.buttonTap()
                                         selectedDay = makeDayData(from: day)
                                     }
@@ -204,16 +260,17 @@ struct MonthNavigableCalendar: View {
                     }
                 }
             }
-            .padding(.horizontal, JW.Spacing.sm)
-            .padding(.bottom, JW.Spacing.sm)
+            .padding(.horizontal, JW.Spacing.xs)
+            .padding(.bottom, JW.Spacing.xs)
         }
+        .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: JW.Radius.lg)
                 .fill(JW.Color.backgroundCard)
         )
         .sheet(item: $selectedDay) { day in
             DayDetailSheet(data: day)
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.hidden)
                 .presentationBackground(Color(.systemBackground))
         }
@@ -258,7 +315,7 @@ struct MonthNavigableCalendar: View {
             }
             .disabled(isCurrentMonth)
         }
-        .padding(.horizontal, JW.Spacing.sm)
+        .padding(.horizontal, JW.Spacing.xs)
     }
 
     // MARK: - Weekday Header
@@ -272,7 +329,7 @@ struct MonthNavigableCalendar: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, JW.Spacing.md)
+        .padding(.horizontal, JW.Spacing.xs)
     }
 
     // MARK: - Upgrade Prompt
@@ -283,7 +340,7 @@ struct MonthNavigableCalendar: View {
                 .font(.system(size: 14))
                 .foregroundStyle(JW.Color.streak)
 
-            Text("View past months with Pro")
+            Text("View full history with Pro")
                 .font(JW.Font.subheadline)
                 .foregroundStyle(JW.Color.textSecondary)
 
@@ -294,18 +351,18 @@ struct MonthNavigableCalendar: View {
             }
             .font(JW.Font.subheadline.weight(.semibold))
             .foregroundStyle(JW.Color.accent)
-            .padding(.horizontal, JW.Spacing.md)
+            .padding(.horizontal, JW.Spacing.sm)
             .padding(.vertical, JW.Spacing.xs)
             .background(
                 Capsule()
                     .fill(JW.Color.accent.opacity(0.15))
             )
         }
-        .padding(.horizontal, JW.Spacing.md)
+        .padding(.horizontal, JW.Spacing.sm)
         .padding(.vertical, JW.Spacing.sm)
         .background(JW.Color.backgroundTertiary.opacity(0.5))
         .clipShape(RoundedRectangle(cornerRadius: JW.Radius.md))
-        .padding(.horizontal, JW.Spacing.sm)
+        .padding(.horizontal, JW.Spacing.xs)
     }
 
     // MARK: - Navigation Actions
@@ -337,6 +394,7 @@ struct MonthNavigableCalendar: View {
         formatter.dateFormat = "yyyy-MM-dd"
 
         let today = calendar.startOfDay(for: Date())
+        let thirtyDaysAgo = calendar.date(byAdding: .day, value: -30, to: today) ?? today
 
         // Get the range of days in this month
         guard let monthInterval = calendar.dateInterval(of: .month, for: month) else { return [] }
@@ -363,15 +421,24 @@ struct MonthNavigableCalendar: View {
             let isToday = calendar.isDateInToday(current)
             let isFuture = current > today
 
+            // For free users, days older than 30 days are locked
+            let isLocked = !isPro && isInRange && current < thirtyDaysAgo
+
             var goalMet = false
             var shieldUsed = false
             var steps = 0
+            // For today, use current goal. For past days, use stored historical goal.
+            var goal = dailyGoal
 
-            if isInRange {
+            if isInRange && !isLocked {
                 if let log = persistence.loadDailyLog(for: current) {
                     goalMet = log.goalMet
                     shieldUsed = log.shieldUsed
                     steps = log.steps
+                    // Use the stored historical goal if available
+                    if !isToday, let storedGoal = log.goalTarget {
+                        goal = storedGoal
+                    }
                 }
             }
 
@@ -384,7 +451,8 @@ struct MonthNavigableCalendar: View {
                 goalMet: goalMet,
                 shieldUsed: shieldUsed,
                 steps: steps,
-                goal: dailyGoal
+                goal: goal,
+                isLocked: isLocked
             )
 
             currentWeekDays.append(day)
@@ -465,7 +533,8 @@ struct MonthNavigableCalendar: View {
             shieldUsed: day.shieldUsed,
             isToday: day.isToday,
             isWithinWeek: day.isInRange,
-            date: day.date
+            date: day.date,
+            isPastDay: calendar.startOfDay(for: day.date) < calendar.startOfDay(for: Date())
         )
     }
 }
@@ -491,6 +560,7 @@ private struct StreakCalendarDay: Identifiable {
     let shieldUsed: Bool
     let steps: Int
     let goal: Int
+    let isLocked: Bool  // True for days beyond 30-day limit for free users
 }
 
 // MARK: - Calendar Day Cell
@@ -498,45 +568,96 @@ private struct StreakCalendarDay: Identifiable {
 private struct StreakCalendarDayCell: View {
     let day: StreakCalendarDay
 
-    var body: some View {
-        if day.isInRange {
-            ZStack {
-                Circle()
-                    .fill(cellColor)
-                    .frame(width: 32, height: 32)
+    private let circleSize: CGFloat = 36
+    private let ringSize: CGFloat = 36
 
-                if day.goalMet {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.white)
-                } else if day.shieldUsed {
-                    Image(systemName: "shield.fill")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.white)
-                }
-            }
-            .overlay {
-                if day.isToday {
+    private var stepProgress: Double {
+        guard day.goal > 0 else { return 0 }
+        return min(Double(day.steps) / Double(day.goal), 1.0)
+    }
+
+    private var hasPartialProgress: Bool {
+        !day.goalMet && !day.shieldUsed && day.steps > 0
+    }
+
+    var body: some View {
+        if day.isLocked {
+            // Locked day (beyond 30 days for free users): faded circle with lock
+            VStack(spacing: 2) {
+                ZStack {
                     Circle()
-                        .stroke(JW.Color.accent, lineWidth: 2)
-                        .frame(width: 34, height: 34)
+                        .fill(JW.Color.backgroundTertiary.opacity(0.4))
+                        .frame(width: circleSize, height: circleSize)
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(JW.Color.textTertiary.opacity(0.6))
+                }
+                Color.clear.frame(height: 8)
+            }
+        } else if day.isInRange {
+            VStack(spacing: 2) {
+                ZStack {
+                    if day.goalMet {
+                        // Goal met: solid green circle with checkmark
+                        Circle()
+                            .fill(JW.Color.accent)
+                            .frame(width: circleSize, height: circleSize)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(.white)
+                    } else if day.shieldUsed {
+                        // Shield used: solid blue circle with shield icon
+                        Circle()
+                            .fill(JW.Color.accentBlue)
+                            .frame(width: circleSize, height: circleSize)
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.white)
+                    } else if hasPartialProgress {
+                        // Partial progress: ring showing percentage
+                        Circle()
+                            .stroke(JW.Color.backgroundTertiary, lineWidth: 3)
+                            .frame(width: ringSize, height: ringSize)
+                        Circle()
+                            .trim(from: 0, to: stepProgress)
+                            .stroke(
+                                JW.Color.accent.opacity(0.7),
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            )
+                            .frame(width: ringSize, height: ringSize)
+                            .rotationEffect(.degrees(-90))
+                    } else {
+                        // Missed with no steps: gray circle
+                        Circle()
+                            .fill(JW.Color.backgroundTertiary)
+                            .frame(width: circleSize, height: circleSize)
+                    }
+                }
+                .overlay {
+                    if day.isToday {
+                        Circle()
+                            .stroke(JW.Color.accent, lineWidth: 2)
+                            .frame(width: 38, height: 38)
+                    }
+                }
+
+                // Shield indicator below (for shielded days that also met goal)
+                if day.shieldUsed && day.goalMet {
+                    Image(systemName: "shield.fill")
+                        .font(.system(size: 8))
+                        .foregroundStyle(JW.Color.accentBlue)
+                } else {
+                    Color.clear.frame(height: 8)
                 }
             }
         } else {
             // Placeholder for out-of-range or future days
-            Circle()
-                .fill(Color.clear)
-                .frame(width: 32, height: 32)
-        }
-    }
-
-    private var cellColor: Color {
-        if day.goalMet {
-            return JW.Color.accent
-        } else if day.shieldUsed {
-            return JW.Color.accentBlue
-        } else {
-            return JW.Color.backgroundTertiary
+            VStack(spacing: 2) {
+                Circle()
+                    .fill(Color.clear)
+                    .frame(width: circleSize, height: circleSize)
+                Color.clear.frame(height: 8)
+            }
         }
     }
 }

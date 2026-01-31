@@ -27,10 +27,8 @@ struct WalkHistoryRowView: View {
             return walk.intervalProgram?.displayName ?? "Interval Walk"
         case .fatBurn:
             return "Fat Burn Zone"
-        case .postMeal:
-            return "Post-Meal Walk"
-        case .free:
-            return "Free Walk"
+        case .postMeal, .free:
+            return "Post-Meal"
         }
     }
 
@@ -38,8 +36,7 @@ struct WalkHistoryRowView: View {
         switch walk.mode {
         case .interval: return "bolt.fill"
         case .fatBurn: return "heart.fill"
-        case .postMeal: return "fork.knife"
-        case .free: return "figure.walk"
+        case .postMeal, .free: return "fork.knife"
         }
     }
 
@@ -47,8 +44,7 @@ struct WalkHistoryRowView: View {
         switch walk.mode {
         case .interval: return JW.Color.accent
         case .fatBurn: return JW.Color.streak
-        case .postMeal: return JW.Color.streak
-        case .free: return JW.Color.accentBlue
+        case .postMeal, .free: return JW.Color.streak
         }
     }
 

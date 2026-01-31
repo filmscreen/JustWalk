@@ -30,4 +30,8 @@ class AppState {
     var pendingCardAction: CardAction? = nil
 
     var healthKitDenied: Bool = false
+
+    /// Tracks whether the user is currently viewing the active walk screen
+    /// Set by WalkTabView when showing WalkActiveView
+    var isViewingActiveWalk: Bool = false
 }

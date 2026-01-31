@@ -9,7 +9,7 @@ import SwiftUI
 
 struct IntervalActiveView: View {
     @StateObject private var walkSession = WalkSessionManager.shared
-    @StateObject private var voiceManager = IntervalVoiceManager.shared
+    @StateObject private var watchConnectivity = PhoneConnectivityManager.shared
     @State private var showEndConfirmation = false
     @State private var phaseAnimationTrigger: UUID?
     @State private var previousPhaseType: IntervalPhase.PhaseType?
@@ -89,15 +89,17 @@ struct IntervalActiveView: View {
             guard let phase = currentPhase, oldValue != newValue else { return }
             // Reset pre-warning glow
             withAnimation { isPhaseWarning = false }
-            voiceManager.announce(phase: phase)
 
-            // Distinct haptics based on phase type
-            if phase.type == .fast {
-                JustWalkHaptics.intervalSpeedUp()
-            } else if phase.type == .slow {
-                JustWalkHaptics.intervalSlowDown()
-            }
+            let isFastPhase = phase.type == .fast
+
+            // iPhone haptic feedback - strong vibration pattern for phase change
             JustWalkHaptics.intervalPhaseChange()
+
+            // Watch haptics (works even when phone screen is off)
+            watchConnectivity.triggerPhaseChangeHapticOnWatch()
+
+            // Notification with text instruction (always fires for clear guidance)
+            NotificationManager.shared.sendIntervalPhaseChangeNotification(isFastPhase: isFastPhase)
 
             withAnimation {
                 phaseAnimationTrigger = phase.id
@@ -107,13 +109,13 @@ struct IntervalActiveView: View {
         // Countdown warnings
         .onChange(of: secondsRemaining) { oldValue, newValue in
             guard newValue < oldValue else { return }
-            // 10-second warning
+            // 10-second warning - sync to Watch
             if newValue == 10 {
                 JustWalkHaptics.intervalCountdownWarning()
+                watchConnectivity.triggerCountdownWarningOnWatch()
             }
-            // 3-second voice countdown + visual glow warning
+            // 3-second visual glow warning
             if newValue <= 3, newValue > 0 {
-                voiceManager.announceCountdown(newValue)
                 if !isPhaseWarning {
                     withAnimation { isPhaseWarning = true }
                 }
@@ -122,7 +124,6 @@ struct IntervalActiveView: View {
         // Halfway announcement
         .onChange(of: overallProgress) { oldValue, newValue in
             if oldValue < 0.5, newValue >= 0.5 {
-                voiceManager.announceHalfway()
             }
         }
         .onAppear {
@@ -132,9 +133,6 @@ struct IntervalActiveView: View {
                     phaseAnimationTrigger = phase.id
                 }
             }
-        }
-        .onDisappear {
-            voiceManager.stop()
         }
     }
 
@@ -222,18 +220,6 @@ struct IntervalActiveView: View {
 
     private var controlButtons: some View {
         HStack(spacing: 20) {
-            // Voice toggle
-            Button(action: {
-                voiceManager.toggle()
-                JustWalkHaptics.buttonTap()
-            }) {
-                Image(systemName: voiceManager.isEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                    .font(JW.Font.title2)
-                    .frame(width: 52, height: 52)
-            }
-            .jwGlassEffect()
-            .buttonPressEffect()
-
             // Pause / Resume
             Button(action: {
                 if walkSession.isPaused {

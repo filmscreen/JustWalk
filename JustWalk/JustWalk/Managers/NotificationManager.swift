@@ -7,6 +7,7 @@
 
 import Foundation
 import UserNotifications
+import UIKit
 
 @Observable
 class NotificationManager {
@@ -125,6 +126,118 @@ class NotificationManager {
         scheduleNotification(content: content, identifier: "shield_deployed")
     }
 
+    // MARK: - 4. Walk Reminder (Forgotten Walk)
+
+    /// Schedule a reminder notification for when a walk exceeds expected duration.
+    /// Only one reminder per walk — if the walk ends before it fires, cancel it.
+    func scheduleWalkReminder(mode: WalkMode, expectedDurationSeconds: Int?) {
+        guard isEnabled else { return }
+
+        let reminderDelay: TimeInterval
+
+        switch mode {
+        case .free:
+            // Quick Walk: 45 minutes
+            reminderDelay = 45 * 60
+        case .interval, .fatBurn:
+            // Intervals/Fat Burn: expected duration + 15 minutes
+            let expected = TimeInterval(expectedDurationSeconds ?? (20 * 60))
+            reminderDelay = expected + (15 * 60)
+        case .postMeal:
+            // Post-Meal: expected duration + 10 minutes
+            let expected = TimeInterval(expectedDurationSeconds ?? (10 * 60))
+            reminderDelay = expected + (10 * 60)
+        }
+
+        let content = UNMutableNotificationContent()
+        content.title = "Still walking?"
+        content.body = "Tap to end your walk when you're done."
+        content.sound = .default
+        content.categoryIdentifier = "WALK_ACTIVE"
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: reminderDelay, repeats: false)
+        let request = UNNotificationRequest(identifier: "walk_reminder", content: content, trigger: trigger)
+
+        center.add(request)
+    }
+
+    /// Cancel the walk reminder notification (called when walk ends normally)
+    func cancelWalkReminder() {
+        center.removePendingNotificationRequests(withIdentifiers: ["walk_reminder"])
+    }
+
+    // MARK: - 5. Interval Phase Change Notification
+
+    /// Fires when interval phase changes to inform user what to do.
+    /// Always fires (regardless of screen state or Watch) to provide clear text instruction.
+    /// Watch haptics provide attention; this notification provides the instruction.
+    func sendIntervalPhaseChangeNotification(isFastPhase: Bool) {
+        print("🔔 sendIntervalPhaseChangeNotification called - isEnabled=\(isEnabled), isFastPhase=\(isFastPhase)")
+        guard isEnabled else {
+            print("🔔 Notification skipped - isEnabled is false")
+            return
+        }
+
+        let content = UNMutableNotificationContent()
+        content.title = isFastPhase ? "Speed up!" : "Slow down"
+        content.body = isFastPhase ? "Time to pick up the pace." : "Recovery phase — easy pace."
+        content.sound = .default
+        content.interruptionLevel = .timeSensitive
+
+        let identifier = "interval_phase_\(UUID().uuidString)"
+        print("🔔 Scheduling notification with identifier: \(identifier)")
+        scheduleNotification(content: content, identifier: identifier)
+    }
+
+    // MARK: - 6. Fat Burn Zone Alerts
+
+    /// Fires when heart rate goes out of fat burn zone to inform user what to do.
+    /// Always fires (regardless of screen state or Watch) to provide clear text instruction.
+    /// Watch haptics provide attention; this notification provides the instruction.
+    func sendFatBurnOutOfRangeNotification(isBelowZone: Bool) {
+        guard isEnabled else { return }
+
+        let content = UNMutableNotificationContent()
+        if isBelowZone {
+            content.title = "Pick up the pace"
+            content.body = "Heart rate is below your fat burn zone."
+        } else {
+            content.title = "Ease up a bit"
+            content.body = "Heart rate is above your fat burn zone."
+        }
+        content.sound = .default
+        content.interruptionLevel = .timeSensitive
+
+        scheduleNotification(content: content, identifier: "fatburn_zone_\(UUID().uuidString)")
+    }
+
+    // MARK: - 7. Walk Auto-End Notification
+
+    /// Fires when a walk is automatically ended due to inactivity or time limit.
+    /// Ensures user knows their walk has stopped tracking.
+    func sendWalkAutoEndedNotification(reason: WalkAutoEndReason) {
+        guard isEnabled else { return }
+
+        let content = UNMutableNotificationContent()
+        switch reason {
+        case .inactivity:
+            content.title = "Walk ended"
+            content.body = "No activity detected for 10 minutes."
+        case .timeLimit:
+            content.title = "Walk ended"
+            content.body = "Maximum walk duration reached."
+        }
+        content.sound = .default
+        content.interruptionLevel = .timeSensitive
+
+        scheduleNotification(content: content, identifier: "walk_auto_ended")
+    }
+
+    enum WalkAutoEndReason {
+        case inactivity
+        case timeLimit
+    }
+
     // MARK: - Notification Categories
 
     func registerCategories() {
@@ -146,13 +259,31 @@ class NotificationManager {
             intentIdentifiers: []
         )
 
+        let walkReminder = UNNotificationCategory(
+            identifier: "WALK_REMINDER",
+            actions: [startWalkAction],
+            intentIdentifiers: []
+        )
+
         let celebration = UNNotificationCategory(
             identifier: "CELEBRATION",
             actions: [viewAction],
             intentIdentifiers: []
         )
 
-        center.setNotificationCategories([streakRisk, celebration])
+        let endWalkAction = UNNotificationAction(
+            identifier: "END_WALK",
+            title: "End Walk",
+            options: .foreground
+        )
+
+        let walkActive = UNNotificationCategory(
+            identifier: "WALK_ACTIVE",
+            actions: [endWalkAction],
+            intentIdentifiers: []
+        )
+
+        center.setNotificationCategories([streakRisk, walkReminder, celebration, walkActive])
     }
 
     // MARK: - Helpers
@@ -160,7 +291,13 @@ class NotificationManager {
     private func scheduleNotification(content: UNMutableNotificationContent, identifier: String) {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
-        center.add(request)
+        center.add(request) { error in
+            if let error = error {
+                print("🔔 ERROR scheduling notification: \(error.localizedDescription)")
+            } else {
+                print("🔔 Notification scheduled successfully: \(identifier)")
+            }
+        }
     }
 
     func cancelAllPendingNotifications() {

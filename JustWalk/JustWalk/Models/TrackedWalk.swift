@@ -14,8 +14,8 @@ struct TrackedWalk: Codable, Identifiable {
     let durationMinutes: Int
     let steps: Int
     let distanceMeters: Double
-    let mode: WalkMode
-    let intervalProgram: IntervalProgram?
+    var mode: WalkMode
+    var intervalProgram: IntervalProgram?
     let intervalCompleted: Bool?
     let routeCoordinates: [CodableCoordinate]
     let customIntervalConfig: CustomIntervalConfig?
@@ -33,8 +33,9 @@ struct TrackedWalk: Codable, Identifiable {
 
     /// Whether this walk should appear in user-facing lists.
     /// Shows any walk with recorded activity; only filters truly empty recordings.
+    /// For sub-minute walks, checks actual time difference since durationMinutes truncates to 0.
     var isDisplayable: Bool {
-        steps > 0 || durationMinutes > 0
+        steps > 0 || durationMinutes > 0 || endTime.timeIntervalSince(startTime) >= 1
     }
 
     // Backward-compatible decoding for records saved before new fields existed

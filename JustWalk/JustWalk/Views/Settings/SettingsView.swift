@@ -13,8 +13,8 @@ struct SettingsView: View {
     private var persistence: PersistenceManager { PersistenceManager.shared }
     private var subscriptionManager: SubscriptionManager { SubscriptionManager.shared }
     private var notificationManager: NotificationManager { NotificationManager.shared }
+    private var walkNotificationManager: WalkNotificationManager { WalkNotificationManager.shared }
     private var hapticsManager: HapticsManager { HapticsManager.shared }
-    private var voiceManager: IntervalVoiceManager { IntervalVoiceManager.shared }
     private var streakManager: StreakManager { StreakManager.shared }
     private var shieldManager: ShieldManager { ShieldManager.shared }
     private var healthKitManager: HealthKitManager { HealthKitManager.shared }
@@ -22,11 +22,22 @@ struct SettingsView: View {
     @State private var profile: UserProfile = .default
     @State private var showProPaywall = false
     @State private var showDeleteConfirmation = false
+    @State private var showDeleteSheet = false
     @State private var showStreakDetail = false
     @State private var showShieldDetail = false
     @State private var showStreakReminderSheet = false
+    @State private var showWalkReminderSheet = false
+    @State private var showShieldPurchaseSheet = false
+    @State private var showPrivacySheet = false
 
     @State private var notificationPermissionStatus: UNAuthorizationStatus = .notDetermined
+    @AppStorage("liveActivity_promptShown") private var liveActivityPromptShown = false
+    @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled = true
+
+    // HealthKit sync state
+    @State private var isSyncingHealthKit = false
+    @State private var showSyncResult = false
+    @State private var syncResultMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -35,17 +46,20 @@ struct SettingsView: View {
                 streakShieldsSection
                 notificationsSection
                 walksSection
+                privacySection
                 displaySection
                 proSection
                 dataSupportSection
 
-                // Debug/Developer section (always available for tester mode toggle)
+                #if DEBUG
+                // Debug/Developer section
                 Section("Developer") {
                     NavigationLink("Debug Settings") {
                         DebugSettingsView()
                     }
                     .listRowBackground(JW.Color.backgroundCard)
                 }
+                #endif
             }
             .scrollContentBackground(.hidden)
             .background(JW.Color.backgroundPrimary)
@@ -56,6 +70,11 @@ struct SettingsView: View {
             }
             .onChange(of: profile) { _, newValue in
                 persistence.saveProfile(newValue)
+                UserDefaults.standard.set(newValue.dailyStepGoal, forKey: "dailyStepGoal")
+                StepDataManager.shared.updateTodaySteps(
+                    HealthKitManager.shared.todaySteps,
+                    goalTarget: newValue.dailyStepGoal
+                )
             }
             .sheet(isPresented: $showProPaywall) {
                 ProUpgradeView(onComplete: { showProPaywall = false })
@@ -69,16 +88,31 @@ struct SettingsView: View {
             .sheet(isPresented: $showStreakReminderSheet) {
                 StreakReminderSheet()
             }
-            .alert("Delete All Data?", isPresented: $showDeleteConfirmation) {
-                Button("Delete Everything", role: .destructive) {
-                    PersistenceManager.shared.clearAllData()
-                    CloudKitSyncManager.shared.deleteCloudData()
-                    NotificationManager.shared.cancelAllPendingNotifications()
+            .sheet(isPresented: $showWalkReminderSheet) {
+                WalkReminderSheet()
+            }
+            .sheet(isPresented: $showShieldPurchaseSheet) {
+                ShieldPurchaseSheet(
+                    isPro: subscriptionManager.isPro,
+                    onShieldPurchased: { },
+                    onRequestProUpgrade: { showProPaywall = true }
+                )
+            }
+            .sheet(isPresented: $showPrivacySheet) {
+                PrivacySheetView()
+            }
+            .sheet(isPresented: $showDeleteSheet) {
+                DeleteDataConfirmationView(onConfirmDelete: {
+                    // Reset local state after deletion
                     profile = .default
-                }
-                Button("Cancel", role: .cancel) {}
+                    // Post notification to reset app to onboarding
+                    NotificationCenter.default.post(name: .didDeleteAllData, object: nil)
+                })
+            }
+            .alert("HealthKit Sync", isPresented: $showSyncResult) {
+                Button("OK", role: .cancel) {}
             } message: {
-                Text("This will permanently erase all walks, streaks, and settings. This cannot be undone.")
+                Text(syncResultMessage)
             }
         }
     }
@@ -154,6 +188,22 @@ struct SettingsView: View {
             }
             .listRowBackground(JW.Color.backgroundCard)
 
+            if shieldManager.shieldData.availableShields == 0 {
+                Button {
+                    showShieldPurchaseSheet = true
+                } label: {
+                    HStack {
+                        Image(systemName: "shield.badge.plus")
+                            .foregroundStyle(JW.Color.accentBlue)
+                        Text("Get More Shields")
+                        Spacer()
+                        Text(subscriptionManager.shieldDisplayPrice)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .listRowBackground(JW.Color.backgroundCard)
+            }
+
             Button {
                 showStreakDetail = true
             } label: {
@@ -182,9 +232,38 @@ struct SettingsView: View {
         return formatter.string(from: date)
     }
 
+    private var walkReminderTimeLabel: String {
+        if !walkNotificationManager.notificationsEnabled {
+            return "Off"
+        }
+        if walkNotificationManager.smartTimingEnabled {
+            return "Smart"
+        }
+        guard let time = walkNotificationManager.preferredTime else { return "6:00 PM" }
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: time)
+    }
+
     private var notificationsSection: some View {
         Section("Notifications") {
             if systemNotificationsAllowed {
+                Button {
+                    showWalkReminderSheet = true
+                } label: {
+                    HStack {
+                        Text("Daily Walk Reminder")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text(walkReminderTimeLabel)
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .listRowBackground(JW.Color.backgroundCard)
+
                 // Streak Reminder — tapping opens detail sheet
                 Button {
                     showStreakReminderSheet = true
@@ -253,17 +332,63 @@ struct SettingsView: View {
 
     private var walksSection: some View {
         Section("Walks") {
-            Toggle("Audio Coaching", isOn: Binding(
-                get: { voiceManager.isEnabled },
-                set: { voiceManager.isEnabled = $0 }
-            ))
-            .listRowBackground(JW.Color.backgroundCard)
-
             Toggle("Haptics", isOn: Binding(
                 get: { hapticsManager.isEnabled },
                 set: { hapticsManager.isEnabled = $0 }
             ))
             .listRowBackground(JW.Color.backgroundCard)
+
+        }
+    }
+
+    // MARK: - Privacy
+
+    private var privacySection: some View {
+        Section("Privacy") {
+            Button {
+                showPrivacySheet = true
+            } label: {
+                HStack {
+                    Text("Your Data")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .listRowBackground(JW.Color.backgroundCard)
+
+            Toggle(isOn: $iCloudSyncEnabled) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("iCloud Sync")
+                    Text("Sync walks and streaks across your Apple devices.\nUses your iCloud account — we never see this data.")
+                        .font(JW.Font.caption)
+                        .foregroundStyle(JW.Color.textSecondary)
+                }
+            }
+            .listRowBackground(JW.Color.backgroundCard)
+            .onChange(of: iCloudSyncEnabled) { _, enabled in
+                if enabled {
+                    Task {
+                        let success = await CloudKitSyncManager.shared.setup()
+                        if success {
+                            CloudKitSyncManager.shared.pushAllToCloud()
+                        }
+                    }
+                }
+            }
+
+            if let url = URL(string: "https://getjustwalk.com/privacy") {
+                Link(destination: url) {
+                    HStack {
+                        Text("Privacy Policy")
+                        Spacer()
+                        Image(systemName: "arrow.up.right.square")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .listRowBackground(JW.Color.backgroundCard)
+            }
         }
     }
 
@@ -273,6 +398,12 @@ struct SettingsView: View {
         Section("Display") {
             Toggle("Use Metric (km)", isOn: $profile.useMetricUnits)
                 .listRowBackground(JW.Color.backgroundCard)
+
+            Toggle("Show Live Activity setup tip", isOn: Binding(
+                get: { !liveActivityPromptShown },
+                set: { liveActivityPromptShown = !$0 }
+            ))
+            .listRowBackground(JW.Color.backgroundCard)
         }
     }
 
@@ -297,7 +428,7 @@ struct SettingsView: View {
                             Text("Upgrade to Pro")
                                 .fontWeight(.semibold)
                             Spacer()
-                            Text("\(subscriptionManager.proAnnualProduct?.displayPrice ?? "$39.99")/year")
+                            Text("\(subscriptionManager.proAnnualProduct?.displayPrice ?? "$29.99")/year")
                                 .foregroundStyle(.secondary)
                         }
                         Text("Unlimited Walks · More Protection · Full History")
@@ -336,18 +467,59 @@ struct SettingsView: View {
             }
             .listRowBackground(JW.Color.backgroundCard)
 
-            ShareLink(
-                item: URL(string: "https://apps.apple.com/app/just-walk/id6740066018")!,
-                message: Text("Check out Just Walk — it makes walking fun!")
-            ) {
+            // Sync HealthKit History button
+            Button {
+                Task {
+                    isSyncingHealthKit = true
+                    let goal = profile.dailyStepGoal
+                    let result = await healthKitManager.syncHealthKitHistory(days: HealthKitManager.historySyncDays, dailyGoal: goal)
+                    isSyncingHealthKit = false
+
+                    if result.synced > 0 {
+                        syncResultMessage = "Synced \(result.synced) days of step data from HealthKit."
+                    } else if result.total > 0 {
+                        syncResultMessage = "All \(result.total) days are already up to date."
+                    } else {
+                        syncResultMessage = "No HealthKit data found. Make sure Health access is granted."
+                    }
+                    showSyncResult = true
+                }
+            } label: {
                 HStack {
-                    Text("Share Just Walk")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Sync HealthKit History")
+                            .foregroundStyle(.primary)
+                        Text("Last \(HealthKitManager.historySyncDays) days")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                     Spacer()
-                    Image(systemName: "square.and.arrow.up")
-                        .foregroundStyle(.secondary)
+                    if isSyncingHealthKit {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
+            .disabled(isSyncingHealthKit)
             .listRowBackground(JW.Color.backgroundCard)
+
+            if let shareURL = URL(string: "https://apps.apple.com/app/just-walk/id6740066018") {
+                ShareLink(
+                    item: shareURL,
+                    message: Text("Check out Just Walk — it makes walking fun!")
+                ) {
+                    HStack {
+                        Text("Share Just Walk")
+                        Spacer()
+                        Image(systemName: "square.and.arrow.up")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .listRowBackground(JW.Color.backgroundCard)
+            }
 
             NavigationLink("Support & Legal") {
                 SupportLegalView(profile: profile)
@@ -355,7 +527,7 @@ struct SettingsView: View {
             .listRowBackground(JW.Color.backgroundCard)
 
             Button(role: .destructive) {
-                showDeleteConfirmation = true
+                showDeleteSheet = true
             } label: {
                 HStack {
                     Text("Delete All Data")
@@ -395,7 +567,7 @@ struct StreakReminderSheet: View {
                     ))
                     .listRowBackground(JW.Color.backgroundCard)
                 } footer: {
-                    Text("Get a reminder in the evening if you haven't hit your step goal yet.")
+                    Text("Get a daily nudge in the evening if you haven't hit your daily goal yet.")
                         .font(JW.Font.caption)
                 }
 
@@ -436,6 +608,91 @@ struct StreakReminderSheet: View {
                 notificationManager.streakReminderMinute = components.minute ?? 0
             }
         )
+    }
+}
+
+// MARK: - Walk Reminder Sheet
+
+struct WalkReminderSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    private var manager: WalkNotificationManager { WalkNotificationManager.shared }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Toggle("Daily Walk Reminder", isOn: Binding(
+                        get: { manager.notificationsEnabled },
+                        set: { newValue in
+                            manager.notificationsEnabled = newValue
+                            manager.scheduleNotificationIfNeeded(force: true)
+                        }
+                    ))
+                    .listRowBackground(JW.Color.backgroundCard)
+                } footer: {
+                    Text("One helpful daily nudge, only if you haven't hit your goal.")
+                        .font(JW.Font.caption)
+                }
+
+                if manager.notificationsEnabled {
+                    Section {
+                        Toggle("Smart Timing", isOn: Binding(
+                            get: { manager.smartTimingEnabled },
+                            set: { newValue in
+                                manager.smartTimingEnabled = newValue
+                                manager.scheduleNotificationIfNeeded(force: true)
+                            }
+                        ))
+                        .listRowBackground(JW.Color.backgroundCard)
+                    } footer: {
+                        Text("Smart timing uses your usual walk time when available.")
+                            .font(JW.Font.caption)
+                    }
+
+                    if !manager.smartTimingEnabled {
+                        Section("Remind Me At") {
+                            DatePicker("Time", selection: preferredTime, displayedComponents: .hourAndMinute)
+                                .labelsHidden()
+                                .datePickerStyle(.wheel)
+                                .listRowBackground(JW.Color.backgroundCard)
+                        }
+                    }
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(JW.Color.backgroundPrimary)
+            .navigationTitle("Daily Walk Reminder")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        manager.scheduleNotificationIfNeeded(force: true)
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var preferredTime: Binding<Date> {
+        Binding(
+            get: {
+                manager.preferredTime ?? defaultPreferredTime()
+            },
+            set: { newDate in
+                manager.preferredTime = newDate
+                manager.scheduleNotificationIfNeeded(force: true)
+            }
+        )
+    }
+
+    private func defaultPreferredTime() -> Date {
+        var components = DateComponents()
+        components.hour = 18
+        components.minute = 0
+        return Calendar.current.date(from: components) ?? Date()
     }
 }
 

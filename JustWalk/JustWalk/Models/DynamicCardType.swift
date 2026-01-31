@@ -10,6 +10,15 @@ import Foundation
 // MARK: - Dynamic Card Type
 
 enum DynamicCardType: Equatable {
+    // P0 — Smart Walk Invitation (highest priority walk prompts)
+    case smartWalkPattern(preferredMode: WalkMode)                    // "You usually walk around now"
+    case smartWalkPostMeal                                             // Post-meal window (12-1:30pm or 6-8pm)
+    case smartWalkEveningRescue(stepsRemaining: Int)                   // After 6pm, goal not met, < 3000 remaining
+    case smartWalkCloseToGoal(stepsRemaining: Int)                     // < 1000 steps to goal
+    case smartWalkMorning                                              // 6-9am invitation
+    case smartWalkGoalMet                                              // Goal complete, bonus walk?
+    case smartWalkDefault                                              // Fallback: "Ready for a walk?"
+
     // P1 — Urgent
     case streakAtRisk(stepsRemaining: Int)
     case shieldDeployed(remainingShields: Int, nextRefill: String)
@@ -24,15 +33,28 @@ enum DynamicCardType: Equatable {
     case weekendWarrior
     case eveningNudge(stepsRemaining: Int)
 
+    // P2.5 — Insight (pattern-based personalization, rare)
+    case insight(InsightCard)
+
     // P3 — Fallback / Tips (50 evergreen tips with random rotation)
     case tip(DailyTip)
 
     /// Stable key for frequency tracking / daily show limit
     var cardKey: String {
         switch self {
+        // P0 — Smart Walk
+        case .smartWalkPattern:      return "smartWalkPattern"
+        case .smartWalkPostMeal:     return "smartWalkPostMeal"
+        case .smartWalkEveningRescue: return "smartWalkEveningRescue"
+        case .smartWalkCloseToGoal:  return "smartWalkCloseToGoal"
+        case .smartWalkMorning:      return "smartWalkMorning"
+        case .smartWalkGoalMet:      return "smartWalkGoalMet"
+        case .smartWalkDefault:      return "smartWalkDefault"
+        // P1 — Urgent
         case .streakAtRisk:          return "streakAtRisk"
         case .shieldDeployed:        return "shieldDeployed"
         case .welcomeBack:           return "welcomeBack"
+        // P2 — Contextual
         case .almostThere:           return "almostThere"
         case .milestoneCelebration(let e): return "milestoneCelebration_\(e.id)"
         case .tryIntervals:          return "tryIntervals"
@@ -40,21 +62,34 @@ enum DynamicCardType: Equatable {
         case .newWeekNewGoal:        return "newWeekNewGoal"
         case .weekendWarrior:        return "weekendWarrior"
         case .eveningNudge:          return "eveningNudge"
+        // P2.5 — Insight
+        case .insight(let card):     return "insight_\(card.id)"
+        // P3 — Tips
         case .tip(let tip):          return "tip_\(tip.id)"
         }
     }
 
-    /// Priority tier: 1 (urgent), 2 (contextual), 3 (fallback/tips)
+    /// Priority tier: 0 (smart walk), 1 (urgent), 2 (contextual), 2.5 (insight), 3 (fallback/tips)
     var tier: Int {
         switch self {
+        case .smartWalkPattern, .smartWalkPostMeal, .smartWalkEveningRescue,
+             .smartWalkCloseToGoal, .smartWalkMorning, .smartWalkGoalMet, .smartWalkDefault:
+            return 0
         case .streakAtRisk, .shieldDeployed, .welcomeBack:
             return 1
         case .almostThere, .milestoneCelebration, .tryIntervals,
              .trySyncWithWatch, .newWeekNewGoal, .weekendWarrior, .eveningNudge:
             return 2
+        case .insight:
+            return 2 // Treat as P2 priority when available
         case .tip:
             return 3
         }
+    }
+
+    /// Whether this is a Smart Walk card (P0 tier)
+    var isSmartWalkCard: Bool {
+        tier == 0
     }
 }
 

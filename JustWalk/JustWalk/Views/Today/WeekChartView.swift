@@ -12,7 +12,7 @@ import StoreKit
 
 enum DayStatus: Equatable {
     case complete
-    case missed
+    case missedNoData
     case shieldUsed
     case inProgress(Double) // 0.0 to 1.0
     case future
@@ -21,7 +21,6 @@ enum DayStatus: Equatable {
 // MARK: - Day Data Model
 
 struct DayData: Identifiable {
-    let id = UUID()
     let day: String         // "Mon", "Tue", etc.
     let dateLabel: String   // "1/25"
     let steps: Int
@@ -31,6 +30,14 @@ struct DayData: Identifiable {
     let isToday: Bool
     let isWithinWeek: Bool
     let date: Date
+    let isPastDay: Bool
+
+    // Use date as stable ID to prevent view recreation on re-render
+    var id: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
 
     var stepProgress: Double {
         min(Double(steps) / Double(max(goal, 1)), 1.0)
@@ -45,11 +52,11 @@ struct DayData: Identifiable {
 
     var status: DayStatus {
         if !isWithinWeek { return .future }
-        if isToday && !goalMet { return .inProgress(stepProgress) }
         if goalMet { return .complete }
         if shieldUsed { return .shieldUsed }
         if isToday { return .inProgress(stepProgress) }
-        return .missed
+        if steps > 0 && isPastDay { return .inProgress(stepProgress) }
+        return .missedNoData
     }
 
     var formattedDate: String {
@@ -83,7 +90,7 @@ struct WeekChartView: View {
     @AppStorage("dailyStepGoal") private var dailyGoal = 5000
     @State private var selectedDay: DayData?
     @State private var appeared = false
-    @State private var pressedDayID: UUID?
+    @State private var pressedDayID: String?
 
     private var weekData: [DayData] {
         // Access version counter so @Observable triggers re-render on log changes
@@ -104,18 +111,23 @@ struct WeekChartView: View {
             let isToday = offset == 0
             // For today, prefer live HealthKit steps over persisted log
             let steps = isToday ? liveTodaySteps : (log?.steps ?? 0)
+            // For today, use current goal. For past days, use the stored historical goal.
+            // If historical goal is missing (legacy data), fall back to current goal.
+            let goal = isToday ? dailyGoal : (log?.goalTarget ?? dailyGoal)
             let goalMet = isToday ? (liveTodaySteps >= dailyGoal) : (log?.goalMet ?? false)
+            let isPastDay = offset < 0
 
             data.append(DayData(
                 day: dayName,
                 dateLabel: dateLabel,
                 steps: steps,
-                goal: dailyGoal,
+                goal: goal,
                 goalMet: goalMet,
                 shieldUsed: log?.shieldUsed ?? false,
                 isToday: isToday,
                 isWithinWeek: true,
-                date: date
+                date: date,
+                isPastDay: isPastDay
             ))
         }
 
@@ -202,7 +214,7 @@ struct WeekChartView: View {
         }
         .sheet(item: $selectedDay) { day in
             DayDetailSheet(data: day)
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.hidden)
                 .presentationBackground(Color(.systemBackground))
         }
@@ -214,11 +226,15 @@ struct WeekChartView: View {
 struct DayIndicator: View {
     let day: DayData
 
-    @State private var animatedProgress: Double = 0
+    @State private var animatedProgress: Double?
     @State private var goalJustCompleted = false
 
     private let circleSize: CGFloat = 32
     private let ringSize: CGFloat = 36
+
+    private var displayProgress: Double {
+        animatedProgress ?? day.stepProgress
+    }
 
     var body: some View {
         VStack(spacing: 6) {
@@ -244,10 +260,13 @@ struct DayIndicator: View {
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(.white)
 
-                case .missed:
-                    // Gray outline circle, empty
+                case .missedNoData:
+                    // Dashed gray circle (no data)
                     Circle()
-                        .stroke(JW.Color.backgroundTertiary, lineWidth: 2)
+                        .stroke(
+                            JW.Color.backgroundTertiary.opacity(0.6),
+                            style: StrokeStyle(lineWidth: 2, dash: [4, 4])
+                        )
                         .frame(width: circleSize, height: circleSize)
 
                 case .shieldUsed:
@@ -263,9 +282,9 @@ struct DayIndicator: View {
                             .stroke(JW.Color.backgroundTertiary, lineWidth: 3)
                             .frame(width: ringSize, height: ringSize)
                         Circle()
-                            .trim(from: 0, to: animatedProgress)
+                            .trim(from: 0, to: displayProgress)
                             .stroke(
-                                JW.Color.accent,
+                                progressRingColor,
                                 style: StrokeStyle(lineWidth: 3, lineCap: .round)
                             )
                             .frame(width: ringSize, height: ringSize)
@@ -299,7 +318,10 @@ struct DayIndicator: View {
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .onAppear {
-            if case .inProgress(let progress) = day.status {
+            // Only animate on first appearance (when animatedProgress is nil)
+            if animatedProgress == nil, case .inProgress(let progress) = day.status {
+                // Start from 0 and animate to target
+                animatedProgress = 0
                 withAnimation(JustWalkAnimation.ringFill) {
                     animatedProgress = progress
                 }
@@ -312,6 +334,13 @@ struct DayIndicator: View {
                 }
             }
         }
+    }
+
+    private var progressRingColor: Color {
+        if day.isToday {
+            return JW.Color.accent
+        }
+        return JW.Color.accent.opacity(0.7)
     }
 }
 
@@ -354,6 +383,29 @@ struct DayDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var walks: [TrackedWalk] = []
     @State private var dayState: DayDetailState = .goalMet
+    @State private var showShieldConfirmation = false
+    @State private var shieldApplied = false
+    @State private var showPaywall = false
+    @State private var showPurchaseSheet = false
+
+    private var shieldManager: ShieldManager { ShieldManager.shared }
+    private var subscriptionManager: SubscriptionManager { SubscriptionManager.shared }
+
+    /// Whether this day is eligible for repair (within 7 days including today, not already met/shielded)
+    private var dayIsRepairable: Bool {
+        guard !data.goalMet && !data.shieldUsed else { return false }
+        return shieldManager.canRepairDate(data.date)
+    }
+
+    /// Whether this day can be repaired with a shield (has shields available)
+    private var canRepairWithShield: Bool {
+        dayIsRepairable && shieldManager.availableShields > 0
+    }
+
+    /// Whether to show purchase prompt (day is repairable but no shields)
+    private var shouldShowPurchasePrompt: Bool {
+        dayIsRepairable && shieldManager.availableShields == 0
+    }
 
     // MARK: - Walk Helpers
 
@@ -393,56 +445,162 @@ struct DayDetailSheet: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 16) {
-            // Drag indicator
-            Capsule()
-                .fill(Color.secondary.opacity(0.5))
-                .frame(width: 36, height: 5)
-                .padding(.top, 8)
+        VStack(spacing: 0) {
+            // FIXED HEADER: Drag indicator + Date + Stats
+            VStack(spacing: 16) {
+                // Drag indicator
+                Capsule()
+                    .fill(Color.secondary.opacity(0.5))
+                    .frame(width: 36, height: 5)
+                    .padding(.top, 8)
 
-            // Date header
-            Text(data.formattedDate)
-                .font(.headline)
-                .foregroundStyle(JW.Color.textPrimary)
+                // Date header
+                Text(data.formattedDate)
+                    .font(.headline)
+                    .foregroundStyle(JW.Color.textPrimary)
 
-            // Content based on day state
-            switch dayState {
-            case .goalMet, .goalMissed:
-                stepsContent
-            case .restDay, .streakBroken:
-                missedContent
-            case .shieldUsed, .lightDayShielded:
-                shieldContent
+                // Content based on day state (steps/distance/goal - always visible)
+                switch dayState {
+                case .goalMet, .goalMissed:
+                    stepsContent
+                case .restDay, .streakBroken:
+                    missedContent
+                case .shieldUsed, .lightDayShielded:
+                    shieldContent
+                }
             }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
 
-            // Divider
             Divider()
 
-            // Walks section or empathetic footer
-            if !walks.isEmpty {
-                walksSection
-            } else if dayState == .goalMet || dayState == .goalMissed {
-                Text("No walks recorded")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding()
+            // SCROLLABLE MIDDLE: Walk list (expands to fill available space)
+            if walks.isEmpty {
+                VStack {
+                    Spacer()
+                    if dayState == .goalMet || dayState == .goalMissed {
+                        Text("No walks recorded")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity)
+            } else {
+                ScrollView {
+                    walksSection
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                }
+                .frame(maxWidth: .infinity)
             }
 
-            Spacer()
+            Spacer(minLength: 0)
 
-            // Done button
-            Button("Done") { dismiss() }
-                .font(.headline)
-                .foregroundStyle(JW.Color.accent)
-                .padding(.bottom, 24)
+            Divider()
+
+            // FIXED FOOTER: Shield buttons + Done
+            VStack(spacing: 12) {
+                // Use Shield button (for missed days that can be repaired)
+                if canRepairWithShield && !shieldApplied {
+                    useShieldButton
+                }
+
+                // Purchase prompt (when day is repairable but no shields available)
+                if shouldShowPurchasePrompt && !shieldApplied {
+                    purchaseShieldButton
+                }
+
+                // Done button
+                Button("Done") { dismiss() }
+                    .font(.headline)
+                    .foregroundStyle(JW.Color.accent)
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
         }
-        .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
         .onAppear {
             determineDayState()
             loadWalks()
         }
+        .alert("Use Shield?", isPresented: $showShieldConfirmation) {
+            Button("Use Shield", role: .destructive) {
+                applyShield()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Use 1 shield to protect your streak for this day. You have \(shieldManager.availableShields) shield\(shieldManager.availableShields == 1 ? "" : "s") remaining.")
+        }
+        .sheet(isPresented: $showPaywall) {
+            ProUpgradeView(onComplete: { showPaywall = false })
+        }
+        .sheet(isPresented: $showPurchaseSheet) {
+            ShieldPurchaseSheet(
+                isPro: subscriptionManager.isPro,
+                onShieldPurchased: { applyShield() },
+                onRequestProUpgrade: { showPaywall = true }
+            )
+        }
+    }
+
+    // MARK: - Use Shield Button
+
+    private var useShieldButton: some View {
+        Button {
+            JustWalkHaptics.buttonTap()
+            showShieldConfirmation = true
+        } label: {
+            HStack(spacing: JW.Spacing.sm) {
+                Image(systemName: "shield.fill")
+                    .font(.system(size: 16))
+                Text("Use Shield to Repair")
+                    .font(JW.Font.headline)
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(JW.Color.accentBlue)
+            .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
+        }
+        .padding(.bottom, JW.Spacing.sm)
+    }
+
+    private func applyShield() {
+        if shieldManager.repairDate(data.date) {
+            shieldApplied = true
+            JustWalkHaptics.success()
+            // Update the day state to reflect the shield was used
+            dayState = .shieldUsed
+        }
+    }
+
+    // MARK: - Upgrade for Shields Button
+
+    private var purchaseShieldButton: some View {
+        Button {
+            JustWalkHaptics.buttonTap()
+            showPurchaseSheet = true
+        } label: {
+            HStack(spacing: JW.Spacing.sm) {
+                Image(systemName: "shield.fill")
+                    .font(.system(size: 16))
+                Text("Get Shield to Repair")
+                    .font(JW.Font.headline)
+                Spacer()
+                Text(subscriptionManager.shieldDisplayPrice)
+                    .font(JW.Font.subheadline.weight(.semibold))
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(JW.Color.accentBlue)
+            .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
+        }
+        .padding(.bottom, JW.Spacing.sm)
     }
 
     // MARK: - Steps Content (Goal Met / Goal Missed)
@@ -621,11 +779,10 @@ struct DayDetailSheet: View {
     }
 
     private func loadWalks() {
-        let log = PersistenceManager.shared.loadDailyLog(for: data.date)
-        if let ids = log?.trackedWalkIDs {
-            walks = ids.compactMap { PersistenceManager.shared.loadTrackedWalk(by: $0) }
-                .filter(\.isDisplayable)
-        }
+        // Query walks directly by date instead of relying on trackedWalkIDs in DailyLog
+        walks = PersistenceManager.shared.loadTrackedWalks(forDay: data.date)
+            .filter(\.isDisplayable)
+            .sorted { $0.startTime < $1.startTime }
     }
 }
 
@@ -647,13 +804,17 @@ struct ExtendedWeekChartView: View {
             let weekdayIndex = calendar.component(.weekday, from: date) - 1
             let dayName = calendar.shortWeekdaySymbols[weekdayIndex]
 
+            let isToday = offset == 0
+            // For today, use current goal. For past days, use stored historical goal.
+            let goal = isToday ? dailyGoal : (log?.goalTarget ?? dailyGoal)
+
             data.append(ExtendedDayData(
                 day: dayName,
                 steps: log?.steps ?? 0,
-                goal: dailyGoal,
+                goal: goal,
                 goalMet: log?.goalMet ?? false,
                 shieldUsed: log?.shieldUsed ?? false,
-                isToday: offset == 0
+                isToday: isToday
             ))
         }
 

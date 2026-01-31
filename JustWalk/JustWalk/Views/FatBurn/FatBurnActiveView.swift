@@ -9,8 +9,10 @@
 import SwiftUI
 
 struct FatBurnActiveView: View {
+    @Environment(AppState.self) private var appState
     @StateObject private var walkSession = WalkSessionManager.shared
     @StateObject private var zoneManager = FatBurnZoneManager.shared
+    @StateObject private var watchConnectivity = PhoneConnectivityManager.shared
 
     @State private var showEndConfirmation = false
     @State private var timer: Timer?
@@ -74,9 +76,15 @@ struct FatBurnActiveView: View {
                                 .transition(.opacity)
                         }
                     } else {
-                        Text("Waiting for Apple Watch...")
-                            .font(JW.Font.subheadline)
-                            .foregroundStyle(JW.Color.textSecondary)
+                        if watchConnectivity.isWatchReachable {
+                            Text("Waiting for heart rate...")
+                                .font(JW.Font.subheadline)
+                                .foregroundStyle(JW.Color.textSecondary)
+                        } else {
+                            Text("Apple Watch not connected")
+                                .font(JW.Font.subheadline)
+                                .foregroundStyle(JW.Color.textTertiary)
+                        }
                     }
                 }
 
@@ -131,36 +139,48 @@ struct FatBurnActiveView: View {
         .onAppear {
             startHRTracking()
             JustWalkHaptics.prepareForFatBurn()
+            appState.isViewingActiveWalk = true
         }
         .onDisappear {
             stopHRTracking()
+            appState.isViewingActiveWalk = false
         }
-        .onChange(of: zoneManager.zoneState) { newState in
+        .onChange(of: zoneManager.zoneState) { _, newState in
             withAnimation(.easeInOut(duration: 0.5)) {
                 bgColor = newState.backgroundColor
             }
 
-            // Fire haptics based on zone transition
+            // Fire haptics/notifications based on zone transition
             let wasInZone = previousZoneState == .inZone
             switch newState {
             case .inZone:
                 JustWalkHaptics.fatBurnEnteredZone()
             case .belowZone:
                 if wasInZone {
-                    JustWalkHaptics.fatBurnLeftZone()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        JustWalkHaptics.fatBurnSpeedUp()
-                    }
+                    // Immediate notification on zone exit (10s repeat alerts continue separately)
+                    NotificationManager.shared.sendFatBurnOutOfRangeNotification(isBelowZone: true)
                 }
             case .aboveZone:
                 if wasInZone {
-                    JustWalkHaptics.fatBurnLeftZone()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                        JustWalkHaptics.fatBurnSlowDown()
-                    }
+                    // Immediate notification on zone exit (10s repeat alerts continue separately)
+                    NotificationManager.shared.sendFatBurnOutOfRangeNotification(isBelowZone: false)
                 }
             }
             previousZoneState = newState
+        }
+        .onChange(of: zoneManager.shouldTriggerOutOfRangeHaptic) { _, state in
+            guard let state else { return }
+            // Watch haptics are handled by WatchWalkSessionManager independently
+            // Notification provides text instruction (always fires for clear guidance)
+            switch state {
+            case .belowZone:
+                NotificationManager.shared.sendFatBurnOutOfRangeNotification(isBelowZone: true)
+            case .aboveZone:
+                NotificationManager.shared.sendFatBurnOutOfRangeNotification(isBelowZone: false)
+            case .inZone:
+                break
+            }
+            zoneManager.shouldTriggerOutOfRangeHaptic = nil
         }
     }
 

@@ -15,8 +15,8 @@ enum IntervalProgram: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .short: return "Quick"
-        case .medium: return "Standard"
+        case .short: return "Intervals - Quick"
+        case .medium: return "Intervals - Standard"
         }
     }
 

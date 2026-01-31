@@ -11,7 +11,6 @@ import CoreMotion
 import UIKit
 import Combine
 
-@Observable
 class WalkSessionManager: NSObject, ObservableObject {
     static let shared = WalkSessionManager()
 
@@ -22,22 +21,22 @@ class WalkSessionManager: NSObject, ObservableObject {
     private var stepsBeforePause: Int = 0
 
     // State
-    var isWalking: Bool = false
-    var isPaused: Bool = false
-    var currentMode: WalkMode = .free
-    var currentIntervalProgram: IntervalProgram?
-    var currentCustomInterval: CustomIntervalConfig?
-    var currentWalkId: UUID?
+    @Published var isWalking: Bool = false
+    @Published var isPaused: Bool = false
+    @Published var currentMode: WalkMode = .free
+    @Published var currentIntervalProgram: IntervalProgram?
+    @Published var currentCustomInterval: CustomIntervalConfig?
+    @Published var currentWalkId: UUID?
 
     // Tracking data
-    var startTime: Date?
-    var pauseTime: Date?
-    var totalPausedDuration: TimeInterval = 0
-    var routeCoordinates: [CLLocationCoordinate2D] = []
-    var currentLocation: CLLocationCoordinate2D?
-    var elapsedSeconds: Int = 0
-    var currentSteps: Int = 0
-    var currentDistance: Double = 0 // meters
+    @Published var startTime: Date?
+    @Published var pauseTime: Date?
+    @Published var totalPausedDuration: TimeInterval = 0
+    @Published var routeCoordinates: [CLLocationCoordinate2D] = []
+    @Published var currentLocation: CLLocationCoordinate2D?
+    @Published var elapsedSeconds: Int = 0
+    @Published var currentSteps: Int = 0
+    @Published var currentDistance: Double = 0 // meters
 
     // Eco-Track state
     private var screenLockedTime: Date?
@@ -45,11 +44,14 @@ class WalkSessionManager: NSObject, ObservableObject {
     private let ecoTrackThreshold: TimeInterval = 300 // 5 minutes
 
     // Walk completion
-    var completedWalk: TrackedWalk?
+    @Published var completedWalk: TrackedWalk?
 
     // Cross-device state
     private var isEndingWalk = false
-    var isWatchInitiated: Bool = false
+    @Published var isWatchInitiated: Bool = false
+
+    // Post-meal duration (10 minutes)
+    static let postMealDurationSeconds = 600
 
     // Anti-cheat
     private var lastStepCount: Int = 0
@@ -59,6 +61,29 @@ class WalkSessionManager: NSObject, ObservableObject {
     private let maxSpeedMPS: Double = 6.7 // ~15 mph
     private var speedViolationTime: Date?
     private let speedCooldown: TimeInterval = 30 // 30-second cooldown after speed violation
+
+    // MARK: - Auto-End System (Forgotten Walk Protection)
+
+    /// Inactivity tracking for auto-end
+    private var stepCountAtLastActivity: Int = 0
+    private var lastActivityTime: Date = Date()
+    private let inactivityThreshold: TimeInterval = 10 * 60 // 10 minutes of no steps
+    private let minimumStepsForActivity: Int = 50 // Need at least 50 steps to count as "active"
+    private var inactivityCheckTimer: Timer?
+
+    /// Hard time limits by walk mode (backstop protection)
+    private let hardTimeLimits: [WalkMode: TimeInterval] = [
+        .free: 3 * 60 * 60,      // 3 hours
+        .interval: 2 * 60 * 60,  // 2 hours
+        .fatBurn: 2 * 60 * 60,   // 2 hours
+        .postMeal: 1 * 60 * 60   // 1 hour
+    ]
+
+    /// Reason for auto-ending a walk
+    enum AutoEndReason {
+        case inactivity
+        case hardTimeLimit
+    }
 
     // Timer
     private var timer: Timer?
@@ -110,7 +135,7 @@ class WalkSessionManager: NSObject, ObservableObject {
         locationManager.requestAlwaysAuthorization()
     }
 
-    var locationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
+    @Published var locationAuthorizationStatus: CLAuthorizationStatus = .notDetermined
 
     // MARK: - Walk Control
 
@@ -154,17 +179,53 @@ class WalkSessionManager: NSObject, ObservableObject {
 
         startTimer()
         startPedometer()
+        startInactivityMonitoring()
 
-        // Start Live Activity
-        LiveActivityManager.shared.startActivity(mode: mode, intervalProgram: intervalProgram)
+        // Schedule walk reminder notification
+        let expectedDuration = getExpectedDurationSeconds(mode: mode, intervalProgram: intervalProgram, customInterval: customInterval)
+        NotificationManager.shared.scheduleWalkReminder(mode: mode, expectedDurationSeconds: expectedDuration)
 
-        // Start Watch workout silently if available (only when iPhone-initiated)
-        if !isWatchInitiated && watchConnectivity.canCommunicateWithWatch {
-            watchConnectivity.startWorkoutOnWatch(walkId: id)
+        // Start Live Activity with countdown data for interval and post-meal modes
+        let countdownRemaining: Int?
+        let countdownEndDate: Date?
+        let phaseType: String?
+
+        if mode == .interval {
+            countdownRemaining = getSecondsRemainingInPhase()
+            countdownEndDate = getCurrentIntervalPhaseEndDate()
+            phaseType = getCurrentIntervalPhaseTypeLabel()
+        } else if mode == .postMeal {
+            countdownRemaining = Self.postMealDurationSeconds
+            countdownEndDate = Date().addingTimeInterval(TimeInterval(Self.postMealDurationSeconds))
+            phaseType = nil
+        } else {
+            countdownRemaining = nil
+            countdownEndDate = nil
+            phaseType = nil
+        }
+
+        LiveActivityManager.shared.startActivity(
+            mode: mode,
+            intervalProgram: intervalProgram,
+            intervalPhaseRemaining: countdownRemaining,
+            intervalPhaseEndDate: countdownEndDate,
+            intervalPhaseType: phaseType
+        )
+
+        // Start Watch workout silently if available (only when iPhone-initiated).
+        // Interval/fat burn/post-meal flows start Watch with additional context elsewhere.
+        if !isWatchInitiated && watchConnectivity.canCommunicateWithWatch, mode == .free {
+            watchConnectivity.startWorkoutOnWatch(walkId: id, startTime: startTime, modeRaw: "free")
         }
     }
 
     func pauseWalk() {
+        pauseWalkInternal()
+        watchConnectivity.pauseWorkoutOnWatch()
+    }
+
+    /// Internal pause logic — does NOT notify Watch (used when Watch initiated the pause)
+    private func pauseWalkInternal() {
         guard isWalking, !isPaused else { return }
         isPaused = true
         pauseTime = Date()
@@ -173,12 +234,39 @@ class WalkSessionManager: NSObject, ObservableObject {
         locationManager.stopUpdatingLocation()
         stepsBeforePause = currentSteps
         stopPedometer()
+        stopInactivityMonitoring() // Pause inactivity timer while walk is paused
 
-        LiveActivityManager.shared.updatePaused(true)
-        watchConnectivity.pauseWorkoutOnWatch()
+        // Calculate countdown remaining for interval and post-meal modes
+        let countdownRemaining: Int?
+        let phaseType: String?
+
+        if currentMode == .interval {
+            countdownRemaining = getSecondsRemainingInPhase()
+            phaseType = getCurrentIntervalPhaseTypeLabel()
+        } else if currentMode == .postMeal {
+            countdownRemaining = max(0, Self.postMealDurationSeconds - elapsedSeconds)
+            phaseType = nil
+        } else {
+            countdownRemaining = nil
+            phaseType = nil
+        }
+
+        LiveActivityManager.shared.updatePaused(
+            true,
+            elapsedSeconds: elapsedSeconds,
+            intervalPhaseRemaining: countdownRemaining,
+            intervalPhaseEndDate: nil,
+            intervalPhaseType: phaseType
+        )
     }
 
     func resumeWalk() {
+        resumeWalkInternal()
+        watchConnectivity.resumeWorkoutOnWatch()
+    }
+
+    /// Internal resume logic — does NOT notify Watch (used when Watch initiated the resume)
+    private func resumeWalkInternal() {
         guard isWalking, isPaused else { return }
         if let pauseStart = pauseTime {
             totalPausedDuration += Date().timeIntervalSince(pauseStart)
@@ -190,19 +278,49 @@ class WalkSessionManager: NSObject, ObservableObject {
         locationManager.startUpdatingLocation()
         startTimer()
         startPedometer()
+        startInactivityMonitoring() // Resume inactivity monitoring
 
-        LiveActivityManager.shared.updatePaused(false)
-        watchConnectivity.resumeWorkoutOnWatch()
+        // Calculate countdown data for interval and post-meal modes
+        let countdownRemaining: Int?
+        let countdownEndDate: Date?
+        let phaseType: String?
+
+        if currentMode == .interval {
+            countdownRemaining = getSecondsRemainingInPhase()
+            countdownEndDate = getCurrentIntervalPhaseEndDate()
+            phaseType = getCurrentIntervalPhaseTypeLabel()
+        } else if currentMode == .postMeal {
+            countdownRemaining = max(0, Self.postMealDurationSeconds - elapsedSeconds)
+            countdownEndDate = Date().addingTimeInterval(TimeInterval(countdownRemaining ?? 0))
+            phaseType = nil
+        } else {
+            countdownRemaining = nil
+            countdownEndDate = nil
+            phaseType = nil
+        }
+
+        LiveActivityManager.shared.updatePaused(
+            false,
+            elapsedSeconds: elapsedSeconds,
+            intervalPhaseRemaining: countdownRemaining,
+            intervalPhaseEndDate: countdownEndDate,
+            intervalPhaseType: phaseType
+        )
     }
 
     func endWalk() async -> TrackedWalk? {
-        guard isWalking, !isEndingWalk, let start = startTime else { return nil }
+        guard isWalking, !isEndingWalk, let start = startTime else {
+            LiveActivityManager.shared.endActivity()
+            return nil
+        }
         isEndingWalk = true
         defer { isEndingWalk = false }
 
         timer?.invalidate()
         locationManager.stopUpdatingLocation()
         stopPedometer()
+        stopInactivityMonitoring()
+        NotificationManager.shared.cancelWalkReminder()
 
         let end = Date()
         let duration = Int(end.timeIntervalSince(start) - totalPausedDuration) / 60
@@ -215,6 +333,9 @@ class WalkSessionManager: NSObject, ObservableObject {
         let isInterval = currentIntervalProgram != nil || currentCustomInterval != nil
         let intervalCompleted = isInterval && duration >= (intervalDuration ?? 0)
 
+        // Fetch calories for the walk
+        let calories = await healthKitManager.fetchCaloriesDuring(start: start, end: end)
+
         let walk = TrackedWalk(
             id: currentWalkId ?? UUID(),
             startTime: start,
@@ -226,8 +347,19 @@ class WalkSessionManager: NSObject, ObservableObject {
             intervalProgram: currentIntervalProgram,
             intervalCompleted: isInterval ? intervalCompleted : nil,
             routeCoordinates: routeCoordinates.map { CodableCoordinate(latitude: $0.latitude, longitude: $0.longitude) },
-            customIntervalConfig: currentCustomInterval
+            customIntervalConfig: currentCustomInterval,
+            activeCalories: calories > 0 ? calories : nil
         )
+
+        // Save workout to Apple Health (skip if Watch-initiated, Watch already saves to Health)
+        if !isWatchInitiated && duration >= 1 {
+            let _ = await healthKitManager.saveWorkout(
+                startDate: start,
+                endDate: end,
+                totalDistance: distance,
+                totalCalories: calories > 0 ? calories : nil
+            )
+        }
 
         // Store completed walk for WalkTabView to process
         if intervalCompleted {
@@ -311,12 +443,40 @@ class WalkSessionManager: NSObject, ObservableObject {
         guard let start = startTime, !isPaused else { return }
         elapsedSeconds = Int(Date().timeIntervalSince(start) - totalPausedDuration)
 
-        // Update Live Activity every 5 seconds (reduces battery drain)
-        if elapsedSeconds % 5 == 0 {
+        if shouldAutoEndInterval() {
+            Task { await endWalk() }
+            return
+        }
+
+        // Update Live Activity every second for countdown modes (interval/postMeal), every 5s otherwise
+        let isCountdownMode = currentMode == .interval || currentMode == .postMeal
+
+        if isCountdownMode || elapsedSeconds % 5 == 0 {
+            let countdownRemaining: Int?
+            let countdownEndDate: Date?
+            let phaseType: String?
+
+            if currentMode == .interval {
+                countdownRemaining = getSecondsRemainingInPhase()
+                countdownEndDate = getCurrentIntervalPhaseEndDate()
+                phaseType = getCurrentIntervalPhaseTypeLabel()
+            } else if currentMode == .postMeal {
+                countdownRemaining = max(0, Self.postMealDurationSeconds - elapsedSeconds)
+                countdownEndDate = startTime?.addingTimeInterval(TimeInterval(Self.postMealDurationSeconds) + totalPausedDuration)
+                phaseType = nil
+            } else {
+                countdownRemaining = nil
+                countdownEndDate = nil
+                phaseType = nil
+            }
+
             LiveActivityManager.shared.updateProgress(
                 elapsedSeconds: elapsedSeconds,
                 steps: currentSteps,
-                distance: currentDistance
+                distance: currentDistance,
+                intervalPhaseRemaining: countdownRemaining,
+                intervalPhaseEndDate: countdownEndDate,
+                intervalPhaseType: phaseType
             )
         }
 
@@ -365,6 +525,102 @@ class WalkSessionManager: NSObject, ObservableObject {
             zeroStepsStartTime = nil
         }
         lastStepCount = currentSteps
+    }
+
+    // MARK: - Auto-End System (Forgotten Walk Protection)
+
+    /// Start monitoring for inactivity to auto-end forgotten walks
+    private func startInactivityMonitoring() {
+        // Reset activity tracking
+        stepCountAtLastActivity = currentSteps
+        lastActivityTime = Date()
+
+        // Check every 2 minutes for inactivity
+        inactivityCheckTimer?.invalidate()
+        inactivityCheckTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
+            self?.checkForInactivityAndLimits()
+        }
+    }
+
+    /// Stop inactivity monitoring
+    private func stopInactivityMonitoring() {
+        inactivityCheckTimer?.invalidate()
+        inactivityCheckTimer = nil
+    }
+
+    /// Check for inactivity and hard time limits
+    private func checkForInactivityAndLimits() {
+        guard isWalking, !isPaused, !isEndingWalk else { return }
+
+        // Check hard time limit first (backstop)
+        if let start = startTime {
+            let elapsed = Date().timeIntervalSince(start) - totalPausedDuration
+            let limit = hardTimeLimits[currentMode] ?? (3 * 60 * 60)
+
+            if elapsed >= limit {
+                autoEndWalk(reason: .hardTimeLimit)
+                return
+            }
+        }
+
+        // Check for inactivity
+        let stepsSinceLastActivity = currentSteps - stepCountAtLastActivity
+
+        if stepsSinceLastActivity >= minimumStepsForActivity {
+            // User is still walking — reset activity tracker
+            stepCountAtLastActivity = currentSteps
+            lastActivityTime = Date()
+        } else {
+            // Check if inactive for too long
+            let inactiveDuration = Date().timeIntervalSince(lastActivityTime)
+            if inactiveDuration >= inactivityThreshold {
+                autoEndWalk(reason: .inactivity)
+            }
+        }
+    }
+
+    /// Auto-end the walk due to inactivity or time limit
+    private func autoEndWalk(reason: AutoEndReason) {
+        guard isWalking, !isEndingWalk else { return }
+
+        Task {
+            // For inactivity, use the last activity time as the effective end time
+            // This gives accurate walk duration (not inflated by forgotten time)
+            if reason == .inactivity {
+                // The endWalk method will use the current time, but the walk data
+                // will still be meaningful because steps stopped accumulating
+                print("[WalkSessionManager] Auto-ending walk due to inactivity. Last activity: \(lastActivityTime)")
+                NotificationManager.shared.sendWalkAutoEndedNotification(reason: .inactivity)
+            } else {
+                print("[WalkSessionManager] Auto-ending walk due to hard time limit")
+                NotificationManager.shared.sendWalkAutoEndedNotification(reason: .timeLimit)
+            }
+
+            _ = await endWalk()
+        }
+    }
+
+    /// Get expected duration in seconds for walk reminder scheduling
+    private func getExpectedDurationSeconds(mode: WalkMode, intervalProgram: IntervalProgram?, customInterval: CustomIntervalConfig?) -> Int? {
+        switch mode {
+        case .free:
+            return nil // No expected duration for quick walk
+        case .interval:
+            if let program = intervalProgram {
+                return program.duration * 60
+            } else if let custom = customInterval {
+                return custom.totalMinutes * 60
+            }
+            return 20 * 60 // Default 20 minutes
+        case .fatBurn:
+            // Fat burn typically uses custom interval configs
+            if let custom = customInterval {
+                return custom.totalMinutes * 60
+            }
+            return 20 * 60 // Default 20 minutes
+        case .postMeal:
+            return Self.postMealDurationSeconds
+        }
     }
 
     // MARK: - Interval Support
@@ -422,6 +678,34 @@ class WalkSessionManager: NSObject, ObservableObject {
         guard let currentPhase = getCurrentIntervalPhase() else { return 0 }
         let phaseEnd = currentPhase.startOffset + currentPhase.durationSeconds
         return max(0, phaseEnd - elapsedSeconds)
+    }
+
+    private func getCurrentIntervalPhaseTypeLabel() -> String? {
+        guard let currentPhase = getCurrentIntervalPhase() else { return nil }
+        switch currentPhase.type {
+        case .warmup:   return "WARM UP"
+        case .fast:     return "FAST"
+        case .slow:     return "SLOW"
+        case .cooldown: return "COOL DOWN"
+        }
+    }
+
+    private func getCurrentIntervalPhaseEndDate() -> Date? {
+        guard let start = startTime,
+              let currentPhase = getCurrentIntervalPhase() else { return nil }
+        let phaseEnd = currentPhase.startOffset + currentPhase.durationSeconds
+        // Account for any accumulated pause time so Live Activity stays in sync
+        return start.addingTimeInterval(TimeInterval(phaseEnd) + totalPausedDuration)
+    }
+
+    private func shouldAutoEndInterval() -> Bool {
+        guard isWalking,
+              !isEndingWalk,
+              currentMode == .interval,
+              let phases = activePhases,
+              let lastPhase = phases.last else { return false }
+        let totalSeconds = lastPhase.startOffset + lastPhase.durationSeconds
+        return elapsedSeconds >= totalSeconds
     }
 
     // MARK: - State Persistence
@@ -482,8 +766,18 @@ class WalkSessionManager: NSObject, ObservableObject {
 
     private func setupWatchCallbacks() {
         // Scenario 2: Watch starts walk → iPhone follows
-        watchConnectivity.onWorkoutStartedOnWatch = { [weak self] walkId in
-            self?.handleWatchWorkoutStarted(walkId: walkId)
+        watchConnectivity.onWorkoutStartedOnWatch = { [weak self] walkId, modeRaw, intervalRaw in
+            self?.handleWatchWorkoutStarted(walkId: walkId, modeRaw: modeRaw, intervalRaw: intervalRaw)
+        }
+
+        // Watch pauses walk → iPhone follows
+        watchConnectivity.onWorkoutPausedOnWatch = { [weak self] in
+            self?.handleWatchWorkoutPaused()
+        }
+
+        // Watch resumes walk → iPhone follows
+        watchConnectivity.onWorkoutResumedOnWatch = { [weak self] in
+            self?.handleWatchWorkoutResumed()
         }
 
         // Scenario 4: Watch ends walk → iPhone stops tracking
@@ -498,15 +792,29 @@ class WalkSessionManager: NSObject, ObservableObject {
         }
     }
 
-    private func handleWatchWorkoutStarted(walkId: UUID) {
+    private func handleWatchWorkoutPaused() {
+        guard isWalking, !isPaused else { return }
+        pauseWalkInternal()
+    }
+
+    private func handleWatchWorkoutResumed() {
+        guard isWalking, isPaused else { return }
+        resumeWalkInternal()
+    }
+
+    private func handleWatchWorkoutStarted(walkId: UUID, modeRaw: String?, intervalRaw: String?) {
         guard !isWalking else { return }
 
         // Start iPhone tracking to complement Watch
-        startWalk(mode: .free, walkId: walkId)
+        let mode = WalkMode(rawValue: modeRaw ?? "") ?? .free
+        let intervalProgram = IntervalProgram(rawValue: intervalRaw ?? "")
+        startWalk(mode: mode, intervalProgram: intervalProgram, walkId: walkId)
 
     }
 
     private func handleWatchWorkoutEnded(_ watchSummary: WorkoutSummaryData) {
+        // Ensure any live activity is dismissed even if iPhone wasn't actively tracking.
+        LiveActivityManager.shared.endActivity()
         if isWalking {
             // Scenario A: Watch ended while iPhone was still tracking — end iPhone walk
             Task {
@@ -520,7 +828,17 @@ class WalkSessionManager: NSObject, ObservableObject {
             enhanceCompletedWalkWithWatchData(summary: watchSummary)
         } else {
             // Scenario C: iPhone wasn't tracking — create walk from Watch data alone
+            // First check if this walk was already saved (prevents duplicate creation)
+            if PersistenceManager.shared.loadTrackedWalk(by: watchSummary.walkId) != nil {
+                // Walk already exists — just enhance it with Watch data
+                enhanceCompletedWalkWithWatchData(summary: watchSummary)
+                return
+            }
+
             let duration = Int(watchSummary.totalSeconds) / 60
+
+            let mode = WalkMode(rawValue: watchSummary.modeRaw ?? "") ?? .free
+            let intervalProgram = IntervalProgram(rawValue: watchSummary.intervalProgramRaw ?? "")
 
             let walk = TrackedWalk(
                 id: watchSummary.walkId,
@@ -529,8 +847,8 @@ class WalkSessionManager: NSObject, ObservableObject {
                 durationMinutes: duration,
                 steps: watchSummary.totalSteps,
                 distanceMeters: watchSummary.totalDistance,
-                mode: .free,
-                intervalProgram: nil,
+                mode: mode,
+                intervalProgram: intervalProgram,
                 intervalCompleted: nil,
                 routeCoordinates: [],
                 heartRateAvg: watchSummary.averageHeartRate,
@@ -554,6 +872,12 @@ class WalkSessionManager: NSObject, ObservableObject {
             walk.heartRateAvg = summary.averageHeartRate
             walk.heartRateMax = summary.maxHeartRate
             walk.activeCalories = summary.totalActiveCalories
+            if let mode = WalkMode(rawValue: summary.modeRaw ?? "") {
+                walk.mode = mode
+            }
+            if let intervalProgram = IntervalProgram(rawValue: summary.intervalProgramRaw ?? "") {
+                walk.intervalProgram = intervalProgram
+            }
             completedWalk = walk
         }
 
@@ -562,6 +886,12 @@ class WalkSessionManager: NSObject, ObservableObject {
             savedWalk.heartRateAvg = summary.averageHeartRate
             savedWalk.heartRateMax = summary.maxHeartRate
             savedWalk.activeCalories = summary.totalActiveCalories
+            if let mode = WalkMode(rawValue: summary.modeRaw ?? "") {
+                savedWalk.mode = mode
+            }
+            if let intervalProgram = IntervalProgram(rawValue: summary.intervalProgramRaw ?? "") {
+                savedWalk.intervalProgram = intervalProgram
+            }
             PersistenceManager.shared.updateTrackedWalk(savedWalk)
         }
     }
@@ -590,8 +920,9 @@ extension WalkSessionManager: CLLocationManagerDelegate {
 
         // Anti-cheat: speed check with cooldown
         if location.speed > maxSpeedMPS {
-            speedViolationTime = Date()
-            pauseWalk()
+            if speedViolationTime == nil {
+                speedViolationTime = Date()
+            }
             return
         }
 

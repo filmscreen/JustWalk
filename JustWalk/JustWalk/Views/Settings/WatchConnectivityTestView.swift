@@ -181,8 +181,10 @@ struct WatchConnectivityTestView: View {
     // MARK: - Callbacks
 
     private func setupCallbacks() {
-        connectivity.onWorkoutStartedOnWatch = { walkId in
-            log(title: "Watch: Workout Started", detail: "Walk ID: \(walkId.uuidString.prefix(8))...", outgoing: false)
+        connectivity.onWorkoutStartedOnWatch = { walkId, modeRaw, intervalRaw in
+            let modeLabel = modeRaw ?? "n/a"
+            let intervalLabel = intervalRaw ?? "n/a"
+            log(title: "Watch: Workout Started", detail: "Walk ID: \(walkId.uuidString.prefix(8))... • mode: \(modeLabel) • interval: \(intervalLabel)", outgoing: false)
         }
 
         connectivity.onWorkoutEndedOnWatch = { summary in

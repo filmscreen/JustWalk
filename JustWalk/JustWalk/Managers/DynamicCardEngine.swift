@@ -2,14 +2,15 @@
 //  DynamicCardEngine.swift
 //  JustWalk
 //
-//  3-tier card evaluation: P1 (urgent) → P2 (contextual) → P3 (fallback tips)
+//  4-tier card evaluation: P0 (smart walk) → P1 (urgent) → P2 (contextual) → P3 (fallback tips)
 //  Always shows one card — never empty.
 //
 
+import Combine
 import Foundation
 
-@Observable
-class DynamicCardEngine {
+@MainActor
+final class DynamicCardEngine: ObservableObject {
     static let shared = DynamicCardEngine()
 
     private let streakManager = StreakManager.shared
@@ -17,7 +18,14 @@ class DynamicCardEngine {
     private let persistence = PersistenceManager.shared
 
     /// Always has a value — guaranteed fallback via P3 tips
-    var currentCard: DynamicCardType = .tip(DailyTip.allTips[0])
+    @Published var currentCard: DynamicCardType = .tip(DailyTip.allTips[0])
+
+    // MARK: - Walk Pattern Analysis
+
+    /// Cached user walk pattern (refreshed periodically)
+    private var cachedWalkPattern: WalkPatternResult?
+    private var lastPatternAnalysis: Date?
+    private let patternAnalysisCooldown: TimeInterval = 3600 // 1 hour
 
     // MARK: - Tip Recency Tracking
 
@@ -116,6 +124,11 @@ class DynamicCardEngine {
     }
 
     private func evaluateInternal(dailyGoal: Int, currentSteps: Int) -> DynamicCardType {
+        // 0. P0 — Smart Walk Invitation (highest priority)
+        if let p0 = evaluateP0SmartWalk(dailyGoal: dailyGoal, currentSteps: currentSteps) {
+            return p0
+        }
+
         // 1. P1 — Urgent
         if let p1 = evaluateP1(dailyGoal: dailyGoal, currentSteps: currentSteps) {
             return p1
@@ -128,6 +141,74 @@ class DynamicCardEngine {
 
         // 3. P3 — Fallback tip (deterministic daily rotation)
         return evaluateP3Tip()
+    }
+
+    // MARK: - P0 Evaluation (Smart Walk Invitation)
+
+    private func evaluateP0SmartWalk(dailyGoal: Int, currentSteps: Int) -> DynamicCardType? {
+        // Skip in testing mode
+        if isTesting { return nil }
+
+        let goalMet = currentSteps >= dailyGoal
+        let stepsRemaining = max(dailyGoal - currentSteps, 0)
+        let hour = Calendar.current.component(.hour, from: Date())
+
+        // Priority 1: Pattern-based suggestion (user typically walks around now)
+        if let patternCheck = isNearTypicalWalkTime(), patternCheck.isNear {
+            let card = DynamicCardType.smartWalkPattern(preferredMode: patternCheck.preferredMode)
+            if canShowToday(card) { return card }
+        }
+
+        // Priority 2: Close to goal (< 1,000 steps remaining)
+        if !goalMet && stepsRemaining < 1000 {
+            let card = DynamicCardType.smartWalkCloseToGoal(stepsRemaining: stepsRemaining)
+            if canShowToday(card) { return card }
+        }
+
+        // Priority 3: Post-meal windows (12:00-1:30pm or 6:00-8:00pm)
+        if !goalMet && isPostMealWindow(hour: hour) {
+            let card = DynamicCardType.smartWalkPostMeal
+            if canShowToday(card) { return card }
+        }
+
+        // Priority 4: Evening rescue (after 6pm, goal not met, < 3,000 steps remaining)
+        if !goalMet && hour >= 18 && stepsRemaining < 3000 && stepsRemaining >= 1000 {
+            let card = DynamicCardType.smartWalkEveningRescue(stepsRemaining: stepsRemaining)
+            if canShowToday(card) { return card }
+        }
+
+        // Priority 5: Morning invitation (6-9am, < 1,000 steps so far)
+        if !goalMet && hour >= 6 && hour < 9 && currentSteps < 1000 {
+            let card = DynamicCardType.smartWalkMorning
+            if canShowToday(card) { return card }
+        }
+
+        // Priority 6: Goal already met (bonus walk suggestion)
+        if goalMet {
+            let card = DynamicCardType.smartWalkGoalMet
+            if canShowToday(card) { return card }
+        }
+
+        // Priority 7: Default (fallback smart walk prompt)
+        // Only show if no other card would show and user hasn't walked today
+        let todayWalks = getTodayWalkCount()
+        if todayWalks == 0 {
+            let card = DynamicCardType.smartWalkDefault
+            if canShowToday(card) { return card }
+        }
+
+        return nil
+    }
+
+    private func isPostMealWindow(hour: Int) -> Bool {
+        // Lunch window: 12:00pm - 1:30pm (hours 12-13)
+        // Dinner window: 6:00pm - 8:00pm (hours 18-19)
+        return (hour >= 12 && hour <= 13) || (hour >= 18 && hour <= 19)
+    }
+
+    private func getTodayWalkCount() -> Int {
+        let log = persistence.loadDailyLog(for: Date())
+        return log?.trackedWalkIDs.count ?? 0
     }
 
     // MARK: - P1 Evaluation (Urgent)
@@ -179,6 +260,15 @@ class DynamicCardEngine {
         if let event = MilestoneManager.shared.popNextTier2() {
             let card = DynamicCardType.milestoneCelebration(event: event)
             if canShowToday(card) { return card }
+        }
+
+        // Insight card (pattern-based personalization, rare)
+        if let insightCard = InsightCardManager.shared.selectInsight() {
+            let card = DynamicCardType.insight(insightCard)
+            if canShowToday(card) {
+                InsightCardManager.shared.markInsightShown(insightCard.type)
+                return card
+            }
         }
 
         // Try intervals: user has free usage remaining
@@ -267,6 +357,11 @@ class DynamicCardEngine {
     private func canShowToday(_ cardType: DynamicCardType) -> Bool {
         let key = cardType.cardKey
 
+        // Allow the currently displayed card to persist across refreshes.
+        if key == currentCard.cardKey {
+            return true
+        }
+
         // Check if acted upon today
         if actedUponToday.contains(key) {
             return false
@@ -280,9 +375,19 @@ class DynamicCardEngine {
 
     private func maxShowsPerDay(for cardType: DynamicCardType) -> Int {
         switch cardType {
+        // P0 — Smart Walk (show once per day each)
+        case .smartWalkPattern:      return 1
+        case .smartWalkPostMeal:     return 1
+        case .smartWalkEveningRescue: return 1
+        case .smartWalkCloseToGoal:  return 1
+        case .smartWalkMorning:      return 1
+        case .smartWalkGoalMet:      return 1
+        case .smartWalkDefault:      return 1
+        // P1 — Urgent
         case .streakAtRisk:          return 1
         case .shieldDeployed:        return 1
         case .welcomeBack:           return 1
+        // P2 — Contextual
         case .almostThere:           return 1
         case .milestoneCelebration:  return 1
         case .tryIntervals:          return 1
@@ -290,6 +395,9 @@ class DynamicCardEngine {
         case .newWeekNewGoal:        return 1
         case .weekendWarrior:        return 1
         case .eveningNudge:          return 1
+        // P2.5 — Insight
+        case .insight:               return 1
+        // P3 — Tips
         case .tip:                   return 999 // tips always available as fallback
         }
     }
@@ -375,6 +483,8 @@ class DynamicCardEngine {
         }
     }
 
+    
+
     // MARK: - Testing Support
 
     func resetForTesting() {
@@ -386,8 +496,108 @@ class DynamicCardEngine {
         isTesting = true
         lastEvaluationTime = nil
         lastResetDate = nil
+        cachedWalkPattern = nil
+        lastPatternAnalysis = nil
         saveShowCounts()
         saveActedUpon()
         saveRecentTipIds()
     }
+
+    // MARK: - Walk Pattern Analysis
+
+    /// Analyzes user's walk history to detect typical walking time and preferred mode
+    private func analyzeWalkPatterns() -> WalkPatternResult? {
+        // Check cache
+        if let cached = cachedWalkPattern,
+           let lastAnalysis = lastPatternAnalysis,
+           Date().timeIntervalSince(lastAnalysis) < patternAnalysisCooldown {
+            return cached
+        }
+
+        // Load recent walks (last 30 days)
+        let allWalks = persistence.loadAllTrackedWalks()
+            .filter(\.isDisplayable)
+
+        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        let recentWalks = allWalks.filter { $0.startTime >= thirtyDaysAgo }
+
+        // Need at least 5 walks to establish a pattern
+        guard recentWalks.count >= 5 else {
+            cachedWalkPattern = nil
+            lastPatternAnalysis = Date()
+            return nil
+        }
+
+        // Analyze walk times (group by hour)
+        let calendar = Calendar.current
+        var hourCounts: [Int: Int] = [:]
+        var modeCounts: [WalkMode: Int] = [:]
+
+        for walk in recentWalks {
+            let hour = calendar.component(.hour, from: walk.startTime)
+            hourCounts[hour, default: 0] += 1
+            modeCounts[walk.mode, default: 0] += 1
+        }
+
+        // Find most common hour (with ±1 hour tolerance)
+        var bestHourRange: (start: Int, count: Int) = (0, 0)
+        for hour in 0..<24 {
+            let count = (hourCounts[hour] ?? 0)
+                + (hourCounts[(hour + 23) % 24] ?? 0)  // hour - 1
+                + (hourCounts[(hour + 1) % 24] ?? 0)   // hour + 1
+            if count > bestHourRange.count {
+                bestHourRange = (hour, count)
+            }
+        }
+
+        // Find most common mode
+        let preferredMode = modeCounts.max(by: { $0.value < $1.value })?.key ?? .free
+
+        // Only return pattern if it's strong enough (at least 40% of walks in that window)
+        let patternStrength = Double(bestHourRange.count) / Double(recentWalks.count)
+        guard patternStrength >= 0.4 else {
+            cachedWalkPattern = nil
+            lastPatternAnalysis = Date()
+            return nil
+        }
+
+        let result = WalkPatternResult(
+            typicalHour: bestHourRange.start,
+            preferredMode: preferredMode,
+            walkCount: recentWalks.count,
+            patternStrength: patternStrength
+        )
+
+        cachedWalkPattern = result
+        lastPatternAnalysis = Date()
+        return result
+    }
+
+    /// Checks if current time is within ±30 minutes of user's typical walk time
+    private func isNearTypicalWalkTime() -> (isNear: Bool, preferredMode: WalkMode)? {
+        guard let pattern = analyzeWalkPatterns() else { return nil }
+
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: Date())
+        let currentMinute = calendar.component(.minute, from: Date())
+
+        // Convert to minutes from midnight for easier comparison
+        let currentMinutes = currentHour * 60 + currentMinute
+        let typicalMinutes = pattern.typicalHour * 60 + 30 // middle of the typical hour
+
+        // Check if within ±30 minutes
+        let difference = abs(currentMinutes - typicalMinutes)
+        let isNear = difference <= 30 || difference >= (24 * 60 - 30) // handle midnight wrap
+
+        return (isNear, pattern.preferredMode)
+    }
+}
+
+// MARK: - Walk Pattern Result
+
+struct WalkPatternResult {
+    let typicalHour: Int          // 0-23, the hour user typically walks
+    let preferredMode: WalkMode   // Most used walk mode
+    let walkCount: Int            // Number of walks analyzed
+    let patternStrength: Double   // 0.0-1.0, how strong the pattern is
 }

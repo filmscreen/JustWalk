@@ -24,21 +24,37 @@ struct WalkActiveView: View {
 
     private var freeWalkBody: some View {
         ZStack {
-            WalkMapView(
-                coordinates: walkSession.routeCoordinates,
-                currentLocation: walkSession.currentLocation
-            )
-            .ignoresSafeArea()
+            // Gradient background (no map)
+            JW.Color.heroGradient
+                .ignoresSafeArea()
 
-            VStack {
+            VStack(spacing: 0) {
+                // Top: minimized stats bar
                 WalkStatsBar(
                     elapsedSeconds: walkSession.elapsedSeconds,
                     steps: walkSession.currentSteps,
                     distanceMeters: walkSession.currentDistance
                 )
+                .padding(.top, JW.Spacing.sm)
 
                 Spacer()
 
+                // Center: large elapsed time display
+                VStack(spacing: 24) {
+                    Image(systemName: "figure.walk")
+                        .font(.system(size: 48, weight: .medium))
+                        .foregroundStyle(JW.Color.accent)
+
+                    Text(formatDuration(walkSession.elapsedSeconds))
+                        .font(.system(size: 72, weight: .bold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(.white)
+                        .contentTransition(.numericText())
+                        .animation(.default, value: walkSession.elapsedSeconds)
+                }
+
+                Spacer()
+
+                // Bottom: controls
                 WalkControlBar(
                     isPaused: walkSession.isPaused,
                     onTogglePause: {
@@ -60,6 +76,14 @@ struct WalkActiveView: View {
             }
             Button("Keep Going", role: .cancel) {}
         }
+    }
+
+    // MARK: - Helpers
+
+    private func formatDuration(_ seconds: Int) -> String {
+        let mins = seconds / 60
+        let secs = seconds % 60
+        return String(format: "%d:%02d", mins, secs)
     }
 }
 

@@ -23,6 +23,7 @@ struct WalkIdleView: View {
     @State private var showCountdown = false
     @State private var pendingIntervalProgram: IntervalProgram? = nil
     @State private var pendingCustomConfig: CustomIntervalConfig? = nil
+    @State private var pendingWalkId: UUID? = nil
 
     private let watchConnectivity = PhoneConnectivityManager.shared
 
@@ -63,7 +64,7 @@ struct WalkIdleView: View {
             }
         }
         .sheet(isPresented: $showPaywall) {
-            PaywallView(onComplete: { showPaywall = false })
+            ProUpgradeView(onComplete: { showPaywall = false })
         }
         .sheet(isPresented: $showUpgradeSheet) {
             WalkUpgradeSheet.interval(onUpgrade: { showPaywall = true })
@@ -75,13 +76,49 @@ struct WalkIdleView: View {
         }
         .fullScreenCover(isPresented: $showCountdown) {
             CountdownView {
-                // Countdown complete — start the walk
+                // Countdown complete — start the walk and notify Watch simultaneously
                 if let program = pendingIntervalProgram {
-                    walkSession.startWalk(mode: .interval, intervalProgram: program)
+                    let walkId = pendingWalkId
+                    walkSession.startWalk(mode: .interval, intervalProgram: program, walkId: walkId)
+
+                    // Notify Watch at the same time iPhone starts
+                    if isWatchAvailable {
+                        let transferData = buildTransferData(
+                            name: program.displayName,
+                            totalSeconds: program.duration * 60,
+                            phases: program.phases
+                        )
+                        watchConnectivity.startWorkoutOnWatch(
+                            walkId: walkId ?? UUID(),
+                            startTime: walkSession.startTime,
+                            intervalData: transferData,
+                            modeRaw: "interval"
+                        )
+                    }
+
                     pendingIntervalProgram = nil
+                    pendingWalkId = nil
                 } else if let config = pendingCustomConfig {
-                    walkSession.startWalk(mode: .interval, customInterval: config)
+                    let walkId = pendingWalkId
+                    walkSession.startWalk(mode: .interval, customInterval: config, walkId: walkId)
+
+                    // Notify Watch at the same time iPhone starts
+                    if isWatchAvailable {
+                        let transferData = buildTransferData(
+                            name: config.displayName,
+                            totalSeconds: config.totalMinutes * 60,
+                            phases: config.phases
+                        )
+                        watchConnectivity.startWorkoutOnWatch(
+                            walkId: walkId ?? UUID(),
+                            startTime: walkSession.startTime,
+                            intervalData: transferData,
+                            modeRaw: "interval"
+                        )
+                    }
+
                     pendingCustomConfig = nil
+                    pendingWalkId = nil
                 }
             }
         }
@@ -142,38 +179,22 @@ struct WalkIdleView: View {
 
         // Note: Usage is recorded after walk completion (in WalkTabView) only if walk >= 5 minutes
 
-        // Always show countdown and start local walk session
+        // Show countdown, then start walk + notify Watch when countdown completes
+        let walkId = UUID()
         pendingIntervalProgram = program
+        pendingWalkId = walkId
         showCountdown = true
-
-        // Also send to Watch if available (Watch will run workout in parallel)
-        if isWatchAvailable {
-            let transferData = buildTransferData(
-                name: program.displayName,
-                totalSeconds: program.duration * 60,
-                phases: program.phases
-            )
-            watchConnectivity.startWorkoutOnWatch(walkId: UUID(), intervalData: transferData)
-        }
         selectedInterval = nil
     }
 
     private func startCustomIntervalWalk(config: CustomIntervalConfig) {
         // Note: Usage is recorded after walk completion (in WalkTabView) only if walk >= 5 minutes
 
-        // Always show countdown and start local walk session
+        // Show countdown, then start walk + notify Watch when countdown completes
+        let walkId = UUID()
         pendingCustomConfig = config
+        pendingWalkId = walkId
         showCountdown = true
-
-        // Also send to Watch if available (Watch will run workout in parallel)
-        if isWatchAvailable {
-            let transferData = buildTransferData(
-                name: config.displayName,
-                totalSeconds: config.totalMinutes * 60,
-                phases: config.phases
-            )
-            watchConnectivity.startWorkoutOnWatch(walkId: UUID(), intervalData: transferData)
-        }
     }
 
     private func buildTransferData(name: String, totalSeconds: Int, phases: [IntervalPhase]) -> IntervalTransferData {

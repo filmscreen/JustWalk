@@ -131,6 +131,8 @@ struct FatBurnActiveWatchView: View {
                     .font(.caption)
             }
             .foregroundStyle(.secondary)
+
+            // End action lives on the controls page.
         }
         .padding(.horizontal)
         .padding(.top, 4)

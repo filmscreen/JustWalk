@@ -14,6 +14,8 @@ struct ShieldDetailSheet: View {
     private var shieldManager = ShieldManager.shared
     private var subscriptionManager = SubscriptionManager.shared
 
+    @State private var showPurchaseSheet = false
+    @State private var showProPaywall = false
 
 
     private var shieldData: ShieldData {
@@ -35,6 +37,7 @@ struct ShieldDetailSheet: View {
                     heroSection
                     infoRows
                     howShieldsWorkSection
+                    purchaseSection
 
                 }
                 .padding()
@@ -47,8 +50,18 @@ struct ShieldDetailSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.large, .medium], selection: .constant(.large))
         .presentationDragIndicator(.visible)
+        .sheet(isPresented: $showPurchaseSheet) {
+            ShieldPurchaseSheet(
+                isPro: isPro,
+                onShieldPurchased: { },
+                onRequestProUpgrade: { showProPaywall = true }
+            )
+        }
+        .sheet(isPresented: $showProPaywall) {
+            ProUpgradeView(onComplete: { showProPaywall = false })
+        }
 
     }
 
@@ -135,6 +148,31 @@ struct ShieldDetailSheet: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var purchaseSection: some View {
+        Group {
+            if shieldData.availableShields == 0 {
+                Button {
+                    JustWalkHaptics.buttonTap()
+                    showPurchaseSheet = true
+                } label: {
+                    HStack {
+                        Image(systemName: "shield.fill")
+                        Text(isPro ? "Buy Shield" : "Get More Shields")
+                            .font(JW.Font.headline)
+                        Spacer()
+                        Text(subscriptionManager.shieldDisplayPrice)
+                            .font(JW.Font.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding()
+                    .background(JW.Color.accentBlue)
+                    .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
+                }
+                .padding(.top, JW.Spacing.sm)
+            }
+        }
     }
 
 

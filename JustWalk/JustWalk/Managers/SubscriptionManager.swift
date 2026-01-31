@@ -16,24 +16,29 @@ class SubscriptionManager: ObservableObject {
     // Product IDs
     static let proAnnualID = "com.onworldtech.justwalk.pro.annual"
     static let proMonthlyID = "com.onworldtech.justwalk.pro.monthly"
+    static let shieldProductID = "com.onworldtech.justwalk.shield"
 
     // State
     var products: [Product] = []
+    var shieldProduct: Product?
     var purchasedProductIDs: Set<String> = []
     var isPro: Bool = false
     var isLoading: Bool = false
 
     private var updateListenerTask: Task<Void, Error>?
 
-    // Tester mode key (works in production for TestFlight testing)
+    // Tester mode key (debug-only)
     private static let testerModeKey = "tester_mode_enabled"
+    private static let lastProStatusKey = "last_known_pro_status"
     
     init() {
         updateListenerTask = listenForTransactions()
-        // Check tester mode (works in production)
+
+        // Check tester mode (works in TestFlight)
         if UserDefaults.standard.bool(forKey: Self.testerModeKey) {
             isPro = true
         }
+
         #if DEBUG
         if UserDefaults.standard.bool(forKey: "debug_overridePro") {
             isPro = true
@@ -57,8 +62,9 @@ class SubscriptionManager: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let productIDs = [Self.proAnnualID, Self.proMonthlyID]
+            let productIDs = [Self.proAnnualID, Self.proMonthlyID, Self.shieldProductID]
             products = try await Product.products(for: productIDs)
+            shieldProduct = products.first { $0.id == Self.shieldProductID }
         } catch {
             print("Failed to load products: \(error)")
         }
@@ -82,6 +88,27 @@ class SubscriptionManager: ObservableObject {
 
         @unknown default:
             return nil
+        }
+    }
+
+    // MARK: - Shield Purchase
+
+    func purchaseShield() async throws -> Bool {
+        guard let product = shieldProduct else {
+            throw StoreError.productNotFound
+        }
+
+        let result = try await product.purchase()
+        switch result {
+        case .success(let verification):
+            let transaction = try checkVerified(verification)
+            ShieldManager.shared.addShields(1)
+            await transaction.finish()
+            return true
+        case .userCancelled, .pending:
+            return false
+        @unknown default:
+            return false
         }
     }
 
@@ -147,17 +174,32 @@ class SubscriptionManager: ObservableObject {
     }
 
     private func updateProStatus() {
-        isPro = purchasedProductIDs.contains(Self.proAnnualID) ||
-                purchasedProductIDs.contains(Self.proMonthlyID)
-        // Tester mode override (works in production)
+        let newIsPro = purchasedProductIDs.contains(Self.proAnnualID) ||
+            purchasedProductIDs.contains(Self.proMonthlyID)
+
+        handleProStatusChange(newIsPro: newIsPro)
+
+        // Tester mode override (works in TestFlight)
         if UserDefaults.standard.bool(forKey: Self.testerModeKey) {
             isPro = true
         }
+
         #if DEBUG
         if UserDefaults.standard.bool(forKey: "debug_overridePro") {
             isPro = true
         }
         #endif
+    }
+
+    private func handleProStatusChange(newIsPro: Bool) {
+        let wasPro = UserDefaults.standard.bool(forKey: Self.lastProStatusKey)
+        isPro = newIsPro
+
+        if newIsPro && !wasPro {
+            ShieldManager.shared.grantProUpgradeShields()
+        }
+
+        UserDefaults.standard.set(newIsPro, forKey: Self.lastProStatusKey)
     }
 
     // MARK: - Product Helpers
@@ -168,6 +210,10 @@ class SubscriptionManager: ObservableObject {
 
     var proMonthlyProduct: Product? {
         products.first { $0.id == Self.proMonthlyID }
+    }
+
+    var shieldDisplayPrice: String {
+        shieldProduct?.displayPrice ?? "$2.99"
     }
 
     // MARK: - Pro Feature Access
@@ -215,17 +261,17 @@ class SubscriptionManager: ObservableObject {
         }
     }
 
-    // MARK: - Tester Mode (Production-safe)
-    
+    // MARK: - Tester Mode (works in TestFlight for beta testing)
+
     var isTesterModeEnabled: Bool {
         UserDefaults.standard.bool(forKey: Self.testerModeKey)
     }
-    
+
     func enableTesterMode() {
         UserDefaults.standard.set(true, forKey: Self.testerModeKey)
         isPro = true
     }
-    
+
     func disableTesterMode() {
         UserDefaults.standard.set(false, forKey: Self.testerModeKey)
         Task { await updatePurchasedProducts() }

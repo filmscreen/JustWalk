@@ -25,6 +25,9 @@ struct GoalSettingView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: JW.Spacing.lg) {
+                    Spacer()
+                        .frame(height: 120)
+
                     // Header
                     VStack(spacing: JW.Spacing.sm) {
                         Text("Your Daily Goal.")
@@ -39,7 +42,6 @@ struct GoalSettingView: View {
                             .padding(.horizontal, JW.Spacing.lg)
                             .staggeredAppearance(index: 1, delay: 0.1)
                     }
-                    .padding(.top, JW.Spacing.xl)
 
                     // Goal options
                     VStack(spacing: JW.Spacing.md) {
@@ -78,12 +80,12 @@ struct GoalSettingView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(JW.Color.accent)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
             }
             .buttonPressEffect()
             .padding(.horizontal, JW.Spacing.xl)
-            .padding(.bottom, JW.Spacing.xl)
+            .padding(.bottom, 40)
             .staggeredAppearance(index: 4, delay: 0.1)
         }
         .sheet(isPresented: $showCustomInput) {

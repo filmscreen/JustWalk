@@ -8,8 +8,19 @@
 import Foundation
 import WatchConnectivity
 import Combine
+import HealthKit
 
 final class PhoneConnectivityManager: NSObject, ObservableObject {
+
+    // MARK: - Complication Push Keys
+    /// Keys used for complication-specific data transfer
+    private enum ComplicationKey {
+        static let isComplicationUpdate = "isComplicationUpdate"
+        static let todaySteps = "complication_todaySteps"
+        static let stepGoal = "complication_stepGoal"
+        static let currentStreak = "complication_currentStreak"
+        static let timestamp = "complication_timestamp"
+    }
 
     // MARK: - Singleton
 
@@ -19,12 +30,17 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
 
     @Published private(set) var isWatchAppInstalled = false
     @Published private(set) var isWatchReachable = false
+    @Published private(set) var isWatchPaired = false
+    @Published private(set) var isWatchStateKnown = false
     @Published private(set) var watchWorkoutState: WorkoutState = .idle
     @Published private(set) var latestWatchStats: WorkoutLiveStats?
+    @Published private(set) var isWatchConnectedStable = false
 
     // MARK: - Callbacks
 
-    var onWorkoutStartedOnWatch: ((UUID) -> Void)?
+    var onWorkoutStartedOnWatch: ((UUID, String?, String?) -> Void)?
+    var onWorkoutPausedOnWatch: (() -> Void)?
+    var onWorkoutResumedOnWatch: (() -> Void)?
     var onWorkoutEndedOnWatch: ((WorkoutSummaryData) -> Void)?
     var onWatchError: ((String) -> Void)?
 
@@ -33,6 +49,9 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
     private var session: WCSession?
     private var pendingMessages: [[String: Any]] = []
     private var currentWalkId: UUID?
+    private var pendingStart: (walkId: UUID, startTime: Date?, intervalData: IntervalTransferData?, modeRaw: String?, zoneLow: Int?, zoneHigh: Int?)?
+    private let healthStore = HKHealthStore()
+    private var connectionDebounceTimer: Timer?
 
     // MARK: - Initialization
 
@@ -60,23 +79,73 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
         return session.isPaired && session.isWatchAppInstalled
     }
 
+    /// Check if a Watch is paired (even if app not installed)
+    var isWatchPairedNow: Bool {
+        session?.isPaired ?? false
+    }
+
+    private func updateStableConnectionState() {
+        connectionDebounceTimer?.invalidate()
+        let newValue = canCommunicateWithWatch
+        connectionDebounceTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: false) { [weak self] _ in
+            guard let self else { return }
+            DispatchQueue.main.async {
+                self.isWatchConnectedStable = newValue
+            }
+        }
+    }
+
     /// Check if Watch is immediately reachable
     var isWatchImmediatelyReachable: Bool {
         session?.isReachable ?? false
     }
 
     /// Start workout on Watch (called when iPhone starts a walk)
-    func startWorkoutOnWatch(walkId: UUID, intervalData: IntervalTransferData? = nil, completion: ((Bool) -> Void)? = nil) {
+    func startWorkoutOnWatch(
+        walkId: UUID,
+        startTime: Date? = nil,
+        intervalData: IntervalTransferData? = nil,
+        modeRaw: String? = nil,
+        zoneLow: Int? = nil,
+        zoneHigh: Int? = nil,
+        completion: ((Bool) -> Void)? = nil
+    ) {
         self.currentWalkId = walkId
+        pendingStart = (walkId, startTime, intervalData, modeRaw, zoneLow, zoneHigh)
+        requestWatchAppLaunchIfPossible()
 
-        let message = WatchMessage.startWorkout(walkId: walkId, intervalData: intervalData)
+        let message = WatchMessage.startWorkout(
+            walkId: walkId,
+            startTime: startTime,
+            intervalData: intervalData,
+            modeRaw: modeRaw,
+            intervalProgramRaw: nil,
+            zoneLow: zoneLow,
+            zoneHigh: zoneHigh
+        )
         sendMessage(message, requiresImmediateDelivery: true) { success in
             if !success {
                 // Fallback: update application context
-                self.updateApplicationContext(workoutState: .active, walkId: walkId)
+                self.updateApplicationContext(
+                    workoutState: .active,
+                    walkId: walkId,
+                    startTime: startTime,
+                    intervalData: intervalData,
+                    modeRaw: modeRaw,
+                    zoneLow: zoneLow,
+                    zoneHigh: zoneHigh
+                )
             }
             completion?(success)
         }
+    }
+
+    private func requestWatchAppLaunchIfPossible() {
+        guard canCommunicateWithWatch, HKHealthStore.isHealthDataAvailable() else { return }
+        let configuration = HKWorkoutConfiguration()
+        configuration.activityType = .walking
+        configuration.locationType = .outdoor
+        healthStore.startWatchApp(with: configuration) { _, _ in }
     }
 
     /// Pause workout on Watch
@@ -115,8 +184,95 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
                 self.updateApplicationContext(workoutState: .ending, walkId: walkId)
             }
             self.currentWalkId = nil
+            self.pendingStart = nil
             completion?(success)
         }
+    }
+
+    /// Trigger a strong phase-change haptic on Watch (best-effort)
+    func triggerPhaseChangeHapticOnWatch() {
+        let message: [String: Any] = [
+            WatchMessage.Key.command.rawValue: WatchMessage.Command.phaseChangeHaptic.rawValue,
+            WatchMessage.Key.timestamp.rawValue: Date().timeIntervalSince1970
+        ]
+        sendMessage(message, requiresImmediateDelivery: true)
+    }
+
+    /// Trigger a countdown warning haptic on Watch (10 seconds before phase change)
+    func triggerCountdownWarningOnWatch() {
+        let message: [String: Any] = [
+            WatchMessage.Key.command.rawValue: WatchMessage.Command.countdownWarningHaptic.rawValue,
+            WatchMessage.Key.timestamp.rawValue: Date().timeIntervalSince1970
+        ]
+        sendMessage(message, requiresImmediateDelivery: true)
+    }
+
+    /// Trigger a milestone haptic on Watch (e.g., 5-minute halfway point)
+    func triggerMilestoneHapticOnWatch() {
+        let message: [String: Any] = [
+            WatchMessage.Key.command.rawValue: WatchMessage.Command.milestoneHaptic.rawValue,
+            WatchMessage.Key.timestamp.rawValue: Date().timeIntervalSince1970
+        ]
+        sendMessage(message, requiresImmediateDelivery: true)
+    }
+
+    /// Sync streak + goal data to Watch (for watch app + complications)
+    func syncStreakInfoToWatch() {
+        let streak = StreakManager.shared.streakData
+        let goal = PersistenceManager.shared.loadProfile().dailyStepGoal
+        let message: [String: Any] = [
+            WatchMessage.Key.command.rawValue: WatchMessage.Command.syncStreakInfo.rawValue,
+            WatchMessage.Key.streakCurrent.rawValue: streak.currentStreak,
+            WatchMessage.Key.streakLongest.rawValue: streak.longestStreak,
+            WatchMessage.Key.dailyGoal.rawValue: goal,
+            WatchMessage.Key.timestamp.rawValue: Date().timeIntervalSince1970
+        ]
+
+        // Best-effort immediate send + guaranteed context update
+        sendMessage(message, requiresImmediateDelivery: false)
+        updateApplicationContextForStreak(message)
+    }
+
+    // MARK: - Complication Push (Industry-Leading Refresh)
+
+    /// Push step data directly to Watch complications using the dedicated complication channel.
+    /// This uses `transferCurrentComplicationUserInfo()` which has its OWN SEPARATE BUDGET
+    /// from WidgetKit's reloadAllTimelines(). Apple provides ~50 complication pushes per day
+    /// specifically for this purpose, making it the most reliable way to update complications.
+    ///
+    /// Call this whenever step data changes significantly (e.g., every 500 steps or 5 minutes).
+    func pushComplicationUpdate(todaySteps: Int, stepGoal: Int, currentStreak: Int) {
+        guard let session = session, session.isWatchAppInstalled else { return }
+
+        // Check remaining complication transfers to avoid wasting budget
+        #if os(iOS)
+        guard session.remainingComplicationUserInfoTransfers > 0 else {
+            print("Complication budget exhausted for today")
+            return
+        }
+        #endif
+
+        let complicationData: [String: Any] = [
+            ComplicationKey.isComplicationUpdate: true,
+            ComplicationKey.todaySteps: todaySteps,
+            ComplicationKey.stepGoal: stepGoal,
+            ComplicationKey.currentStreak: currentStreak,
+            ComplicationKey.timestamp: Date().timeIntervalSince1970
+        ]
+
+        // This method has PRIORITY delivery and separate budget from regular transfers.
+        // It will wake the watch app/extension and trigger complication reload.
+        session.transferCurrentComplicationUserInfo(complicationData)
+        print("Pushed complication update: \(todaySteps) steps (budget remaining: \(session.remainingComplicationUserInfoTransfers))")
+    }
+
+    /// Check how many complication pushes remain today
+    var remainingComplicationBudget: Int {
+        #if os(iOS)
+        return session?.remainingComplicationUserInfoTransfers ?? 0
+        #else
+        return 0
+        #endif
     }
 
     // MARK: - Private Methods
@@ -144,23 +300,53 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
         }
     }
 
-    private func updateApplicationContext(workoutState: WorkoutState, walkId: UUID?) {
+    private func updateApplicationContext(
+        workoutState: WorkoutState,
+        walkId: UUID?,
+        startTime: Date? = nil,
+        intervalData: IntervalTransferData? = nil,
+        modeRaw: String? = nil,
+        zoneLow: Int? = nil,
+        zoneHigh: Int? = nil
+    ) {
         guard let session = session else { return }
-
-        let context = AppContext(
-            workoutState: workoutState,
-            currentWalkId: walkId,
-            isPro: SubscriptionManager.shared.isPro,
-            lastSyncTime: Date()
-        )
-
+        var context: [String: Any] = [
+            WatchMessage.Key.command.rawValue: workoutState == .ending
+                ? WatchMessage.Command.endWorkout.rawValue
+                : WatchMessage.Command.startWorkout.rawValue,
+            WatchMessage.Key.walkId.rawValue: walkId?.uuidString ?? "",
+            "workoutState": workoutState.rawValue,
+            "isPro": SubscriptionManager.shared.isPro,
+            "lastSyncTime": Date()
+        ]
+        if let startTime {
+            context[WatchMessage.Key.startTime.rawValue] = startTime.timeIntervalSince1970
+        }
+        if let intervalData, let data = try? JSONEncoder().encode(intervalData) {
+            context[WatchMessage.Key.intervalData.rawValue] = data
+        }
+        if let modeRaw {
+            context[WatchMessage.Key.modeRaw.rawValue] = modeRaw
+        }
+        if let zoneLow {
+            context[WatchMessage.Key.zoneLow.rawValue] = zoneLow
+        }
+        if let zoneHigh {
+            context[WatchMessage.Key.zoneHigh.rawValue] = zoneHigh
+        }
         do {
-            let data = try JSONEncoder().encode(context)
-            if let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                try session.updateApplicationContext(dict)
-            }
+            try session.updateApplicationContext(context)
         } catch {
             print("Failed to update application context: \(error)")
+        }
+    }
+
+    private func updateApplicationContextForStreak(_ message: [String: Any]) {
+        guard let session = session else { return }
+        do {
+            try session.updateApplicationContext(message)
+        } catch {
+            print("Failed to update streak context: \(error)")
         }
     }
 
@@ -173,20 +359,25 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
             case .workoutStarted:
                 if let walkIdString = message[WatchMessage.Key.walkId.rawValue] as? String,
                    let walkId = UUID(uuidString: walkIdString) {
+                    let modeRaw = message[WatchMessage.Key.modeRaw.rawValue] as? String
+                    let intervalRaw = message[WatchMessage.Key.intervalProgramRaw.rawValue] as? String
                     DispatchQueue.main.async {
                         self.watchWorkoutState = .active
-                        self.onWorkoutStartedOnWatch?(walkId)
+                        self.pendingStart = nil
+                        self.onWorkoutStartedOnWatch?(walkId, modeRaw, intervalRaw)
                     }
                 }
 
             case .workoutPaused:
                 DispatchQueue.main.async {
                     self.watchWorkoutState = .paused
+                    self.onWorkoutPausedOnWatch?()
                 }
 
             case .workoutResumed:
                 DispatchQueue.main.async {
                     self.watchWorkoutState = .active
+                    self.onWorkoutResumedOnWatch?()
                 }
 
             case .workoutEnded:
@@ -195,6 +386,7 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
                     DispatchQueue.main.async {
                         self.watchWorkoutState = .idle
                         self.currentWalkId = nil
+                        self.pendingStart = nil
                         self.onWorkoutEndedOnWatch?(summary)
                     }
                 }
@@ -214,6 +406,16 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
                     }
                 }
 
+            case .fatBurnOutOfRangeLow:
+                DispatchQueue.main.async {
+                    JustWalkHaptics.fatBurnOutOfRangeLow()
+                }
+
+            case .fatBurnOutOfRangeHigh:
+                DispatchQueue.main.async {
+                    JustWalkHaptics.fatBurnOutOfRangeHigh()
+                }
+
             case .workoutError:
                 if let error = message[WatchMessage.Key.error.rawValue] as? String {
                     DispatchQueue.main.async {
@@ -222,6 +424,20 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
                 }
             }
         }
+    }
+
+    private func retryPendingStartIfNeeded() {
+        guard let pendingStart = pendingStart else { return }
+        let message = WatchMessage.startWorkout(
+            walkId: pendingStart.walkId,
+            startTime: pendingStart.startTime,
+            intervalData: pendingStart.intervalData,
+            modeRaw: pendingStart.modeRaw,
+            intervalProgramRaw: nil,
+            zoneLow: pendingStart.zoneLow,
+            zoneHigh: pendingStart.zoneHigh
+        )
+        sendMessage(message, requiresImmediateDelivery: true)
     }
 }
 
@@ -233,12 +449,16 @@ extension PhoneConnectivityManager: WCSessionDelegate {
         DispatchQueue.main.async {
             self.isWatchAppInstalled = session.isWatchAppInstalled
             self.isWatchReachable = session.isReachable
+            self.isWatchPaired = session.isPaired
+            self.isWatchStateKnown = true
         }
+        updateStableConnectionState()
 
         // Send any pending messages
         if activationState == .activated && session.isReachable {
             pendingMessages.forEach { sendMessage($0, requiresImmediateDelivery: false) }
             pendingMessages.removeAll()
+            retryPendingStartIfNeeded()
         }
     }
 
@@ -255,17 +475,25 @@ extension PhoneConnectivityManager: WCSessionDelegate {
         DispatchQueue.main.async {
             self.isWatchAppInstalled = session.isWatchAppInstalled
             self.isWatchReachable = session.isReachable
+            self.isWatchPaired = session.isPaired
+            self.isWatchStateKnown = true
         }
+        updateStableConnectionState()
     }
 
     func sessionReachabilityDidChange(_ session: WCSession) {
         DispatchQueue.main.async {
             self.isWatchReachable = session.isReachable
         }
+        updateStableConnectionState()
 
         // Watch reconnected during an active walk — sync state
-        if session.isReachable && watchWorkoutState == .active, let walkId = currentWalkId {
-            updateApplicationContext(workoutState: .active, walkId: walkId)
+        if session.isReachable {
+            if watchWorkoutState == .active, let walkId = currentWalkId {
+                updateApplicationContext(workoutState: .active, walkId: walkId)
+            } else {
+                retryPendingStartIfNeeded()
+            }
         }
     }
 
@@ -286,6 +514,7 @@ extension PhoneConnectivityManager: WCSessionDelegate {
 
     // Receive application context update
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-        // Handle context update from Watch if needed
+        // Handle context updates from Watch (e.g., workout ended fallback)
+        handleReceivedMessage(applicationContext)
     }
 }

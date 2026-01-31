@@ -42,6 +42,8 @@ private enum WidgetColors {
 
 struct JustWalkWidgetData {
     static let appGroupID = "group.com.justwalk.shared"
+    private static var lastWidgetRefresh: Date = .distantPast
+    private static let widgetRefreshThrottle: TimeInterval = 1800
 
     static var sharedDefaults: UserDefaults {
         UserDefaults(suiteName: appGroupID) ?? .standard
@@ -81,6 +83,15 @@ struct JustWalkWidgetData {
         sharedDefaults.set(currentStreak, forKey: "widget_currentStreak")
         sharedDefaults.set(weekSteps, forKey: "widget_weekSteps")
         sharedDefaults.set(shieldCount, forKey: "widget_shieldCount")
+        refreshWidgetsIfNeeded()
+    }
+
+    private static func refreshWidgetsIfNeeded(force: Bool = false) {
+        let now = Date()
+        if !force && now.timeIntervalSince(lastWidgetRefresh) < widgetRefreshThrottle {
+            return
+        }
+        lastWidgetRefresh = now
         WidgetCenter.shared.reloadAllTimelines()
     }
 }
@@ -178,27 +189,27 @@ struct TodayWidgetView: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(WidgetColors.ringStart.opacity(0.15), lineWidth: 8)
-                .padding(16)
+                .stroke(WidgetColors.ringStart.opacity(0.15), lineWidth: 10)
+                .padding(10)
 
-            Circle()
-                .trim(from: 0, to: entry.stepProgress)
-                .stroke(
-                    entry.goalComplete
-                        ? AnyShapeStyle(WidgetColors.success)
-                        : AnyShapeStyle(WidgetColors.ringGradient),
-                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
-                )
-                .rotationEffect(.degrees(-90))
-                .padding(16)
+                Circle()
+                    .trim(from: 0, to: entry.stepProgress)
+                    .stroke(
+                        entry.goalComplete
+                            ? AnyShapeStyle(WidgetColors.success)
+                            : AnyShapeStyle(WidgetColors.ringGradient),
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .padding(10)
 
             VStack(spacing: 4) {
                 Image(systemName: "figure.walk")
-                    .font(.system(size: 20, weight: .medium))
+                    .font(.system(size: 24, weight: .medium))
                     .foregroundStyle(WidgetColors.accent)
 
                 Text(entry.todaySteps.formatted())
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
                     .monospacedDigit()
             }
         }
@@ -229,20 +240,20 @@ struct StreakWidgetView: View {
     var body: some View {
         VStack(spacing: 4) {
             Image(systemName: "flame.fill")
-                .font(.system(size: 36))
+                .font(.system(size: 40))
                 .foregroundStyle(flameGradient)
 
             Text("\(entry.currentStreak)")
-                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .font(.system(size: 44, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
 
             Text(entry.currentStreak == 1 ? "day" : "days")
-                .font(.system(size: 14))
+                .font(.system(size: 15))
                 .foregroundStyle(.secondary)
         }
-        .padding(16)
+        .padding(12)
     }
 
     private var flameGradient: some ShapeStyle {
@@ -286,7 +297,7 @@ struct TodayStreakWidgetView: View {
             // Ring
             ZStack {
                 Circle()
-                    .stroke(WidgetColors.ringStart.opacity(0.15), lineWidth: 8)
+                    .stroke(WidgetColors.ringStart.opacity(0.15), lineWidth: 9)
 
                 Circle()
                     .trim(from: 0, to: entry.stepProgress)
@@ -294,17 +305,17 @@ struct TodayStreakWidgetView: View {
                         entry.goalComplete
                             ? AnyShapeStyle(WidgetColors.success)
                             : AnyShapeStyle(WidgetColors.ringGradient),
-                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 9, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
 
                 Text(entry.todaySteps.formatted())
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
             }
-            .frame(width: 90, height: 90)
+            .frame(width: 100, height: 100)
 
             VStack(alignment: .leading, spacing: 8) {
                 // Streak
@@ -398,12 +409,12 @@ struct ThisWeekWidgetView: View {
                             .frame(height: barHeight(for: steps))
 
                         Text(dayLabels[index % dayLabels.count])
-                            .font(.system(size: 9))
+                            .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                     }
                 }
             }
-            .frame(maxHeight: 80)
+            .frame(maxHeight: 86)
 
             // Goal line label
             HStack {
@@ -411,7 +422,7 @@ struct ThisWeekWidgetView: View {
                     .fill(Color.secondary.opacity(0.3))
                     .frame(height: 1)
                 Text("\(entry.stepGoal.formatted()) goal")
-                    .font(.system(size: 8))
+                    .font(.system(size: 9))
                     .foregroundStyle(.secondary)
                     .fixedSize()
             }
@@ -453,7 +464,7 @@ struct ShieldsWidgetView: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: entry.shieldCount > 0 ? "shield.fill" : "shield")
-                .font(.system(size: 36))
+                .font(.system(size: 40))
                 .foregroundStyle(entry.shieldCount > 0 ? WidgetColors.shield : .gray)
 
             VStack(spacing: 2) {

@@ -76,11 +76,11 @@ class LocationInsightsService {
               let decoded = try? JSONDecoder().decode(LandmarkData.self, from: data) else {
             // Fallback: empty data with universal defaults
             return LandmarkData(cities: [:], regions: [:], universal: [
-                LandmarkEntry(miles: 5, text: "a solid morning walk"),
-                LandmarkEntry(miles: 10, text: "further than most walk in a week"),
-                LandmarkEntry(miles: 26, text: "a full marathon"),
-                LandmarkEntry(miles: 50, text: "a truly impressive distance"),
-                LandmarkEntry(miles: 100, text: "a journey")
+                LandmarkEntry(miles: 5, text: "a typical morning walk"),
+                LandmarkEntry(miles: 10, text: "about 20,000 steps"),
+                LandmarkEntry(miles: 26, text: "a full marathon distance"),
+                LandmarkEntry(miles: 50, text: "about 100,000 steps"),
+                LandmarkEntry(miles: 100, text: "nearly four marathons")
             ])
         }
         return decoded
@@ -186,7 +186,7 @@ class LocationInsightsService {
             return "That's \(landmark.text)."
         }
 
-        return "That's solid."
+        return "That's about \(miles * 2000) steps."
     }
 
     private func findClosestLandmark(miles: Int, in landmarks: [LandmarkEntry]) -> LandmarkEntry? {

@@ -27,6 +27,7 @@ struct PostMealCountdownView: View {
                 PostMealCompletionView(walk: walk) {
                     onFlowComplete()
                 }
+                .id(walk.id) // Stable identity prevents view recreation during parent re-renders
                 .transition(.scaleUp)
             } else {
                 PostMealActiveView()
@@ -49,6 +50,11 @@ struct PostMealCountdownView: View {
 
     private func startPostMealWalk() {
         walkSession.startWalk(mode: .postMeal)
+
+        let watchConnectivity = PhoneConnectivityManager.shared
+        if watchConnectivity.canCommunicateWithWatch, let walkId = walkSession.currentWalkId {
+            watchConnectivity.startWorkoutOnWatch(walkId: walkId, startTime: walkSession.startTime, modeRaw: "postMeal")
+        }
     }
 }
 

@@ -220,6 +220,81 @@ class MilestoneManager: ObservableObject {
         defaults.set(dailyCountsDate, forKey: Keys.dailyCountsDate)
     }
 
+    // MARK: - Cloud Sync
+
+    struct MilestoneState: Codable {
+        var triggeredMilestones: [String: Date]
+        var pendingFullscreen: MilestoneEvent?
+        var pendingTier2: [MilestoneEvent]
+        var pendingToasts: [MilestoneEvent]
+        var dailyCounts: [Int: Int]
+        var dailyCountsDate: String
+    }
+
+    func exportState() -> MilestoneState {
+        MilestoneState(
+            triggeredMilestones: triggeredMilestones,
+            pendingFullscreen: pendingFullscreen,
+            pendingTier2: pendingTier2,
+            pendingToasts: pendingToasts,
+            dailyCounts: dailyCounts,
+            dailyCountsDate: dailyCountsDate
+        )
+    }
+
+    func mergeFromCloud(_ remote: MilestoneState, isFreshInstall: Bool) {
+        if isFreshInstall {
+            triggeredMilestones = remote.triggeredMilestones
+            pendingFullscreen = remote.pendingFullscreen
+            pendingTier2 = remote.pendingTier2
+            pendingToasts = remote.pendingToasts
+            dailyCounts = remote.dailyCounts
+            dailyCountsDate = remote.dailyCountsDate
+            save()
+            return
+        }
+
+        // Merge triggered milestones: keep the most recent date per key
+        for (id, date) in remote.triggeredMilestones {
+            let localDate = triggeredMilestones[id] ?? .distantPast
+            if date > localDate {
+                triggeredMilestones[id] = date
+            }
+        }
+
+        // Merge pending queues by unique id
+        if let remoteFullscreen = remote.pendingFullscreen {
+            if pendingFullscreen == nil {
+                pendingFullscreen = remoteFullscreen
+            }
+        }
+
+        let localTier2IDs = Set(pendingTier2.map(\.id))
+        let newTier2 = remote.pendingTier2.filter { !localTier2IDs.contains($0.id) }
+        if !newTier2.isEmpty {
+            pendingTier2.append(contentsOf: newTier2)
+        }
+
+        let localToastIDs = Set(pendingToasts.map(\.id))
+        let newToasts = remote.pendingToasts.filter { !localToastIDs.contains($0.id) }
+        if !newToasts.isEmpty {
+            pendingToasts.append(contentsOf: newToasts)
+        }
+
+        // Daily counts: take the newer date, or max counts if same date
+        if remote.dailyCountsDate > dailyCountsDate {
+            dailyCountsDate = remote.dailyCountsDate
+            dailyCounts = remote.dailyCounts
+        } else if remote.dailyCountsDate == dailyCountsDate {
+            for (key, value) in remote.dailyCounts {
+                let localValue = dailyCounts[key] ?? 0
+                dailyCounts[key] = max(localValue, value)
+            }
+        }
+
+        save()
+    }
+
     // MARK: - Debug / Reset
 
     #if DEBUG

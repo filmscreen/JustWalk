@@ -9,24 +9,15 @@ import SwiftUI
 
 struct WalksWatchView: View {
     @EnvironmentObject var appState: WatchAppState
-    @ObservedObject private var connectivity = WatchConnectivityManager.shared
-
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
-                // Header with phone indicator
+                // Header
                 HStack {
                     Text("Walks")
                         .font(.headline)
 
                     Spacer()
-
-                    if !connectivity.isPhoneReachable {
-                        Image(systemName: "iphone.slash")
-                            .foregroundStyle(.orange)
-                            .font(.caption)
-                            .accessibilityLabel("iPhone not reachable")
-                    }
                 }
 
                 // Intervals

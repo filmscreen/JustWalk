@@ -51,6 +51,8 @@ class CloudKitSyncManager {
 
     // Fixed record IDs for single-instance records
     private let gameStateRecordName = "UserGameState_v1"
+    private let userSettingsRecordKey = "userSettingsJSON"
+    private let milestoneStateRecordKey = "milestoneStateJSON"
 
     // Debounce
     private var pushWorkItem: DispatchWorkItem?
@@ -69,43 +71,168 @@ class CloudKitSyncManager {
 
     private let logger = Logger(subsystem: "onworldtech.JustWalk", category: "CloudKitSync")
 
+    var isSyncEnabled: Bool {
+        UserDefaults.standard.bool(forKey: "iCloudSyncEnabled")
+    }
+
     private init() {
         container = CKContainer(identifier: "iCloud.onworldtech.JustWalk")
         privateDB = container.privateCloudDatabase
         zoneID = CKRecordZone.ID(zoneName: "JustWalkZone", ownerName: CKCurrentUserDefaultName)
+
+        UserDefaults.standard.register(defaults: [
+            "iCloudSyncEnabled": true
+        ])
+    }
+
+    // Track zone creation state
+    private var zoneReady = false
+    private var pendingPushAfterZone = false
+    private var observersRegistered = false
+
+    // MARK: - Error Logging Helper
+
+    private func logCKError(_ error: Error, context: String) {
+        if let ckError = error as? CKError {
+            logger.error("❌ \(context): CKError code=\(ckError.code.rawValue) - \(ckError.localizedDescription)")
+
+            switch ckError.code {
+            case .zoneNotFound:
+                logger.error("   🔴 ZONE NOT FOUND - CloudKit zone was never created!")
+            case .unknownItem:
+                logger.error("   🔴 UNKNOWN ITEM - Record doesn't exist in CloudKit")
+            case .networkFailure:
+                logger.error("   🔴 NETWORK FAILURE - Check internet connection")
+            case .networkUnavailable:
+                logger.error("   🔴 NETWORK UNAVAILABLE - No network")
+            case .serviceUnavailable:
+                logger.error("   🔴 SERVICE UNAVAILABLE - CloudKit is down")
+            case .notAuthenticated:
+                logger.error("   🔴 NOT AUTHENTICATED - User not signed into iCloud!")
+            case .permissionFailure:
+                logger.error("   🔴 PERMISSION FAILURE - Check entitlements!")
+            case .serverRecordChanged:
+                logger.error("   🔴 SERVER RECORD CHANGED - Conflict detected")
+            case .partialFailure:
+                if let partialErrors = ckError.partialErrorsByItemID {
+                    for (itemID, itemError) in partialErrors {
+                        logger.error("   🔴 Partial error for \(itemID): \(itemError.localizedDescription)")
+                    }
+                }
+            default:
+                logger.error("   🔴 Other CKError code: \(ckError.code.rawValue)")
+            }
+        } else {
+            logger.error("❌ \(context): Non-CK error - \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Setup
 
-    func setup() {
-        createZoneIfNeeded()
-        observePersistenceNotifications()
-        pullFromCloud()
+    /// Sets up CloudKit sync. Returns true if setup succeeded, false otherwise.
+    /// IMPORTANT: This is now async and WAITS for zone creation to complete.
+    @discardableResult
+    func setup() async -> Bool {
+        logger.info("🔧 CloudKit setup() called")
+        guard isSyncEnabled else {
+            logger.warning("⚠️ CloudKit sync is DISABLED - skipping setup")
+            return false
+        }
+        logger.info("✅ CloudKit sync is enabled, proceeding with setup")
+
+        // WAIT for zone creation to complete before proceeding
+        let zoneCreated = await createZoneIfNeeded()
+        guard zoneCreated else {
+            logger.error("❌ Zone creation failed - cannot proceed with CloudKit sync")
+            return false
+        }
+
+        // Zone is ready - set up notification observers
+        await MainActor.run {
+            zoneReady = true
+            observePersistenceNotifications()
+        }
+
+        logger.info("✅ CloudKit setup complete - zone exists, observers registered")
+        return true
     }
 
-    private func createZoneIfNeeded() {
-        let zone = CKRecordZone(zoneID: zoneID)
-        let operation = CKModifyRecordZonesOperation(recordZonesToSave: [zone])
-        operation.modifyRecordZonesResultBlock = { [weak self] result in
-            switch result {
-            case .success:
-                self?.logger.info("CloudKit zone ready")
-            case .failure(let error):
-                self?.logger.error("Failed to create zone: \(error.localizedDescription)")
-            }
+    /// Synchronous setup for backward compatibility - use async version when possible
+    func setupSync() {
+        Task {
+            await setup()
         }
-        privateDB.add(operation)
+    }
+
+    /// Creates the CloudKit zone if it doesn't exist. Returns true on success.
+    private func createZoneIfNeeded() async -> Bool {
+        logger.info("📦 Creating CloudKit zone: \(self.zoneID.zoneName)")
+
+        // First check if zone already exists
+        do {
+            let existingZones = try await privateDB.allRecordZones()
+            if existingZones.contains(where: { $0.zoneID.zoneName == zoneID.zoneName }) {
+                logger.info("✅ Zone already exists: \(self.zoneID.zoneName)")
+                return true
+            }
+        } catch {
+            logger.error("❌ Failed to check existing zones: \(error.localizedDescription)")
+            // Continue to try creating the zone anyway
+        }
+
+        // Zone doesn't exist, create it
+        do {
+            let zone = CKRecordZone(zoneID: zoneID)
+            _ = try await privateDB.save(zone)
+            logger.info("✅ CloudKit zone created: \(self.zoneID.zoneName)")
+            return true
+        } catch {
+            // Check if it's a "zone already exists" error - that's fine
+            if let ckError = error as? CKError {
+                // partialFailure with zoneExists or serverRecordChanged means zone exists
+                if ckError.code == .serverRecordChanged || ckError.code == .partialFailure {
+                    logger.info("ℹ️ Zone already exists (from error), treating as success")
+                    return true
+                }
+            }
+            logger.error("❌ Failed to create zone: \(error.localizedDescription)")
+            logCKError(error, context: "Zone creation")
+            return false
+        }
     }
 
     private func observePersistenceNotifications() {
-        let names: [Notification.Name] = [
-            .didSaveStreakData,
-            .didSaveShieldData,
-            .didSaveDailyLog,
-            .didSaveTrackedWalk,
-            .didSaveProfile
+        // Prevent registering observers multiple times
+        guard !observersRegistered else {
+            logger.info("ℹ️ Observers already registered, skipping")
+            return
+        }
+        observersRegistered = true
+
+        // Critical data gets immediate push (no debounce - can't risk losing this data)
+        let criticalNames: [Notification.Name] = [
+            .didSaveTrackedWalk,  // Walk history is irreplaceable
+            .didSaveShieldData,   // Shield balance must sync immediately (prevents duplication/loss)
+            .didSaveDailyLog      // Goal status & shield usage per day is critical for streak integrity
         ]
-        for name in names {
+        for name in criticalNames {
+            NotificationCenter.default.addObserver(
+                forName: name,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self, !self.isMerging else { return }
+                // Push immediately - critical data that must sync ASAP
+                self.pushAllToCloud()
+            }
+        }
+
+        // Less critical data uses debounced push (reduces API calls)
+        let debouncedNames: [Notification.Name] = [
+            .didSaveStreakData,  // Can be recalculated from DailyLogs
+            .didSaveProfile      // User preferences, not critical
+        ]
+        for name in debouncedNames {
             NotificationCenter.default.addObserver(
                 forName: name,
                 object: nil,
@@ -120,6 +247,7 @@ class CloudKitSyncManager {
     // MARK: - Debounced Push
 
     func schedulePush() {
+        guard isSyncEnabled else { return }
         pushWorkItem?.cancel()
         let item = DispatchWorkItem { [weak self] in
             self?.pushAllToCloud()
@@ -128,9 +256,142 @@ class CloudKitSyncManager {
         DispatchQueue.main.asyncAfter(deadline: .now() + debounceInterval, execute: item)
     }
 
+    // MARK: - Zone Verification
+
+    /// Debug function to check if our CloudKit zone exists
+    func verifyZoneExists() async -> Bool {
+        logger.info("🔍 Verifying zone exists...")
+
+        do {
+            let zones = try await privateDB.allRecordZones()
+            logger.info("   Found \(zones.count) zones in private database:")
+            for zone in zones {
+                logger.info("   - \(zone.zoneID.zoneName)")
+            }
+
+            let ourZoneExists = zones.contains { $0.zoneID.zoneName == zoneID.zoneName }
+            if ourZoneExists {
+                logger.info("   ✅ Our zone '\(self.zoneID.zoneName)' EXISTS")
+            } else {
+                logger.error("   ❌ Our zone '\(self.zoneID.zoneName)' NOT FOUND!")
+            }
+            return ourZoneExists
+        } catch {
+            logCKError(error, context: "Zone verification")
+            return false
+        }
+    }
+
+    // MARK: - Quick Check for Existing Data
+
+    /// Quickly checks if any CloudKit data exists (2-3 second timeout).
+    /// Used during launch to determine if user is returning without waiting for full sync.
+    /// Returns true if GameState record exists, false if not found or on error/timeout.
+    func quickCheckForExistingData() async -> Bool {
+        guard isSyncEnabled else {
+            logger.info("🔍 Quick check: sync disabled")
+            return false
+        }
+
+        logger.info("🔍 Quick check: starting CloudKit lookup...")
+        logger.info("   Zone: \(self.zoneID.zoneName)")
+        logger.info("   Record name: \(self.gameStateRecordName)")
+
+        // First check iCloud account status
+        do {
+            let status = try await container.accountStatus()
+            switch status {
+            case .available:
+                logger.info("   ✅ iCloud account: available")
+            case .noAccount:
+                logger.warning("   ⚠️ iCloud account: NO ACCOUNT - user not signed in!")
+                return false
+            case .restricted:
+                logger.warning("   ⚠️ iCloud account: restricted")
+                return false
+            case .couldNotDetermine:
+                logger.warning("   ⚠️ iCloud account: could not determine status")
+            case .temporarilyUnavailable:
+                logger.warning("   ⚠️ iCloud account: temporarily unavailable")
+            @unknown default:
+                logger.warning("   ⚠️ iCloud account: unknown status")
+            }
+        } catch {
+            logger.error("   ❌ Failed to check iCloud account: \(error.localizedDescription)")
+        }
+
+        // Verify zone exists before trying to fetch records
+        let zoneExists = await verifyZoneExists()
+        if !zoneExists {
+            logger.error("🔍 Quick check: Zone doesn't exist - data was never pushed!")
+            return false
+        }
+
+        // Use actor isolation to safely track continuation state
+        let result: Bool = await withCheckedContinuation { continuation in
+            let gameStateRecordID = CKRecord.ID(recordName: gameStateRecordName, zoneID: zoneID)
+
+            // Create fetch operation with short timeout
+            let operation = CKFetchRecordsOperation(recordIDs: [gameStateRecordID])
+            operation.desiredKeys = [] // We just need to know if it exists, don't fetch data
+            operation.qualityOfService = .userInitiated
+
+            // Track if we've already resumed to prevent double-resume crash
+            var hasResumed = false
+            let lock = NSLock()
+
+            func safeResume(_ value: Bool, reason: String) {
+                lock.lock()
+                defer { lock.unlock() }
+                guard !hasResumed else { return }
+                hasResumed = true
+                self.logger.info("Quick check: \(reason) - returning \(value)")
+                continuation.resume(returning: value)
+            }
+
+            var foundRecord = false
+
+            operation.perRecordResultBlock = { [weak self] recordID, result in
+                switch result {
+                case .success:
+                    foundRecord = true
+                    self?.logger.info("🔍 Quick check: ✅ FOUND existing record: \(recordID.recordName)")
+                case .failure(let error):
+                    self?.logCKError(error, context: "Quick check per-record")
+                }
+            }
+
+            operation.fetchRecordsResultBlock = { [weak self] result in
+                switch result {
+                case .success:
+                    if foundRecord {
+                        self?.logger.info("🔍 Quick check: ✅ Fetch succeeded, record exists")
+                    } else {
+                        self?.logger.info("🔍 Quick check: ⚠️ Fetch succeeded but no record found")
+                    }
+                    safeResume(foundRecord, reason: "fetch completed")
+                case .failure(let error):
+                    self?.logCKError(error, context: "Quick check fetch")
+                    safeResume(false, reason: "fetch error")
+                }
+            }
+
+            // Add timeout - if CloudKit doesn't respond in 3 seconds, assume no data
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                operation.cancel()
+                safeResume(false, reason: "timeout after 3s")
+            }
+
+            self.privateDB.add(operation)
+        }
+
+        return result
+    }
+
     // MARK: - Force Sync (push + pull)
 
     func forceSync() {
+        guard isSyncEnabled else { return }
         pushAllToCloud()
         // Pull after a brief delay to let the push settle
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
@@ -141,10 +402,26 @@ class CloudKitSyncManager {
     // MARK: - Push All To Cloud
 
     func pushAllToCloud() {
+        logger.info("📤 pushAllToCloud() called")
+        guard isSyncEnabled else {
+            logger.warning("⚠️ pushAllToCloud: sync is DISABLED")
+            return
+        }
+
+        // If zone isn't ready yet, queue the push for later
+        if !zoneReady {
+            logger.info("⏳ Zone not ready yet, queuing push for after zone creation")
+            pendingPushAfterZone = true
+            return
+        }
+
         // Cancel any pending debounced push to avoid double-push
         pushWorkItem?.cancel()
 
-        guard !isSyncing else { return }
+        guard !isSyncing else {
+            logger.info("⏳ Already syncing, skipping push")
+            return
+        }
         isSyncing = true
 
         Task { @MainActor in
@@ -160,12 +437,23 @@ class CloudKitSyncManager {
         let dailyLogs = persistence.loadAllDailyLogs()
         let logRecords = dailyLogs.map { buildDailyLogRecord($0) }
 
+        // Log which days have shields for debugging
+        let shieldedLogs = dailyLogs.filter { $0.shieldUsed }
+        if !shieldedLogs.isEmpty {
+            logger.info("🛡️ Pushing \(shieldedLogs.count) shielded day(s):")
+            for log in shieldedLogs {
+                logger.info("   🛡️ \(log.dateString): shieldUsed=true, goalMet=\(log.goalMet), steps=\(log.steps)")
+            }
+        }
+
         // Build tracked walk records (ALL walks — no cutoff)
         let walks = persistence.loadAllTrackedWalks()
         let walkRecords = walks.map { buildTrackedWalkRecord($0) }
 
         // Combine all records
         let allRecords = [gameStateRecord] + logRecords + walkRecords
+
+        logger.info("📊 Pushing \(allRecords.count) total records (1 gameState, \(logRecords.count) logs, \(walkRecords.count) walks)")
 
         // Batch in groups of 400 (CloudKit limit)
         let batchSize = 400
@@ -184,9 +472,18 @@ class CloudKitSyncManager {
             operation.modifyRecordsResultBlock = { [weak self] result in
                 switch result {
                 case .success:
-                    self?.logger.info("Pushed batch of \(batch.count) records")
+                    self?.logger.info("✅ Pushed batch of \(batch.count) records successfully")
                 case .failure(let error):
-                    self?.logger.error("Push failed: \(error.localizedDescription)")
+                    self?.logger.error("❌ Push FAILED: \(error.localizedDescription)")
+                    // Log specific CloudKit error details
+                    if let ckError = error as? CKError {
+                        self?.logger.error("   CKError code: \(ckError.code.rawValue)")
+                        if let partialErrors = ckError.partialErrorsByItemID {
+                            for (itemID, itemError) in partialErrors {
+                                self?.logger.error("   Partial error for \(itemID): \(itemError.localizedDescription)")
+                            }
+                        }
+                    }
                     pushError = error
                 }
                 group.leave()
@@ -198,9 +495,11 @@ class CloudKitSyncManager {
             guard let self else { return }
             self.isSyncing = false
             if let error = pushError {
+                self.logger.error("❌ Push completed with errors: \(error.localizedDescription)")
                 self.syncStatus = .error(error.localizedDescription)
                 self.scheduleRetry()
             } else {
+                self.logger.info("✅ Push completed successfully!")
                 self.syncStatus = .success
                 self.lastSyncDate = Date()
                 self.retryCount = 0
@@ -212,6 +511,7 @@ class CloudKitSyncManager {
     // MARK: - Pull From Cloud
 
     func pullFromCloud() {
+        guard isSyncEnabled else { return }
         guard !isSyncing else { return }
         isSyncing = true
 
@@ -243,11 +543,13 @@ class CloudKitSyncManager {
         group.enter()
         fetchAllRecords(ofType: RecordType.dailyLog) { [weak self] records, error in
             if let records {
+                self?.logger.info("📥 Pulled \(records.count) daily log records from CloudKit")
                 for record in records {
                     self?.mergeDailyLog(remote: record)
                 }
             } else if let error {
                 self?.logger.error("Pull daily logs failed: \(error.localizedDescription)")
+                self?.logCKError(error, context: "Pull daily logs")
                 pullError = error
             }
             group.leave()
@@ -318,7 +620,9 @@ class CloudKitSyncManager {
                     self.logger.info("Cloud data deleted")
                     self.syncStatus = .success
                     // Recreate the zone for future use
-                    self.createZoneIfNeeded()
+                    Task {
+                        _ = await self.createZoneIfNeeded()
+                    }
                 case .failure(let error):
                     self.logger.error("Delete failed: \(error.localizedDescription)")
                     self.syncStatus = .error(error.localizedDescription)
@@ -339,11 +643,20 @@ class CloudKitSyncManager {
         if let streakJSON = try? encoder.encode(persistence.loadStreakData()) {
             record["streakDataJSON"] = streakJSON as CKRecordValue
         }
-        if let shieldJSON = try? encoder.encode(persistence.loadShieldData()) {
+
+        let shieldData = persistence.loadShieldData()
+        logger.info("🛡️ buildGameStateRecord: Pushing shieldData with availableShields=\(shieldData.availableShields)")
+        if let shieldJSON = try? encoder.encode(shieldData) {
             record["shieldDataJSON"] = shieldJSON as CKRecordValue
         }
         if let profileJSON = try? encoder.encode(persistence.loadProfile()) {
             record["profileJSON"] = profileJSON as CKRecordValue
+        }
+        if let settingsJSON = try? encoder.encode(buildUserSettingsSnapshot()) {
+            record[userSettingsRecordKey] = settingsJSON as CKRecordValue
+        }
+        if let milestoneJSON = try? encoder.encode(MilestoneManager.shared.exportState()) {
+            record[milestoneStateRecordKey] = milestoneJSON as CKRecordValue
         }
 
         return record
@@ -380,11 +693,16 @@ class CloudKitSyncManager {
     // MARK: - Merge Logic
 
     private func mergeGameState(remote: CKRecord) {
+        logger.info("📥 mergeGameState() called - starting restore from CloudKit")
         isMerging = true
         defer { isMerging = false }
 
         let decoder = JSONDecoder()
         let persistence = PersistenceManager.shared
+        let localProfile = persistence.loadProfile()
+        let isFreshInstall = !localProfile.hasCompletedOnboarding
+            && localProfile.displayName.isEmpty
+            && localProfile.legacyBadges.isEmpty
 
         // Merge StreakData: most recent lastGoalMetDate wins for currentStreak; max longestStreak; max consecutiveGoalDays
         if let remoteData = remote["streakDataJSON"] as? Data,
@@ -419,43 +737,58 @@ class CloudKitSyncManager {
             }
         }
 
-        // Merge ShieldData: MIN availableShields (prevent duplication exploit);
-        // MAX purchasedShields; MAX shieldsUsedThisMonth; most recent lastRefillDate
+        // Merge ShieldData: Fresh install takes remote values; otherwise MIN availableShields
+        // (prevent duplication exploit); MAX purchasedShields; MAX shieldsUsedThisMonth; most recent lastRefillDate
         if let remoteData = remote["shieldDataJSON"] as? Data,
            let remoteShield = try? decoder.decode(ShieldData.self, from: remoteData) {
             var localShield = persistence.loadShieldData()
             var changed = false
 
-            // MIN availableShields — prevents shield duplication across devices
-            if remoteShield.availableShields < localShield.availableShields {
-                localShield.availableShields = remoteShield.availableShields
-                changed = true
-            }
+            logger.info("🛡️ Shield merge: remote availableShields=\(remoteShield.availableShields), local availableShields=\(localShield.availableShields)")
+            logger.info("🛡️ Shield merge: remote lastRefillDate=\(String(describing: remoteShield.lastRefillDate)), local lastRefillDate=\(String(describing: localShield.lastRefillDate))")
 
-            // MAX purchasedShields (lifetime counter — never decreases)
-            if remoteShield.purchasedShields > localShield.purchasedShields {
-                localShield.purchasedShields = remoteShield.purchasedShields
-                changed = true
-            }
+            // Detect fresh install: local has no lastRefillDate (never initialized)
+            let isLocalFreshInstall = localShield.lastRefillDate == nil
 
-            // MAX shieldsUsedThisMonth (usage count — take the higher to avoid under-counting)
-            if remoteShield.shieldsUsedThisMonth > localShield.shieldsUsedThisMonth {
-                localShield.shieldsUsedThisMonth = remoteShield.shieldsUsedThisMonth
+            if isLocalFreshInstall {
+                // Fresh install — take ALL remote shield data
+                logger.info("🛡️ Shield merge: Fresh install detected, taking remote values (availableShields=\(remoteShield.availableShields))")
+                localShield = remoteShield
                 changed = true
-            }
+            } else {
+                // Existing install — use defensive merge logic
 
-            // MAX totalShieldsUsed (lifetime counter — never decreases)
-            if remoteShield.totalShieldsUsed > localShield.totalShieldsUsed {
-                localShield.totalShieldsUsed = remoteShield.totalShieldsUsed
-                changed = true
-            }
+                // MIN availableShields — prevents shield duplication across devices
+                if remoteShield.availableShields < localShield.availableShields {
+                    localShield.availableShields = remoteShield.availableShields
+                    changed = true
+                }
 
-            // Most recent lastRefillDate wins (prevents double refill)
-            let localRefill = localShield.lastRefillDate ?? .distantPast
-            let remoteRefill = remoteShield.lastRefillDate ?? .distantPast
-            if remoteRefill > localRefill {
-                localShield.lastRefillDate = remoteShield.lastRefillDate
-                changed = true
+                // MAX purchasedShields (lifetime counter — never decreases)
+                if remoteShield.purchasedShields > localShield.purchasedShields {
+                    localShield.purchasedShields = remoteShield.purchasedShields
+                    changed = true
+                }
+
+                // MAX shieldsUsedThisMonth (usage count — take the higher to avoid under-counting)
+                if remoteShield.shieldsUsedThisMonth > localShield.shieldsUsedThisMonth {
+                    localShield.shieldsUsedThisMonth = remoteShield.shieldsUsedThisMonth
+                    changed = true
+                }
+
+                // MAX totalShieldsUsed (lifetime counter — never decreases)
+                if remoteShield.totalShieldsUsed > localShield.totalShieldsUsed {
+                    localShield.totalShieldsUsed = remoteShield.totalShieldsUsed
+                    changed = true
+                }
+
+                // Most recent lastRefillDate wins (prevents double refill)
+                let localRefill = localShield.lastRefillDate ?? .distantPast
+                let remoteRefill = remoteShield.lastRefillDate ?? .distantPast
+                if remoteRefill > localRefill {
+                    localShield.lastRefillDate = remoteShield.lastRefillDate
+                    changed = true
+                }
             }
 
             if changed {
@@ -470,11 +803,6 @@ class CloudKitSyncManager {
            let remoteProfile = try? decoder.decode(UserProfile.self, from: remoteData) {
             var localProfile = persistence.loadProfile()
             var changed = false
-
-            // Detect fresh install: no onboarding, empty name, no badges
-            let isFreshInstall = !localProfile.hasCompletedOnboarding
-                && localProfile.displayName.isEmpty
-                && localProfile.legacyBadges.isEmpty
 
             if isFreshInstall {
                 // Fresh install — take everything from remote
@@ -510,7 +838,25 @@ class CloudKitSyncManager {
 
             if changed {
                 persistence.saveProfile(localProfile)
+
+                // If we restored a completed onboarding state, also set the KVS flag
+                // so future reinstalls will be detected immediately without CloudKit check
+                if localProfile.hasCompletedOnboarding {
+                    CloudKeyValueStore.setHasCompletedOnboarding()
+                }
             }
+        }
+
+        // Merge user settings (notifications, haptics, voice, education flags, usage counters, etc.)
+        if let settingsData = remote[userSettingsRecordKey] as? Data,
+           let remoteSettings = try? decoder.decode(CloudUserSettings.self, from: settingsData) {
+            applyUserSettings(remoteSettings, isFreshInstall: isFreshInstall)
+        }
+
+        // Merge milestone state
+        if let milestoneData = remote[milestoneStateRecordKey] as? Data,
+           let remoteMilestones = try? decoder.decode(MilestoneManager.MilestoneState.self, from: milestoneData) {
+            MilestoneManager.shared.mergeFromCloud(remoteMilestones, isFreshInstall: isFreshInstall)
         }
     }
 
@@ -520,7 +866,15 @@ class CloudKitSyncManager {
 
         let decoder = JSONDecoder()
         guard let remoteData = remote["logJSON"] as? Data,
-              let remoteLog = try? decoder.decode(DailyLog.self, from: remoteData) else { return }
+              let remoteLog = try? decoder.decode(DailyLog.self, from: remoteData) else {
+            logger.error("❌ Failed to decode DailyLog from CloudKit record")
+            return
+        }
+
+        // Log if this is a shielded day being restored
+        if remoteLog.shieldUsed {
+            logger.info("🛡️ Restoring shielded day: \(remoteLog.dateString) (shieldUsed=true, goalMet=\(remoteLog.goalMet), steps=\(remoteLog.steps))")
+        }
 
         let persistence = PersistenceManager.shared
         let localLog = persistence.loadDailyLog(for: remoteLog.date)
@@ -541,6 +895,11 @@ class CloudKitSyncManager {
             if remoteLog.shieldUsed && !merged.shieldUsed {
                 merged.shieldUsed = true
                 changed = true
+                logger.info("   🛡️ Merged shieldUsed=true for \(remoteLog.dateString)")
+            }
+            if merged.goalTarget == nil, let remoteGoal = remoteLog.goalTarget {
+                merged.goalTarget = remoteGoal
+                changed = true
             }
 
             // Union trackedWalkIDs
@@ -556,6 +915,9 @@ class CloudKitSyncManager {
             }
         } else {
             // No local log for this date — take the remote one
+            if remoteLog.shieldUsed {
+                logger.info("   🛡️ Saving new shielded day: \(remoteLog.dateString)")
+            }
             persistence.saveDailyLog(remoteLog)
         }
     }
@@ -645,8 +1007,187 @@ class CloudKitSyncManager {
     private func reloadManagers() {
         DispatchQueue.main.async {
             let persistence = PersistenceManager.shared
+
+            // Invalidate caches so restored walks/logs are visible immediately
+            persistence.invalidateCaches()
+
+            // Reload managers with fresh data from persistence
             StreakManager.shared.streakData = persistence.loadStreakData()
             ShieldManager.shared.shieldData = persistence.loadShieldData()
+
+            // Post notification so UI can refresh (e.g., walk history, day details)
+            NotificationCenter.default.post(name: .didCompleteCloudSync, object: nil)
         }
+    }
+}
+
+// MARK: - Cloud Sync Notifications
+
+extension Notification.Name {
+    /// Posted when CloudKit sync completes (pull or push).
+    /// UI should refresh to show any restored data.
+    static let didCompleteCloudSync = Notification.Name("didCompleteCloudSync")
+
+    /// Posted when user deletes all data.
+    /// App should reset to onboarding state.
+    static let didDeleteAllData = Notification.Name("didDeleteAllData")
+}
+
+// MARK: - User Settings Snapshot
+
+private struct CloudUserSettings: Codable {
+    var notifications: NotificationSettings
+    var haptics: HapticsSettings
+    var liveActivity: LiveActivitySettings
+    var education: EducationSettings
+    var userAge: Int?
+    var intervalUsage: IntervalUsageData
+    var fatBurnUsage: FatBurnUsageData
+}
+
+private struct NotificationSettings: Codable {
+    var isEnabled: Bool
+    var streakRemindersEnabled: Bool
+    var streakReminderHour: Int
+    var streakReminderMinute: Int
+    var goalCelebrationsEnabled: Bool
+}
+
+private struct HapticsSettings: Codable {
+    var isEnabled: Bool
+    var goalReachedHaptic: Bool
+    var stepMilestoneHaptic: Bool
+}
+
+private struct LiveActivitySettings: Codable {
+    var isEnabled: Bool
+    var promptShown: Bool
+}
+
+private struct EducationSettings: Codable {
+    var hasSeenIntervalsEducation: Bool
+    var hasSeenFatBurnEducation: Bool
+    var hasSeenPostMealEducation: Bool
+    var hasSeenGuidedWalksIntent: Bool
+    var guidedWalksIntent: String
+    var hasSeenStreakMilestoneProPrompt: Bool
+    var preflightSeen: [String: Bool]
+}
+
+private extension CloudKitSyncManager {
+    func buildUserSettingsSnapshot() -> CloudUserSettings {
+        let defaults = UserDefaults.standard
+
+        let preflightSeen: [String: Bool] = Dictionary(uniqueKeysWithValues:
+            IntervalProgram.allCases.map { program in
+                let key = "hasSeenPreFlight_\(program.rawValue)"
+                return (program.rawValue, defaults.bool(forKey: key))
+            }
+        )
+
+        return CloudUserSettings(
+            notifications: NotificationSettings(
+                isEnabled: defaults.bool(forKey: "notif_isEnabled"),
+                streakRemindersEnabled: defaults.bool(forKey: "notif_streakReminders"),
+                streakReminderHour: defaults.integer(forKey: "notif_streakReminderHour"),
+                streakReminderMinute: defaults.integer(forKey: "notif_streakReminderMinute"),
+                goalCelebrationsEnabled: defaults.bool(forKey: "notif_goalCelebrations")
+            ),
+            haptics: HapticsSettings(
+                isEnabled: defaults.bool(forKey: "haptics_isEnabled"),
+                goalReachedHaptic: defaults.bool(forKey: "haptics_goalReached"),
+                stepMilestoneHaptic: defaults.bool(forKey: "haptics_stepMilestone")
+            ),
+            liveActivity: LiveActivitySettings(
+                isEnabled: defaults.bool(forKey: "liveActivity_isEnabled"),
+                promptShown: defaults.bool(forKey: "liveActivity_promptShown")
+            ),
+            education: EducationSettings(
+                hasSeenIntervalsEducation: defaults.bool(forKey: "hasSeenIntervalsEducation"),
+                hasSeenFatBurnEducation: defaults.bool(forKey: "hasSeenFatBurnEducation"),
+                hasSeenPostMealEducation: defaults.bool(forKey: "hasSeenPostMealEducation"),
+                hasSeenGuidedWalksIntent: defaults.bool(forKey: "hasSeenGuidedWalksIntent"),
+                guidedWalksIntent: defaults.string(forKey: "guidedWalksIntent") ?? "exploring",
+                hasSeenStreakMilestoneProPrompt: defaults.bool(forKey: "hasSeenStreakMilestoneProPrompt"),
+                preflightSeen: preflightSeen
+            ),
+            userAge: defaults.object(forKey: "userAge") as? Int,
+            intervalUsage: PersistenceManager.shared.loadIntervalUsage(),
+            fatBurnUsage: PersistenceManager.shared.loadFatBurnUsage()
+        )
+    }
+
+    func applyUserSettings(_ remote: CloudUserSettings, isFreshInstall: Bool) {
+        let defaults = UserDefaults.standard
+
+        // Usage: keep the higher usage for the current week
+        var localInterval = PersistenceManager.shared.loadIntervalUsage()
+        if remote.intervalUsage.weekStartDate > localInterval.weekStartDate {
+            localInterval = remote.intervalUsage
+        } else if remote.intervalUsage.weekStartDate == localInterval.weekStartDate {
+            localInterval.intervalsUsedThisWeek = max(
+                localInterval.intervalsUsedThisWeek,
+                remote.intervalUsage.intervalsUsedThisWeek
+            )
+        }
+        PersistenceManager.shared.saveIntervalUsage(localInterval)
+
+        var localFatBurn = PersistenceManager.shared.loadFatBurnUsage()
+        if remote.fatBurnUsage.weekStartDate > localFatBurn.weekStartDate {
+            localFatBurn = remote.fatBurnUsage
+        } else if remote.fatBurnUsage.weekStartDate == localFatBurn.weekStartDate {
+            localFatBurn.fatBurnsUsedThisWeek = max(
+                localFatBurn.fatBurnsUsedThisWeek,
+                remote.fatBurnUsage.fatBurnsUsedThisWeek
+            )
+        }
+        PersistenceManager.shared.saveFatBurnUsage(localFatBurn)
+
+        // Education flags (never overwrite true with false)
+        if remote.education.hasSeenIntervalsEducation {
+            defaults.set(true, forKey: "hasSeenIntervalsEducation")
+        }
+        if remote.education.hasSeenFatBurnEducation {
+            defaults.set(true, forKey: "hasSeenFatBurnEducation")
+        }
+        if remote.education.hasSeenPostMealEducation {
+            defaults.set(true, forKey: "hasSeenPostMealEducation")
+        }
+        if remote.education.hasSeenGuidedWalksIntent {
+            defaults.set(true, forKey: "hasSeenGuidedWalksIntent")
+        }
+        if remote.education.hasSeenStreakMilestoneProPrompt {
+            defaults.set(true, forKey: "hasSeenStreakMilestoneProPrompt")
+        }
+        for (programRaw, seen) in remote.education.preflightSeen where seen {
+            defaults.set(true, forKey: "hasSeenPreFlight_\(programRaw)")
+        }
+
+        // Guided walks intent: only overwrite if fresh or local is default
+        let localGuidedIntent = defaults.string(forKey: "guidedWalksIntent") ?? "exploring"
+        if isFreshInstall || localGuidedIntent == "exploring" {
+            defaults.set(remote.education.guidedWalksIntent, forKey: "guidedWalksIntent")
+        }
+
+        // User age
+        if isFreshInstall, let remoteAge = remote.userAge {
+            defaults.set(remoteAge, forKey: "userAge")
+        }
+
+        // Preferences: apply only on fresh install to avoid overriding device-specific toggles
+        guard isFreshInstall else { return }
+
+        NotificationManager.shared.isEnabled = remote.notifications.isEnabled
+        NotificationManager.shared.streakRemindersEnabled = remote.notifications.streakRemindersEnabled
+        NotificationManager.shared.streakReminderHour = remote.notifications.streakReminderHour
+        NotificationManager.shared.streakReminderMinute = remote.notifications.streakReminderMinute
+        NotificationManager.shared.goalCelebrationsEnabled = remote.notifications.goalCelebrationsEnabled
+
+        HapticsManager.shared.isEnabled = remote.haptics.isEnabled
+        HapticsManager.shared.goalReachedHaptic = remote.haptics.goalReachedHaptic
+        HapticsManager.shared.stepMilestoneHaptic = remote.haptics.stepMilestoneHaptic
+
+        LiveActivityManager.shared.isEnabled = remote.liveActivity.isEnabled
+        defaults.set(remote.liveActivity.promptShown, forKey: "liveActivity_promptShown")
     }
 }

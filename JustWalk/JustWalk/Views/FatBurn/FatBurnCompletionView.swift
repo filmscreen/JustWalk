@@ -30,7 +30,7 @@ struct FatBurnCompletionView: View {
     var body: some View {
         ZStack {
             ScrollView(showsIndicators: false) {
-                VStack(spacing: JW.Spacing.xxl) {
+                VStack(spacing: JW.Spacing.lg) {
                     // Header
                     VStack(spacing: JW.Spacing.md) {
                         AnimatedCheckmark()
@@ -40,7 +40,7 @@ struct FatBurnCompletionView: View {
                             .font(.title.bold())
                             .foregroundStyle(JW.Color.textPrimary)
                     }
-                    .padding(.top, 40)
+                    .padding(.top, 8)
 
                     // Stats row
                     HStack(spacing: 8) {
@@ -84,7 +84,7 @@ struct FatBurnCompletionView: View {
                     insightCard
                         .padding(.horizontal, JW.Spacing.lg)
 
-                    Spacer(minLength: 120)
+                    Spacer(minLength: 80)
                 }
             }
 
@@ -98,12 +98,12 @@ struct FatBurnCompletionView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(JW.Color.accent)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.black)
                         .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
                 }
                 .buttonPressEffect()
                 .padding(.horizontal, JW.Spacing.xl)
-                .padding(.bottom, 40)
+                .padding(.bottom, 24)
             }
 
             // Confetti

@@ -12,6 +12,9 @@ import StoreKit
 struct PostWalkSummaryView: View {
     let walk: TrackedWalk
     var insightContent: AnyView? = nil
+    var onDone: (() -> Void)? = nil
+    var showDeleteOption: Bool = false
+    var onDelete: (() -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.requestReview) private var requestReview
@@ -19,6 +22,7 @@ struct PostWalkSummaryView: View {
     @State private var showConfetti = false
     @State private var isSaving = false
     @State private var showSaveSuccess = false
+    @State private var showDeleteConfirmation = false
 
     // Animated stat values
     @State private var animatedDuration = 0
@@ -47,17 +51,18 @@ struct PostWalkSummaryView: View {
 
     var body: some View {
         ZStack {
-            ScrollView {
-                VStack(spacing: 20) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: JW.Spacing.lg) {
                     // Header
-                    VStack(spacing: 8) {
-                        if isIntervalCompleted {
+                    VStack(spacing: JW.Spacing.md) {
+                        if isIntervalWalk {
                             AnimatedCheckmark()
-                                .padding(.bottom, 4)
+                                .padding(.bottom, JW.Spacing.xs)
                         }
 
                         Text(headerTitle)
                             .font(.title.bold())
+                            .foregroundStyle(JW.Color.textPrimary)
 
                         if !isSubstantialWalk && !isIntervalWalk {
                             Text("Nice effort! Keep building the habit.")
@@ -77,7 +82,7 @@ struct PostWalkSummaryView: View {
                         StatCard(icon: "map", value: formatDistance(animatedDistance), label: "Distance")
                             .staggeredAppearance(index: 2, delay: 0.08)
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, JW.Spacing.lg)
 
                     // Interval preset info
                     if let program = walk.intervalProgram {
@@ -93,41 +98,41 @@ struct PostWalkSummaryView: View {
 
                     // Upgrade prompt — above map so it's prominent
                     IntervalUpsellBanner(walk: walk)
-                        .padding(.horizontal)
+                        .padding(.horizontal, JW.Spacing.lg)
 
                     // Mini Map with route drawing animation
                     if walk.routeCoordinates.count >= 2 {
                         AnimatedPostWalkMapView(coordinates: walk.routeCoordinates)
                             .frame(height: 200)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                            .padding(.horizontal)
+                            .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
+                            .padding(.horizontal, JW.Spacing.lg)
                     } else {
                         RouteNotAvailablePlaceholder()
-                            .padding(.horizontal)
+                            .padding(.horizontal, JW.Spacing.lg)
                     }
 
                     // Interval insight card
                     if isIntervalWalk {
                         IntervalInsightCard()
-                            .padding(.horizontal)
+                            .padding(.horizontal, JW.Spacing.lg)
                     }
 
                     // Optional insight content slot
                     if let insightContent {
                         insightContent
-                            .padding(.horizontal)
+                            .padding(.horizontal, JW.Spacing.lg)
                     }
 
                     // Share card — only for substantial walks
                     if isSubstantialWalk {
                         ShareWalkCard(walk: walk, onShare: { shareWalk() }, onSave: { saveWalkImage() })
-                            .padding(.horizontal)
+                            .padding(.horizontal, JW.Spacing.lg)
                     }
 
-                    // Short walk education — only for non-interval, almost-qualifying walks
-                    if !isIntervalWalk && walk.durationMinutes >= 2 && walk.durationMinutes < 5 {
+                    // Short walk education — for all non-interval walks under 5 minutes
+                    if !isIntervalWalk && !isSubstantialWalk {
                         ShortWalkEducationView()
-                            .padding(.horizontal)
+                            .padding(.horizontal, JW.Spacing.lg)
                     }
 
                     Spacer(minLength: 80)
@@ -139,18 +144,22 @@ struct PostWalkSummaryView: View {
                 Spacer()
 
                 Button(action: {
-                    dismiss()
+                    if let onDone {
+                        onDone()
+                    } else {
+                        dismiss()
+                    }
                 }) {
                     Text("Done")
                         .font(JW.Font.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(JW.Color.accent)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        .foregroundStyle(.black)
+                        .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
                 }
-                .pressEffect()
-                .padding(.horizontal, 24)
+                .buttonPressEffect()
+                .padding(.horizontal, JW.Spacing.xl)
                 .padding(.bottom, 24)
             }
 
@@ -183,6 +192,30 @@ struct PostWalkSummaryView: View {
         }
         .background(JW.Color.backgroundPrimary)
         .interactiveDismissDisabled()
+        .toolbar {
+            if showDeleteOption {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .destructive) {
+                        showDeleteConfirmation = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .foregroundStyle(JW.Color.danger)
+                    }
+                }
+            }
+        }
+        .alert("Delete Walk?", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                PersistenceManager.shared.deleteTrackedWalk(walk)
+                if let onDelete {
+                    onDelete()
+                }
+                dismiss()
+            }
+        } message: {
+            Text("This will permanently remove this walk from your history.")
+        }
     }
 
     // MARK: - Counting Animation
@@ -310,25 +343,34 @@ struct CompletionCheckmarkShape: Shape {
 struct AnimatedPostWalkMapView: View {
     let coordinates: [CodableCoordinate]
 
-    @State private var visibleCount = 0
-    @State private var region: MKCoordinateRegion = .init()
+    @State private var animationProgress: CGFloat = 0
+    @State private var animationTimer: Timer?
 
     private var clCoordinates: [CLLocationCoordinate2D] {
         coordinates.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+    }
+
+    private var visibleCount: Int {
+        max(2, Int(CGFloat(clCoordinates.count) * animationProgress))
     }
 
     private var visibleCoordinates: [CLLocationCoordinate2D] {
         Array(clCoordinates.prefix(visibleCount))
     }
 
+    private var isAnimationComplete: Bool {
+        animationProgress >= 1.0
+    }
+
     var body: some View {
         Map {
+            // Always show the polyline if we have coordinates (animation just grows it)
             if visibleCoordinates.count >= 2 {
                 MapPolyline(coordinates: visibleCoordinates)
                     .stroke(JW.Color.accent, lineWidth: 4)
             }
 
-            // Start marker
+            // Start marker - always visible
             if let first = clCoordinates.first {
                 Annotation("Start", coordinate: first) {
                     Circle()
@@ -338,7 +380,7 @@ struct AnimatedPostWalkMapView: View {
             }
 
             // End marker (only when animation complete)
-            if visibleCount >= clCoordinates.count, let last = clCoordinates.last {
+            if isAnimationComplete, let last = clCoordinates.last {
                 Annotation("End", coordinate: last) {
                     Circle()
                         .fill(.red)
@@ -349,22 +391,33 @@ struct AnimatedPostWalkMapView: View {
         .mapStyle(.standard(elevation: .flat))
         .allowsHitTesting(false)
         .onAppear {
-            animateRoute()
+            startAnimationIfNeeded()
+        }
+        .onDisappear {
+            animationTimer?.invalidate()
+            animationTimer = nil
         }
     }
 
-    private func animateRoute() {
-        guard !clCoordinates.isEmpty else { return }
-        let total = clCoordinates.count
-        let duration = 1.5 // seconds
-        let interval = duration / Double(total)
+    private func startAnimationIfNeeded() {
+        // If animation already ran or is running, don't restart
+        guard animationProgress == 0, animationTimer == nil else { return }
+        guard clCoordinates.count >= 2 else {
+            // Not enough coordinates, just show what we have
+            animationProgress = 1.0
+            return
+        }
 
-        Timer.scheduledTimer(withTimeInterval: max(0.02, interval), repeats: true) { timer in
-            if visibleCount < total {
-                visibleCount += max(1, total / 60) // at least 60 frames
+        let totalFrames = 60
+        let interval = 1.5 / Double(totalFrames)
+
+        animationTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { timer in
+            let increment = 1.0 / CGFloat(totalFrames)
+            if animationProgress < 1.0 {
+                animationProgress = min(1.0, animationProgress + increment)
             } else {
-                visibleCount = total
                 timer.invalidate()
+                animationTimer = nil
             }
         }
     }
@@ -573,22 +626,24 @@ struct ShareButton: View {
 
 struct IntervalInsightCard: View {
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "chart.line.uptrend.xyaxis")
-                .font(.title3)
-                .foregroundStyle(JW.Color.accent)
+        HStack(spacing: JW.Spacing.md) {
+            Image(systemName: "lightbulb.fill")
+                .font(JW.Font.title3)
+                .foregroundStyle(.yellow)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("You burned approximately 15% more calories than a regular walk. Nice work.")
-                    .font(JW.Font.subheadline)
-                    .foregroundStyle(JW.Color.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text("You burned approximately 15% more calories than a regular walk. Nice work.")
+                .font(JW.Font.subheadline)
+                .foregroundStyle(JW.Color.textSecondary)
         }
-        .padding()
+        .padding(JW.Spacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: JW.Radius.xl)
                 .fill(JW.Color.backgroundCard)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: JW.Radius.xl)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
         )
     }
 }

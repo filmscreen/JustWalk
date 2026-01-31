@@ -14,7 +14,7 @@ struct TodayView: View {
     @StateObject private var healthKitManager = HealthKitManager.shared
     private var streakManager = StreakManager.shared
     private var shieldManager = ShieldManager.shared
-    private var dynamicCardEngine = DynamicCardEngine.shared
+    @StateObject private var dynamicCardEngine = DynamicCardEngine.shared
     private var persistence = PersistenceManager.shared
 
     @AppStorage("dailyStepGoal") private var dailyGoal = 5000
@@ -24,6 +24,7 @@ struct TodayView: View {
     @State private var showProPaywall = false
     @State private var showMilestonePrompt = false
     @State private var milestoneStreakDays: Int = 0
+    @State private var renderedCard: DynamicCardType = .tip(DailyTip.allTips[0])
     @AppStorage("hasSeenStreakMilestoneProPrompt") private var hasSeenMilestonePrompt = false
     #if DEBUG
     @State private var showDebugOverlay = false
@@ -61,8 +62,24 @@ struct TodayView: View {
             return "What a Day."
         }
 
-        // P4: Goal complete
+        // P4: Goal complete - with clutch save and pattern variants
         if steps >= goal {
+            let minute = Calendar.current.component(.minute, from: Date())
+            // After 11:30pm
+            if hour == 23 && minute >= 30 {
+                return "Under the wire."
+            }
+            // After 10:30pm
+            if hour >= 23 || (hour == 22 && minute >= 30) {
+                return "Clutch."
+            }
+            // Hardest day conquered
+            if let hardestDay = PatternManager.shared.snapshot().cachedHardestDay {
+                let todayWeekday = Calendar.current.component(.weekday, from: Date()) - 1
+                if todayWeekday == hardestDay {
+                    return PatternCopy.hardestDayConqueredHeadline(hardestDay)
+                }
+            }
             return "Nailed It."
         }
 
@@ -83,17 +100,36 @@ struct TodayView: View {
             return "Still Time."
         }
 
-        // P7: Behind but recoverable
+        // P7: Pattern-aware encouragement (hardest day, near typical time, best day)
+        let patterns = PatternManager.shared.snapshot()
+        let todayWeekday = Calendar.current.component(.weekday, from: Date()) - 1
+
+        // On hardest day (goal not met)
+        if let hardestDay = patterns.cachedHardestDay, todayWeekday == hardestDay {
+            return PatternCopy.hardestDayEncouragement(hardestDay)
+        }
+
+        // Near typical walk time
+        if let typicalHour = patterns.cachedTypicalHour, abs(hour - typicalHour) <= 1 {
+            return PatternCopy.nearTypicalTime
+        }
+
+        // On best day
+        if let bestDay = patterns.cachedBestDay, todayWeekday == bestDay {
+            return PatternCopy.bestDay
+        }
+
+        // P8: Behind but recoverable
         if steps > 0 && steps < goal {
             return "Keep Moving."
         }
 
-        // P8: Morning
+        // P9: Morning
         if hour < 12 {
             return "Let's Go."
         }
 
-        // P9: Default
+        // P10: Default
         return "Your Day."
     }
 
@@ -135,6 +171,7 @@ struct TodayView: View {
                 HStack(spacing: JW.Spacing.md) {
                     StreakPill(
                         streak: streakManager.streakData.currentStreak,
+                        longestStreak: streakManager.streakData.longestStreak,
                         onTap: { showStreakDetail = true }
                     )
 
@@ -159,10 +196,10 @@ struct TodayView: View {
                     .padding(.bottom, JW.Spacing.lg)
 
                 // Dynamic Card (always visible — never empty)
-                DynamicCardView(cardType: dynamicCardEngine.currentCard, onAction: { action in
+                DynamicCardView(cardType: renderedCard, onAction: { action in
                     handleCardAction(action)
                 })
-                .id(dynamicCardEngine.currentCard.cardKey)
+                .id(renderedCard.cardKey)
                 .transition(.asymmetric(
                     insertion: .move(edge: .bottom).combined(with: .opacity),
                     removal: .move(edge: .trailing).combined(with: .opacity)
@@ -180,9 +217,13 @@ struct TodayView: View {
             UserDefaults.standard.set(Date(), forKey: "lastAppOpenTime")
 
             Task {
-                let steps = await healthKitManager.fetchTodaySteps()
+                // Fetch weather in background (for Smart Walk Card enhancement)
+                await WeatherManager.shared.fetchWeatherIfNeeded()
+
+                let steps = await healthKitManager.fetchTodaySteps(force: true)
                 withAnimation(JustWalkAnimation.standard) {
                     dynamicCardEngine.refresh(dailyGoal: dailyGoal, currentSteps: steps)
+                    renderedCard = dynamicCardEngine.currentCard
                 }
                 pushWidgetData()
                 checkStreakPaywallTrigger()
@@ -190,20 +231,25 @@ struct TodayView: View {
         }
         .refreshable {
             JustWalkHaptics.selectionChanged()
-            let steps = await healthKitManager.fetchTodaySteps()
+            let steps = await healthKitManager.fetchTodaySteps(force: true)
             withAnimation(JustWalkAnimation.standard) {
                 dynamicCardEngine.refresh(dailyGoal: dailyGoal, currentSteps: steps)
+                renderedCard = dynamicCardEngine.currentCard
             }
             pushWidgetData()
         }
         .onChange(of: persistence.dailyLogVersion) { _, _ in
             Task {
-                let steps = await healthKitManager.fetchTodaySteps()
+                let steps = await healthKitManager.fetchTodaySteps(force: true)
                 withAnimation(JustWalkAnimation.standard) {
                     dynamicCardEngine.refresh(dailyGoal: dailyGoal, currentSteps: steps)
+                    renderedCard = dynamicCardEngine.currentCard
                 }
                 pushWidgetData()
             }
+        }
+        .onReceive(dynamicCardEngine.$currentCard) { newCard in
+            renderedCard = newCard
         }
         .sheet(isPresented: $showStreakDetail) {
             StreakDetailSheet()
@@ -212,7 +258,7 @@ struct TodayView: View {
             ShieldDetailSheet()
         }
         .sheet(isPresented: $showProPaywall) {
-            PaywallView(onComplete: { showProPaywall = false })
+            ProUpgradeView(onComplete: { showProPaywall = false })
         }
         .sheet(isPresented: $showMilestonePrompt) {
             StreakMilestonePrompt(
@@ -314,6 +360,7 @@ struct TodayView: View {
 
 struct StreakPill: View {
     let streak: Int
+    let longestStreak: Int
     let onTap: () -> Void
 
     @State private var isFlameAnimating = false
@@ -335,6 +382,11 @@ struct StreakPill: View {
         }
     }
 
+    /// Show "X best" when current streak is below the longest streak
+    private var showBest: Bool {
+        longestStreak > 0 && streak < longestStreak
+    }
+
     var body: some View {
         Button(action: {
             JustWalkHaptics.buttonTap()
@@ -346,10 +398,22 @@ struct StreakPill: View {
                     .symbolEffect(.pulse, options: .repeating, value: streak > 0 && isFlameAnimating)
 
                 if streak > 0 {
-                    Text("\(streak) day\(streak == 1 ? "" : "s")")
-                        .font(JW.Font.subheadline)
-                        .foregroundStyle(JW.Color.textSecondary)
-                        .contentTransition(.numericText(value: Double(streak)))
+                    HStack(spacing: 4) {
+                        Text("\(streak) day\(streak == 1 ? "" : "s")")
+                            .font(JW.Font.subheadline)
+                            .foregroundStyle(JW.Color.textSecondary)
+                            .contentTransition(.numericText(value: Double(streak)))
+
+                        if showBest {
+                            Text("·")
+                                .font(JW.Font.subheadline)
+                                .foregroundStyle(JW.Color.textTertiary)
+
+                            Text("\(longestStreak) best")
+                                .font(JW.Font.subheadline)
+                                .foregroundStyle(JW.Color.textTertiary)
+                        }
+                    }
                 } else {
                     Text("Start streak")
                         .font(JW.Font.subheadline)

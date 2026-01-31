@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import WidgetKit
 import os
 
 @Observable
@@ -17,6 +18,7 @@ class WatchPersistenceManager {
     private let defaults = UserDefaults.standard
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
+    private let widgetDefaults = UserDefaults(suiteName: "group.com.justwalk.shared") ?? .standard
 
     private enum Keys {
         static let streakInfo = "watch_streak_info"
@@ -55,6 +57,7 @@ class WatchPersistenceManager {
 
     func saveStreakInfo(_ info: WatchStreakInfo) {
         save(info, forKey: Keys.streakInfo)
+        updateWidgetStreakInfo(info)
     }
 
     func loadStreakInfo() -> WatchStreakInfo {
@@ -142,5 +145,11 @@ class WatchPersistenceManager {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: Date())
+    }
+
+    private func updateWidgetStreakInfo(_ info: WatchStreakInfo) {
+        widgetDefaults.set(info.currentStreak, forKey: "widget_currentStreak")
+        widgetDefaults.set(info.dailyStepGoal, forKey: "widget_stepGoal")
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }

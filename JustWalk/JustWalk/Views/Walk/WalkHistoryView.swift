@@ -42,6 +42,9 @@ enum HistoryFilter: String, CaseIterable, Identifiable {
 struct WalkHistoryView: View {
     @State private var selectedFilter: HistoryFilter = .month
     @State private var showUpgradeSheet = false
+    @State private var walkToDelete: TrackedWalk?
+    @State private var showDeleteConfirmation = false
+    @State private var refreshTrigger = UUID()
 
     private var subscriptionManager: SubscriptionManager { SubscriptionManager.shared }
     private var persistence: PersistenceManager { PersistenceManager.shared }
@@ -102,24 +105,32 @@ struct WalkHistoryView: View {
                 if groupedWalks.isEmpty {
                     emptyState
                 } else {
-                    ScrollView(showsIndicators: false) {
-                        LazyVStack(alignment: .leading, spacing: JW.Spacing.lg) {
-                            ForEach(groupedWalks, id: \.0) { header, walks in
-                                Section {
-                                    ForEach(walks) { walk in
-                                        WalkHistoryRowView(walk: walk, useMetric: useMetric)
-                                    }
-                                } header: {
-                                    Text(header.uppercased())
-                                        .font(JW.Font.caption)
-                                        .foregroundStyle(JW.Color.textTertiary)
-                                        .padding(.horizontal, JW.Spacing.xs)
+                    List {
+                        ForEach(groupedWalks, id: \.0) { header, walks in
+                            Section {
+                                ForEach(walks) { walk in
+                                    WalkHistoryRowView(walk: walk, useMetric: useMetric)
+                                        .listRowBackground(Color.clear)
+                                        .listRowInsets(EdgeInsets(top: JW.Spacing.sm, leading: JW.Spacing.lg, bottom: JW.Spacing.sm, trailing: JW.Spacing.lg))
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                            Button(role: .destructive) {
+                                                walkToDelete = walk
+                                                showDeleteConfirmation = true
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
+                                        }
                                 }
+                            } header: {
+                                Text(header.uppercased())
+                                    .font(JW.Font.caption)
+                                    .foregroundStyle(JW.Color.textTertiary)
                             }
                         }
-                        .padding(.horizontal, JW.Spacing.lg)
-                        .padding(.bottom, JW.Spacing.xxxl)
                     }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .id(refreshTrigger)
                 }
             }
         }
@@ -127,6 +138,20 @@ struct WalkHistoryView: View {
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showUpgradeSheet) {
             ProUpgradeView(onComplete: { showUpgradeSheet = false })
+        }
+        .alert("Delete Walk?", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {
+                walkToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let walk = walkToDelete {
+                    persistence.deleteTrackedWalk(walk)
+                    walkToDelete = nil
+                    refreshTrigger = UUID()
+                }
+            }
+        } message: {
+            Text("This will permanently remove this walk from your history.")
         }
     }
 
