@@ -51,9 +51,9 @@ struct ContentView: View {
                             }
                         }
 
-                        Tab("Eat", systemImage: "fork.knife", value: .eat) {
+                        Tab("Fuel", systemImage: "fork.knife", value: .fuel) {
                             NavigationStack {
-                                EatTabView()
+                                FuelTabView()
                             }
                         }
 
@@ -86,10 +86,10 @@ struct ContentView: View {
                         .tag(AppTab.walks)
 
                         NavigationStack {
-                            EatTabView()
+                            FuelTabView()
                         }
-                        .tabItem { Label("Eat", systemImage: "fork.knife") }
-                        .tag(AppTab.eat)
+                        .tabItem { Label("Fuel", systemImage: "fork.knife") }
+                        .tag(AppTab.fuel)
 
                         NavigationStack {
                             SettingsView()

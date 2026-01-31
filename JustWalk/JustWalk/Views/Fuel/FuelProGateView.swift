@@ -1,13 +1,13 @@
 //
-//  EatProGateView.swift
+//  FuelProGateView.swift
 //  JustWalk
 //
-//  Upsell view for free users to unlock the Eat tab with Pro
+//  Upsell view for free users to unlock the Fuel tab with Pro
 //
 
 import SwiftUI
 
-struct EatProGateView: View {
+struct FuelProGateView: View {
     @State private var showProUpgrade = false
 
     // Entrance animation states
@@ -107,7 +107,7 @@ struct EatProGateView: View {
             FeatureRow(
                 icon: "figure.walk",
                 iconColor: JW.Color.streak,
-                title: "Walk + Eat Together",
+                title: "Walk + Fuel Together",
                 description: "Complete picture of your daily health habits"
             )
         }
@@ -204,5 +204,5 @@ private struct FeatureRow: View {
 // MARK: - Previews
 
 #Preview {
-    EatProGateView()
+    FuelProGateView()
 }

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 import os.log
 
 private let apiUsageLogger = Logger(subsystem: "onworldtech.JustWalk", category: "APIUsageTracker")

@@ -1,13 +1,13 @@
 //
-//  EatCalendarView.swift
+//  FuelCalendarView.swift
 //  JustWalk
 //
-//  Calendar view for the Eat tab showing days with food logged
+//  Calendar view for the Fuel tab showing days with food logged
 //
 
 import SwiftUI
 
-struct EatCalendarView: View {
+struct FuelCalendarView: View {
     @Binding var selectedDate: Date
     let hasLogsForDate: (Date) -> Bool
 
@@ -234,7 +234,7 @@ private struct DayCell: View {
 
         var body: some View {
             VStack {
-                EatCalendarView(
+                FuelCalendarView(
                     selectedDate: $selectedDate,
                     hasLogsForDate: mockHasLogs
                 )
@@ -259,7 +259,7 @@ private struct DayCell: View {
 
         var body: some View {
             VStack {
-                EatCalendarView(
+                FuelCalendarView(
                     selectedDate: $selectedDate,
                     hasLogsForDate: { _ in false }
                 )

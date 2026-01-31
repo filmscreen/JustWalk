@@ -1,13 +1,13 @@
 //
-//  EatTabView.swift
+//  FuelTabView.swift
 //  JustWalk
 //
-//  Main Eat tab view assembling calendar, summary, input, and log components
+//  Main Fuel tab view assembling calendar, summary, input, and log components
 //
 
 import SwiftUI
 
-struct EatTabView: View {
+struct FuelTabView: View {
     @StateObject private var subscriptionManager = SubscriptionManager.shared
     @ObservedObject private var foodLogManager = FoodLogManager.shared
 
@@ -77,19 +77,19 @@ struct EatTabView: View {
 
     var body: some View {
         if subscriptionManager.isPro {
-            eatTabContent
+            fuelTabContent
         } else {
-            EatProGateView()
+            FuelProGateView()
         }
     }
 
-    // MARK: - Eat Tab Content
+    // MARK: - Fuel Tab Content
 
-    private var eatTabContent: some View {
+    private var fuelTabContent: some View {
         ScrollView {
             VStack(spacing: JW.Spacing.lg) {
                 // Calendar section
-                EatCalendarView(
+                FuelCalendarView(
                     selectedDate: $selectedDate,
                     hasLogsForDate: { foodLogManager.hasLogs(for: $0) }
                 )
@@ -354,10 +354,10 @@ struct EatTabView: View {
 // MARK: - Previews
 
 #Preview("Empty State") {
-    EatTabView()
+    FuelTabView()
 }
 
 #Preview("With Mock Data") {
     // Note: Previews won't show real data without setting up FoodLogManager
-    EatTabView()
+    FuelTabView()
 }

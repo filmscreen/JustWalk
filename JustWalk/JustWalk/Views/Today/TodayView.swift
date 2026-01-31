@@ -525,7 +525,7 @@ struct FoodSummaryRow: View {
     var body: some View {
         Button {
             JustWalkHaptics.buttonTap()
-            appState.selectedTab = .eat
+            appState.selectedTab = .fuel
         } label: {
             HStack(spacing: JW.Spacing.sm) {
                 Image(systemName: "fork.knife")
