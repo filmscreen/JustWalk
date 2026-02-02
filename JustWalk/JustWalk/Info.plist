@@ -20,8 +20,8 @@
 	<string>Just Walk saves walk summary images to your photo library when you choose to save them.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
-	<key>REVENUECAT_API_KEY</key>
-	<string>sk_ySZkxgCmOCypmPasAuTlnrviuVSTM</string>
+	<key>GEMINI_API_KEY</key>
+	<string>$(GEMINI_API_KEY)</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

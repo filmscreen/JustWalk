@@ -84,7 +84,7 @@ struct FoodInputView: View {
                         .foregroundStyle(JW.Color.accent)
 
                     // Text
-                    Text("What did you eat? (\"1 bagel and 1 cup of OJ\")")
+                    Text("What did you eat?")
                         .font(JW.Font.body)
                         .foregroundStyle(JW.Color.textSecondary)
                         .lineLimit(1)
@@ -174,7 +174,7 @@ struct FoodInputView: View {
             ZStack(alignment: .topLeading) {
                 // Placeholder
                 if foodDescription.isEmpty {
-                    Text("What did you eat? (\"1 bagel and 1 cup of OJ\")")
+                    Text("What did you eat?")
                         .font(JW.Font.subheadline)
                         .foregroundStyle(JW.Color.textTertiary)
                         .padding(.horizontal, JW.Spacing.xs)

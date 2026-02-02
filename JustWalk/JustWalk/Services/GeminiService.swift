@@ -193,9 +193,8 @@ struct GeminiAPIError: Decodable {
 final class GeminiService: ObservableObject {
     static let shared = GeminiService()
 
-    // API Configuration
-    // TODO: Move API key to secure storage before production release
-    private let apiKey = "AIzaSyDbIF2EZk_ZOfZpytgv9hhNKYwKhBIejQQ"
+    // API Configuration - key loaded from Info.plist (set via Secrets.xcconfig)
+    private let apiKey: String
     private let baseURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
     // State
@@ -207,6 +206,16 @@ final class GeminiService: ObservableObject {
     private let decoder: JSONDecoder
 
     private init() {
+        // Load API key from Info.plist (set via Secrets.xcconfig build setting)
+        if let key = Bundle.main.object(forInfoDictionaryKey: "GEMINI_API_KEY") as? String,
+           !key.isEmpty,
+           !key.hasPrefix("$(") {
+            self.apiKey = key
+        } else {
+            geminiLogger.error("GEMINI_API_KEY not found in Info.plist. See Secrets.xcconfig.template for setup instructions.")
+            self.apiKey = ""
+        }
+
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
         config.timeoutIntervalForResource = 60

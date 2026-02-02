@@ -46,6 +46,7 @@ fastlane/test_output
 Secrets/
 credentials.json
 GoogleService-Info.plist
+Secrets.xcconfig
 
 # Environment
 .env
