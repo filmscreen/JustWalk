@@ -38,6 +38,12 @@ final class DynamicCardEngine: ObservableObject {
     /// Testing mode: when `true` certain time/day based P2 checks are skipped to keep tests deterministic.
     private var isTesting: Bool = false
 
+    // MARK: - Streak Protection Tracking
+
+    /// Dates where streak protection has been addressed (user chose to use shield or break)
+    /// Stored as day keys (yyyy-MM-dd) to prevent re-showing the card
+    private var addressedStreakDates: Set<String> = []
+
     // MARK: - Frequency Tracking
 
     /// Show counts per card per day
@@ -48,6 +54,14 @@ final class DynamicCardEngine: ObservableObject {
 
     /// Last date daily counters were reset
     private var lastResetDate: Date?
+
+    // MARK: - Fuel Upsell Tracking
+
+    /// Streak milestones that trigger fuel upsell for free users
+    private let fuelUpsellMilestones: Set<Int> = [7, 14, 21, 30, 60, 90]
+
+    /// Milestones where user dismissed the fuel upsell (won't show again for those)
+    private var dismissedFuelUpsellMilestones: Set<Int> = []
 
     // MARK: - Evaluation Rate Limiting
 
@@ -73,6 +87,8 @@ final class DynamicCardEngine: ObservableObject {
         loadShowCounts()
         loadActedUpon()
         loadRecentTipIds()
+        loadAddressedStreakDates()
+        loadDismissedFuelUpsellMilestones()
         lastResetDate = UserDefaults.standard.object(forKey: "dynamic_card_last_reset") as? Date
         checkAndResetDaily()
 
@@ -124,7 +140,12 @@ final class DynamicCardEngine: ObservableObject {
     }
 
     private func evaluateInternal(dailyGoal: Int, currentSteps: Int) -> DynamicCardType {
-        // 0. P0 — Smart Walk Invitation (highest priority)
+        // 0. P0 Critical — Streak Protection (requires immediate user decision)
+        if let p0Critical = evaluateP0Critical() {
+            return p0Critical
+        }
+
+        // 0.5. P0 — Smart Walk Invitation (highest priority)
         if let p0 = evaluateP0SmartWalk(dailyGoal: dailyGoal, currentSteps: currentSteps) {
             return p0
         }
@@ -141,6 +162,66 @@ final class DynamicCardEngine: ObservableObject {
 
         // 3. P3 — Fallback tip (deterministic daily rotation)
         return evaluateP3Tip()
+    }
+
+    // MARK: - P0 Critical Evaluation (Streak Protection)
+
+    private func evaluateP0Critical() -> DynamicCardType? {
+        // Check if yesterday's goal was missed and user has an active streak + shields
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else {
+            return nil
+        }
+
+        let yesterdayKey = makeDayKey(for: yesterday)
+
+        // Skip if already addressed for this date
+        guard !addressedStreakDates.contains(yesterdayKey) else {
+            return nil
+        }
+
+        // Check if user has an active streak
+        let currentStreak = streakManager.streakData.currentStreak
+        guard currentStreak > 0 else {
+            return nil
+        }
+
+        // Check if user has shields available
+        guard shieldManager.availableShields > 0 else {
+            return nil
+        }
+
+        // Check if yesterday's goal was NOT met
+        if let yesterdayLog = persistence.loadDailyLog(for: yesterday) {
+            // If goal was met or shield already used, no need for protection
+            if yesterdayLog.goalMet || yesterdayLog.shieldUsed {
+                return nil
+            }
+        } else {
+            // No log for yesterday means they didn't open the app
+            // Check if yesterday even happened (first day of using app?)
+            guard let streakStart = streakManager.streakData.streakStartDate,
+                  yesterday >= streakStart else {
+                return nil
+            }
+        }
+
+        // All conditions met: show streak protection card
+        let card = DynamicCardType.streakProtection(streakDays: currentStreak, missedDate: yesterday)
+        if canShowToday(card) {
+            return card
+        }
+
+        return nil
+    }
+
+    /// Creates a day key string for date tracking (yyyy-MM-dd format)
+    private func makeDayKey(for date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
     }
 
     // MARK: - P0 Evaluation (Smart Walk Invitation)
@@ -262,6 +343,16 @@ final class DynamicCardEngine: ObservableObject {
             if canShowToday(card) { return card }
         }
 
+        // Fuel milestone upsell: free users at streak milestones
+        if !SubscriptionManager.shared.isPro {
+            let currentStreak = streakManager.streakData.currentStreak
+            if fuelUpsellMilestones.contains(currentStreak) &&
+               !dismissedFuelUpsellMilestones.contains(currentStreak) {
+                let card = DynamicCardType.fuelMilestoneUpsell(streakDays: currentStreak)
+                if canShowToday(card) { return card }
+            }
+        }
+
         // Insight card (pattern-based personalization, rare)
         if let insightCard = InsightCardManager.shared.selectInsight() {
             let card = DynamicCardType.insight(insightCard)
@@ -357,14 +448,15 @@ final class DynamicCardEngine: ObservableObject {
     private func canShowToday(_ cardType: DynamicCardType) -> Bool {
         let key = cardType.cardKey
 
-        // Allow the currently displayed card to persist across refreshes.
-        if key == currentCard.cardKey {
-            return true
-        }
-
-        // Check if acted upon today
+        // Check if acted upon today (soft dismiss) - this takes priority
         if actedUponToday.contains(key) {
             return false
+        }
+
+        // Allow the currently displayed card to persist across refreshes
+        // (but only if not acted upon)
+        if key == currentCard.cardKey {
+            return true
         }
 
         // Check frequency limits
@@ -375,7 +467,9 @@ final class DynamicCardEngine: ObservableObject {
 
     private func maxShowsPerDay(for cardType: DynamicCardType) -> Int {
         switch cardType {
-        // P0 — Smart Walk (show once per day each)
+        // P0 — Critical (show once per day)
+        case .streakProtection:      return 1
+        // P0.5 — Smart Walk (show once per day each)
         case .smartWalkPattern:      return 1
         case .smartWalkPostMeal:     return 1
         case .smartWalkEveningRescue: return 1
@@ -390,6 +484,7 @@ final class DynamicCardEngine: ObservableObject {
         // P2 — Contextual
         case .almostThere:           return 1
         case .milestoneCelebration:  return 1
+        case .fuelMilestoneUpsell:   return 1
         case .tryIntervals:          return 1
         case .trySyncWithWatch:      return 1
         case .newWeekNewGoal:        return 1
@@ -483,7 +578,44 @@ final class DynamicCardEngine: ObservableObject {
         }
     }
 
-    
+    private func saveAddressedStreakDates() {
+        UserDefaults.standard.set(Array(addressedStreakDates), forKey: "dynamic_card_addressed_streak_dates")
+    }
+
+    private func loadAddressedStreakDates() {
+        if let dates = UserDefaults.standard.stringArray(forKey: "dynamic_card_addressed_streak_dates") {
+            addressedStreakDates = Set(dates)
+        }
+    }
+
+    private func saveDismissedFuelUpsellMilestones() {
+        UserDefaults.standard.set(Array(dismissedFuelUpsellMilestones), forKey: "dynamic_card_dismissed_fuel_milestones")
+    }
+
+    private func loadDismissedFuelUpsellMilestones() {
+        if let milestones = UserDefaults.standard.array(forKey: "dynamic_card_dismissed_fuel_milestones") as? [Int] {
+            dismissedFuelUpsellMilestones = Set(milestones)
+        }
+    }
+
+    // MARK: - Streak Protection Actions
+
+    /// Marks a date as addressed for streak protection (prevents card from showing again for that date)
+    func markStreakProtectionAddressed(for date: Date) {
+        let key = makeDayKey(for: date)
+        addressedStreakDates.insert(key)
+        saveAddressedStreakDates()
+        debugLog("Marked streak protection addressed for \(key)")
+    }
+
+    // MARK: - Fuel Upsell Actions
+
+    /// Marks a fuel upsell milestone as dismissed (won't show again for this milestone)
+    func markFuelUpsellDismissed(milestone: Int) {
+        dismissedFuelUpsellMilestones.insert(milestone)
+        saveDismissedFuelUpsellMilestones()
+        debugLog("Marked fuel upsell dismissed for milestone \(milestone)")
+    }
 
     // MARK: - Testing Support
 
@@ -492,6 +624,8 @@ final class DynamicCardEngine: ObservableObject {
         cardShowCounts.removeAll()
         actedUponToday.removeAll()
         recentTipIds.removeAll()
+        addressedStreakDates.removeAll()
+        dismissedFuelUpsellMilestones.removeAll()
         sessionTip = nil
         isTesting = true
         lastEvaluationTime = nil
@@ -501,6 +635,8 @@ final class DynamicCardEngine: ObservableObject {
         saveShowCounts()
         saveActedUpon()
         saveRecentTipIds()
+        saveAddressedStreakDates()
+        saveDismissedFuelUpsellMilestones()
     }
 
     // MARK: - Walk Pattern Analysis

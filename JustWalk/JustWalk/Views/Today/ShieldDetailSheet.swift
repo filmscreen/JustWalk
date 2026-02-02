@@ -33,15 +33,30 @@ struct ShieldDetailSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: JW.Spacing.md) {
+                VStack(spacing: JW.Spacing.lg) {
+                    // Hero section with more breathing room
                     heroSection
-                    infoRows
-                    howShieldsWorkSection
-                    purchaseSection
+                        .padding(.top, JW.Spacing.md)
 
+                    // Info rows in card
+                    infoRows
+
+                    // How shields work section in card
+                    howShieldsWorkSection
+                        .padding(.horizontal, JW.Spacing.md)
+                        .padding(.vertical, JW.Spacing.md)
+                        .background(
+                            RoundedRectangle(cornerRadius: JW.Radius.lg)
+                                .fill(JW.Color.backgroundCard)
+                        )
+
+                    purchaseSection
                 }
-                .padding()
+                .padding(.horizontal, JW.Spacing.lg)
+                .padding(.top, JW.Spacing.md)
+                .padding(.bottom, JW.Spacing.xl)
             }
+            .background(JW.Color.backgroundPrimary)
             .navigationTitle("Shields")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -49,9 +64,11 @@ struct ShieldDetailSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .toolbarBackground(JW.Color.backgroundPrimary, for: .navigationBar)
         }
         .presentationDetents([.large, .medium], selection: .constant(.large))
         .presentationDragIndicator(.visible)
+        .presentationBackground(JW.Color.backgroundPrimary)
         .sheet(isPresented: $showPurchaseSheet) {
             ShieldPurchaseSheet(
                 isPro: isPro,
@@ -68,46 +85,45 @@ struct ShieldDetailSheet: View {
     // MARK: - Hero Section
 
     private var heroSection: some View {
-        VStack(spacing: JW.Spacing.md) {
-            // Shield icon
+        VStack(spacing: JW.Spacing.sm) {
+            // Shield icon - large centered circle
             ZStack {
                 Circle()
-                    .fill(JW.Color.accentBlue.opacity(0.2))
-                    .frame(width: 64, height: 64)
+                    .fill(JW.Color.accentBlue.opacity(0.3))
+                    .frame(width: 88, height: 88)
 
-                Image(systemName: "shield.fill")
-                    .font(.system(size: 28))
-                    .foregroundStyle(JW.Color.accentBlue)
+                Text("🛡️")
+                    .font(.system(size: 40))
             }
 
-            // Count
-            VStack(spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text("\(shieldData.availableShields)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .contentTransition(.numericText(value: Double(shieldData.availableShields)))
+            // Count display
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(shieldData.availableShields)")
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .contentTransition(.numericText(value: Double(shieldData.availableShields)))
 
-                    Text("of \(maxBank)")
-                        .font(JW.Font.subheadline)
-                        .foregroundStyle(JW.Color.textSecondary)
-                }
-
-                Text("shields available")
-                    .font(JW.Font.caption)
-                    .foregroundStyle(JW.Color.textTertiary)
+                Text("of \(maxBank)")
+                    .font(JW.Font.title3)
+                    .foregroundStyle(JW.Color.textSecondary)
             }
+
+            // "shields available" label
+            Text("shields available")
+                .font(JW.Font.subheadline)
+                .foregroundStyle(JW.Color.textSecondary)
 
             // Bank visualization
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 ForEach(0..<maxBank, id: \.self) { index in
                     Image(systemName: index < shieldData.availableShields ? "shield.fill" : "shield")
-                        .font(.body)
+                        .font(.system(size: 20))
                         .foregroundStyle(index < shieldData.availableShields ? JW.Color.accentBlue : JW.Color.backgroundTertiary)
                 }
             }
+            .padding(.top, JW.Spacing.xs)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, JW.Spacing.sm)
+        .padding(.vertical, JW.Spacing.md)
     }
 
     // MARK: - Info Rows
@@ -134,16 +150,16 @@ struct ShieldDetailSheet: View {
         VStack(alignment: .leading, spacing: JW.Spacing.sm) {
             Text("How Shields Work")
                 .font(JW.Font.caption.bold())
-                .foregroundStyle(JW.Color.textSecondary)
+                .foregroundStyle(JW.Color.textTertiary)
                 .textCase(.uppercase)
 
-            VStack(alignment: .leading, spacing: 8) {
-                BulletPoint(text: "Use a shield to protect your streak when you miss a day")
-                BulletPoint(text: "Keeps your streak alive — no guilt, no pressure")
+            VStack(alignment: .leading, spacing: 6) {
+                BulletPoint(text: "Protect your streak when you miss a day")
+                BulletPoint(text: "No guilt, no pressure")
                 if isPro {
-                    BulletPoint(text: "Pro members get 4 shields/month, bank up to 8")
+                    BulletPoint(text: "Pro: 4 shields/month, bank up to 8")
                 } else {
-                    BulletPoint(text: "Free members get 2 shields to start (no refills)")
+                    BulletPoint(text: "Free: 2 shields to start (no refills)")
                 }
             }
         }
@@ -187,15 +203,15 @@ private struct InfoRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(JW.Font.subheadline)
+                .font(JW.Font.body)
                 .foregroundStyle(JW.Color.textSecondary)
             Spacer()
             Text(value)
-                .font(JW.Font.subheadline.weight(.medium))
+                .font(JW.Font.body.weight(.medium))
                 .foregroundStyle(JW.Color.textPrimary)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 12)
+        .padding(.horizontal, JW.Spacing.lg)
+        .padding(.vertical, JW.Spacing.md)
     }
 }
 
@@ -212,7 +228,7 @@ private struct BulletPoint: View {
                 .padding(.top, 6)
 
             Text(text)
-                .font(JW.Font.caption)
+                .font(JW.Font.subheadline)
                 .foregroundStyle(JW.Color.textSecondary)
         }
     }

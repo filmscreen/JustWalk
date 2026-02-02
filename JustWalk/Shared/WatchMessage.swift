@@ -27,6 +27,9 @@ enum WatchMessage {
         case streakCurrent = "streakCurrent"
         case streakLongest = "streakLongest"
         case dailyGoal = "dailyGoal"
+        case availableShields = "availableShields"
+        case todayCalories = "todayCalories"
+        case calorieGoal = "calorieGoal"
     }
 
     // MARK: - Commands (iPhone → Watch)

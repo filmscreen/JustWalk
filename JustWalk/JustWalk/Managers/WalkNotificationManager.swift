@@ -380,10 +380,15 @@ extension CardAction {
         switch self {
         case .navigateToIntervals: return "navigateToIntervals"
         case .navigateToWalksTab: return "navigateToWalksTab"
+        case .navigateToFuelTab: return "navigateToFuelTab"
         case .startPostMealWalk: return "startPostMealWalk"
         case .startIntervalWalk: return "startIntervalWalk"
         case .startFatBurnWalk: return "startFatBurnWalk"
         case .openWatchSetup: return "openWatchSetup"
+        // These actions are not used in notifications
+        case .useShieldForDate: return "useShieldForDate"
+        case .letStreakBreak: return "letStreakBreak"
+        case .dismissFuelUpsell: return "dismissFuelUpsell"
         }
     }
 
@@ -391,10 +396,12 @@ extension CardAction {
         switch value {
         case "navigateToIntervals": return .navigateToIntervals
         case "navigateToWalksTab": return .navigateToWalksTab
+        case "navigateToFuelTab": return .navigateToFuelTab
         case "startPostMealWalk": return .startPostMealWalk
         case "startIntervalWalk": return .startIntervalWalk
         case "startFatBurnWalk": return .startFatBurnWalk
         case "openWatchSetup": return .openWatchSetup
+        // Streak protection and fuel upsell actions can't be restored from notifications
         default: return nil
         }
     }

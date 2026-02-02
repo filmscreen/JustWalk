@@ -12,10 +12,14 @@ import SwiftUI
 enum CardAction: Equatable {
     case navigateToIntervals
     case navigateToWalksTab
+    case navigateToFuelTab
     case startPostMealWalk
     case startIntervalWalk
     case startFatBurnWalk
     case openWatchSetup
+    case useShieldForDate(Date)       // Use shield to protect streak for a missed date
+    case letStreakBreak(Date)         // Let streak break for a missed date
+    case dismissFuelUpsell(milestone: Int)  // Dismiss fuel upsell for a specific milestone
 }
 
 // MARK: - Pressable Button Style
@@ -37,7 +41,11 @@ struct DynamicCardView: View {
     var body: some View {
         Group {
             switch cardType {
-            // P0 — Smart Walk Cards
+            // P0 — Critical (streak protection)
+            case .streakProtection(let streakDays, let missedDate):
+                StreakProtectionCard(streakDays: streakDays, missedDate: missedDate, onAction: onAction)
+
+            // P0.5 — Smart Walk Cards
             case .smartWalkPattern(let preferredMode):
                 SmartWalkPatternCard(preferredMode: preferredMode, onAction: onAction)
 
@@ -76,6 +84,9 @@ struct DynamicCardView: View {
 
             case .milestoneCelebration(let event):
                 MilestoneCelebrationCard(event: event)
+
+            case .fuelMilestoneUpsell(let streakDays):
+                FuelMilestoneUpsellCard(streakDays: streakDays, onAction: onAction)
 
             case .tryIntervals:
                 TryIntervalsCard {
@@ -447,6 +458,82 @@ private struct ShieldDeployedCard: View {
     }
 }
 
+// MARK: - Streak Protection Card
+
+private struct StreakProtectionCard: View {
+    let streakDays: Int
+    let missedDate: Date
+    var onAction: ((CardAction) -> Void)?
+
+    var body: some View {
+        VStack(spacing: JW.Spacing.md) {
+            // Header
+            HStack {
+                ZStack {
+                    Circle()
+                        .fill(JW.Color.accentBlue.opacity(0.2))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: "shield.fill")
+                        .font(.title3)
+                        .foregroundStyle(JW.Color.accentBlue)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Life happens.")
+                        .font(JW.Font.headline)
+                        .foregroundStyle(JW.Color.textPrimary)
+
+                    Text("You missed yesterday's goal. Use a shield to protect your \(streakDays)-day streak?")
+                        .font(JW.Font.subheadline)
+                        .foregroundStyle(JW.Color.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+            }
+
+            // Buttons
+            HStack(spacing: JW.Spacing.sm) {
+                // Use Shield button (primary action)
+                Button {
+                    JustWalkHaptics.buttonTap()
+                    onAction?(.useShieldForDate(missedDate))
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Use Shield")
+                            .font(JW.Font.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Capsule().fill(JW.Color.accentBlue))
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                // Let It Break button (secondary action)
+                Button {
+                    JustWalkHaptics.buttonTap()
+                    onAction?(.letStreakBreak(missedDate))
+                } label: {
+                    Text("Let It Break")
+                        .font(JW.Font.subheadline.weight(.medium))
+                        .foregroundStyle(JW.Color.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            Capsule()
+                                .stroke(JW.Color.backgroundTertiary, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
+        }
+    }
+}
+
 // MARK: - Welcome Back Card
 
 private struct WelcomeBackCard: View {
@@ -553,6 +640,82 @@ private struct MilestoneCelebrationCard: View {
                 hasAppeared = true
             }
             JustWalkHaptics.milestone()
+        }
+    }
+}
+
+// MARK: - Fuel Milestone Upsell Card
+
+private struct FuelMilestoneUpsellCard: View {
+    let streakDays: Int
+    var onAction: ((CardAction) -> Void)?
+
+    var body: some View {
+        VStack(spacing: JW.Spacing.md) {
+            // Header with celebration icon
+            HStack {
+                ZStack {
+                    Circle()
+                        .fill(JW.Color.accent.opacity(0.2))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: "party.popper.fill")
+                        .font(.title3)
+                        .foregroundStyle(JW.Color.accent)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(streakDays)-day streak!")
+                        .font(JW.Font.headline)
+                        .foregroundStyle(JW.Color.textPrimary)
+
+                    Text("You've nailed the ~20%.\nReady to track the other ~75%?")
+                        .font(JW.Font.subheadline)
+                        .foregroundStyle(JW.Color.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+            }
+
+            // Buttons
+            HStack(spacing: JW.Spacing.sm) {
+                // See Fuel button (primary action)
+                Button {
+                    JustWalkHaptics.buttonTap()
+                    onAction?(.navigateToFuelTab)
+                    onAction?(.dismissFuelUpsell(milestone: streakDays))
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "fork.knife")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("See Fuel")
+                            .font(JW.Font.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Capsule().fill(JW.Color.accent))
+                }
+                .buttonStyle(PressableButtonStyle())
+
+                // Not Now button (secondary action)
+                Button {
+                    JustWalkHaptics.buttonTap()
+                    onAction?(.dismissFuelUpsell(milestone: streakDays))
+                } label: {
+                    Text("Not Now")
+                        .font(JW.Font.subheadline.weight(.medium))
+                        .foregroundStyle(JW.Color.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(
+                            Capsule()
+                                .stroke(JW.Color.backgroundTertiary, lineWidth: 1)
+                        )
+                }
+                .buttonStyle(PressableButtonStyle())
+            }
         }
     }
 }
@@ -796,7 +959,13 @@ private struct TipCard: View {
 #Preview("All Card Types") {
     ScrollView {
         VStack(spacing: 16) {
-            // P0 Smart Walk Cards
+            // P0 Critical Cards
+            DynamicCardView(cardType: .streakProtection(
+                streakDays: 14,
+                missedDate: Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+            ))
+
+            // P0.5 Smart Walk Cards
             DynamicCardView(cardType: .smartWalkPattern(preferredMode: .interval))
             DynamicCardView(cardType: .smartWalkPostMeal)
             DynamicCardView(cardType: .smartWalkEveningRescue(stepsRemaining: 2500))

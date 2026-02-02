@@ -57,28 +57,40 @@ class StreakManager: ObservableObject {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: date)
 
-        if let lastDate = streakData.lastGoalMetDate {
-            let lastDay = calendar.startOfDay(for: lastDate)
-            let daysBetween = calendar.dateComponents([.day], from: lastDay, to: today).day ?? 0
+        // Check if goal already met today to avoid duplicate processing
+        if let todayLog = persistence.loadDailyLog(for: today), todayLog.goalMet {
+            return
+        }
 
-            if daysBetween == 1 {
-                // Consecutive day
-                streakData.currentStreak += 1
-                streakData.consecutiveGoalDays += 1
-            } else if daysBetween == 0 {
-                // Same day, already recorded
-                return
-            } else {
-                // Gap (shouldn't happen if shields work correctly)
-                streakData.currentStreak = 1
-                streakData.consecutiveGoalDays = 1
-                streakData.streakStartDate = today
-            }
-        } else {
+        // Check yesterday's status to determine if streak continues
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else {
             // First goal ever
             streakData.currentStreak = 1
             streakData.consecutiveGoalDays = 1
             streakData.streakStartDate = today
+            streakData.lastGoalMetDate = today
+            streakData.longestStreak = max(streakData.longestStreak, 1)
+            persistence.saveStreakData(streakData)
+            return
+        }
+
+        let yesterdayLog = persistence.loadDailyLog(for: yesterday)
+        let yesterdayCountsForStreak = yesterdayLog?.goalMet ?? false || yesterdayLog?.shieldUsed ?? false
+
+        if yesterdayCountsForStreak {
+            // Consecutive day - increment streak
+            streakData.currentStreak += 1
+            streakData.consecutiveGoalDays += 1
+        } else {
+            // Gap detected - recalculate from logs to get accurate count
+            // This ensures we don't miss any shielded days that were applied retroactively
+            recalculateStreak()
+            // After recalculation, add 1 for today's goal
+            streakData.currentStreak += 1
+            streakData.consecutiveGoalDays = 1
+            if streakData.streakStartDate == nil {
+                streakData.streakStartDate = today
+            }
         }
 
         streakData.lastGoalMetDate = today
@@ -127,12 +139,12 @@ class StreakManager: ObservableObject {
         var streakStart: Date? = nil
         var lastGoalDate: Date? = nil
 
-        // Check if today has goal met
+        // Check if today has goal met or shield used
         let todayLog = persistence.loadDailyLog(for: today)
-        let todayGoalMet = todayLog?.goalMet ?? false
+        let todayCountsForStreak = todayLog?.goalMet ?? false || todayLog?.shieldUsed ?? false
 
-        // If today's goal isn't met yet, start counting from yesterday
-        if !todayGoalMet {
+        // If today doesn't count for streak yet, start counting from yesterday
+        if !todayCountsForStreak {
             guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else {
                 persistence.saveStreakData(streakData)
                 return
@@ -140,9 +152,10 @@ class StreakManager: ObservableObject {
             currentDate = yesterday
         }
 
-        // Walk backwards counting consecutive goal-met days
+        // Walk backwards counting consecutive days with goal met OR shield used
         while true {
-            if let log = persistence.loadDailyLog(for: currentDate), log.goalMet {
+            if let log = persistence.loadDailyLog(for: currentDate),
+               log.goalMet || log.shieldUsed {
                 streakCount += 1
                 streakStart = currentDate
                 if lastGoalDate == nil {

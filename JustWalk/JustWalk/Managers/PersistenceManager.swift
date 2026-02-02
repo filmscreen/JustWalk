@@ -18,6 +18,7 @@ extension Notification.Name {
     static let didSaveTrackedWalk = Notification.Name("didSaveTrackedWalk")
     static let didSaveProfile = Notification.Name("didSaveProfile")
     static let didSaveFoodLog = Notification.Name("didSaveFoodLog")
+    static let didSaveCalorieGoal = Notification.Name("didSaveCalorieGoal")
 }
 
 @Observable
@@ -39,6 +40,7 @@ class PersistenceManager: ObservableObject {
         static let fatBurnUsage = "fat_burn_usage"
         static let walkPatternData = "walk_pattern_data_v1"
         static let foodLogs = "food_logs"
+        static let calorieGoalSettings = "calorie_goal_settings"
     }
 
     /// Incremented whenever daily logs change, so views observing this
@@ -364,7 +366,32 @@ class PersistenceManager: ObservableObject {
         logs.removeAll { $0.id == log.id }
         save(logs, forKey: Keys.foodLogs)
         _cachedFoodLogs = logs
+
+        // Also delete from CloudKit
+        CloudKitSyncManager.shared.deleteFoodLogFromCloud(logID: log.logID)
+
         NotificationCenter.default.post(name: .didSaveFoodLog, object: nil)
+    }
+
+    // MARK: - Calorie Goal Settings Methods
+
+    func saveCalorieGoalSettings(_ settings: CalorieGoalSettings) {
+        save(settings, forKey: Keys.calorieGoalSettings)
+        NotificationCenter.default.post(name: .didSaveCalorieGoal, object: nil)
+    }
+
+    func loadCalorieGoalSettings() -> CalorieGoalSettings? {
+        load(forKey: Keys.calorieGoalSettings)
+    }
+
+    func deleteCalorieGoalSettings() {
+        // Get settingsID before deleting so we can delete from CloudKit
+        if let settings = loadCalorieGoalSettings() {
+            CloudKitSyncManager.shared.deleteCalorieGoalSettingsFromCloud(settingsID: settings.settingsID)
+        }
+
+        defaults.removeObject(forKey: Keys.calorieGoalSettings)
+        NotificationCenter.default.post(name: .didSaveCalorieGoal, object: nil)
     }
 
     // MARK: - Utility Methods
@@ -379,7 +406,8 @@ class PersistenceManager: ObservableObject {
             Keys.intervalUsage,
             Keys.fatBurnUsage,
             Keys.walkPatternData,
-            Keys.foodLogs
+            Keys.foodLogs,
+            Keys.calorieGoalSettings
         ]
         keys.forEach { defaults.removeObject(forKey: $0) }
         invalidateCaches()

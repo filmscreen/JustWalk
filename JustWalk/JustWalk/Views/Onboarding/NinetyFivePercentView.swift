@@ -2,7 +2,7 @@
 //  NinetyFivePercentView.swift
 //  JustWalk
 //
-//  Screen 2: "Two habits. 95% of your wellbeing." — positioning the app's focus
+//  Screen 2: "Two habits. 95% of your well-being." — positioning the app's focus
 //
 
 import SwiftUI
@@ -30,7 +30,7 @@ struct NinetyFivePercentView: View {
             // Copy section
             VStack(spacing: JW.Spacing.lg) {
                 // Headline
-                Text("Two habits.\n95% of your wellbeing.")
+                Text("Two habits.\n95% of your well-being.")
                     .font(JW.Font.title1)
                     .foregroundStyle(JW.Color.textPrimary)
                     .multilineTextAlignment(.center)

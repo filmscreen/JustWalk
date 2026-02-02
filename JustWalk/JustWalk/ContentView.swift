@@ -56,12 +56,6 @@ struct ContentView: View {
                                 FuelTabView()
                             }
                         }
-
-                        Tab("Settings", systemImage: "gearshape", value: .settings) {
-                            NavigationStack {
-                                SettingsView()
-                            }
-                        }
                     }
                 } else {
                     TabView(selection: $appState.selectedTab) {
@@ -90,12 +84,6 @@ struct ContentView: View {
                         }
                         .tabItem { Label("Fuel", systemImage: "fork.knife") }
                         .tag(AppTab.fuel)
-
-                        NavigationStack {
-                            SettingsView()
-                        }
-                        .tabItem { Label("Settings", systemImage: "gearshape") }
-                        .tag(AppTab.settings)
                     }
                 }
             }

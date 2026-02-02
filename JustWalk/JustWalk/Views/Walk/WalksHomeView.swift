@@ -57,6 +57,10 @@ struct WalksHomeView: View {
     @State private var showHistoryUpgradeSheet = false
     @State private var selectedHistoryWalk: TrackedWalk?
 
+    // Tooltip
+    @State private var showWalksTooltip = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     // Computed properties for usage status
     private var intervalsRemaining: Int {
         usageManager.remainingFree(for: .interval) ?? 1
@@ -182,6 +186,15 @@ struct WalksHomeView: View {
             usageManager.refreshWeek()
             loadRecentWalks()
             consumePendingCardAction()
+
+            // Show walks tooltip (first time only, after onboarding)
+            if hasCompletedOnboarding && TooltipKey.shouldShow(.walks) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    withAnimation(JustWalkAnimation.standard) {
+                        showWalksTooltip = true
+                    }
+                }
+            }
         }
         .onChange(of: appState.pendingCardAction) { _, _ in
             consumePendingCardAction()
@@ -206,6 +219,13 @@ struct WalksHomeView: View {
                 .font(JW.Font.subheadline)
                 .foregroundStyle(JW.Color.textSecondary)
         }
+        .tooltip(
+            isPresented: $showWalksTooltip,
+            content: "Guided walks make your steps more effective. Try your first one free.",
+            arrowDirection: .down,
+            offset: CGSize(width: 0, height: -8),
+            onDismiss: { TooltipKey.markAsSeen(.walks) }
+        )
     }
 
     // MARK: - Segmented Control
@@ -696,6 +716,9 @@ struct WalksHomeView: View {
             if let url = URL(string: "itms-watchs://") {
                 UIApplication.shared.open(url)
             }
+        case .navigateToFuelTab, .useShieldForDate, .letStreakBreak, .dismissFuelUpsell:
+            // These actions are handled in TodayView, not here
+            break
         }
     }
 }
@@ -756,11 +779,11 @@ enum FeatureCardWalkType {
         }
     }
 
-    var badge: String? {
+    var showsAppleWatchIcon: Bool {
         switch self {
-        case .intervals: return nil
-        case .fatBurn: return "Apple Watch"
-        case .postMeal: return nil
+        case .intervals: return false
+        case .fatBurn: return true
+        case .postMeal: return false
         }
     }
 
@@ -819,7 +842,7 @@ struct WalkTypeCard: View {
                     // Free user badge (inline after title)
                     if !isPro && walkType != .postMeal {
                         if freeWalksRemaining > 0 {
-                            Text("\(freeWalksRemaining) free")
+                            Text("\(freeWalksRemaining) free/wk")
                                 .font(JW.Font.caption.weight(.medium))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 2)
@@ -827,7 +850,7 @@ struct WalkTypeCard: View {
                                 .foregroundStyle(JW.Color.accent)
                                 .clipShape(RoundedRectangle(cornerRadius: 4))
                         } else {
-                            Text("Mon")
+                            Text("Resets Mon")
                                 .font(JW.Font.caption)
                                 .foregroundStyle(JW.Color.textSecondary)
                         }
@@ -835,21 +858,11 @@ struct WalkTypeCard: View {
 
                     Spacer()
 
-                    // Right badge (Apple Watch / Always Free)
-                    if let badge = walkType.badge {
-                        if walkType == .fatBurn {
-                            HStack(spacing: 4) {
-                                Image(systemName: "applewatch")
-                                    .font(.caption2)
-                                Text(badge)
-                            }
-                            .font(JW.Font.caption)
+                    // Apple Watch icon (no text)
+                    if walkType.showsAppleWatchIcon {
+                        Image(systemName: "applewatch")
+                            .font(.system(size: 14))
                             .foregroundStyle(JW.Color.textSecondary)
-                        } else {
-                            Text(badge)
-                                .font(JW.Font.caption.weight(.medium))
-                                .foregroundStyle(JW.Color.accent)
-                        }
                     }
 
                     // Chevron

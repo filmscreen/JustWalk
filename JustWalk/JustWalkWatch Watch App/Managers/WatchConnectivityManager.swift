@@ -151,16 +151,22 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
         let currentStreak = message[WatchMessage.Key.streakCurrent.rawValue] as? Int ?? 0
         let longestStreak = message[WatchMessage.Key.streakLongest.rawValue] as? Int ?? 0
         let dailyGoal = message[WatchMessage.Key.dailyGoal.rawValue] as? Int ?? 5000
+        let availableShields = message[WatchMessage.Key.availableShields.rawValue] as? Int ?? 0
+        let todayCalories = message[WatchMessage.Key.todayCalories.rawValue] as? Int ?? 0
+        let calorieGoal = message[WatchMessage.Key.calorieGoal.rawValue] as? Int
 
         let streakInfo = WatchStreakInfo(
             currentStreak: currentStreak,
             longestStreak: longestStreak,
             lastGoalMetDate: nil,
-            dailyStepGoal: dailyGoal
+            dailyStepGoal: dailyGoal,
+            availableShields: availableShields,
+            todayCalories: todayCalories,
+            calorieGoal: calorieGoal
         )
 
         WatchPersistenceManager.shared.saveStreakInfo(streakInfo)
-        print("Watch: Synced streak info - streak: \(currentStreak), goal: \(dailyGoal)")
+        print("Watch: Synced streak info - streak: \(currentStreak), goal: \(dailyGoal), shields: \(availableShields), calories: \(todayCalories)")
     }
 
     // MARK: - Complication Push Handler (Industry-Leading Refresh)

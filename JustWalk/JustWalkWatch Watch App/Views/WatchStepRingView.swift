@@ -11,6 +11,9 @@ struct WatchStepRingView: View {
     let steps: Int
     let goal: Int
     var streak: Int = 0
+    var shields: Int = 0
+    var calories: Int = 0
+    var calorieGoal: Int? = nil
     var size: CGFloat = 100
 
     @State private var animatedProgress: Double = 0
@@ -22,6 +25,22 @@ struct WatchStepRingView: View {
 
     private var progressPercent: Int {
         Int(progress * 100)
+    }
+
+    /// Formatted calorie text based on goal
+    private var calorieText: String {
+        if let goal = calorieGoal, goal > 0 {
+            let diff = goal - calories
+            if diff > 0 {
+                return "\(diff) left"
+            } else if diff < 0 {
+                return "\(abs(diff)) over"
+            } else {
+                return "On target"
+            }
+        } else {
+            return "\(calories) cal"
+        }
     }
 
     // Brand green palette (emerald → accent → bright mint)
@@ -64,27 +83,53 @@ struct WatchStepRingView: View {
                 .frame(width: size, height: size)
                 .rotationEffect(.degrees(-90))
 
-            VStack(spacing: 2) {
+            VStack(spacing: 1) {
+                // Step count
                 Text("\(steps)")
-                    .font(.system(size: size * 0.22, weight: .bold))
+                    .font(.system(size: size * 0.20, weight: .bold))
                     .minimumScaleFactor(0.5)
 
                 Text("steps")
-                    .font(.system(size: size * 0.09))
+                    .font(.system(size: size * 0.08))
                     .foregroundStyle(.secondary)
 
-                HStack(spacing: 2) {
-                    Image(systemName: streak > 0 ? "flame.fill" : "flame")
-                        .font(.system(size: size * 0.1))
-                        .foregroundStyle(.orange)
-                    Text("\(streak)")
-                        .font(.system(size: size * 0.1, weight: .semibold))
+                // Streak and Shields row
+                HStack(spacing: size * 0.06) {
+                    // Streak
+                    HStack(spacing: 2) {
+                        Image(systemName: streak > 0 ? "flame.fill" : "flame")
+                            .font(.system(size: size * 0.08))
+                            .foregroundStyle(.orange)
+                        Text("\(streak)")
+                            .font(.system(size: size * 0.08, weight: .semibold))
+                    }
+
+                    // Shields
+                    HStack(spacing: 2) {
+                        Image(systemName: shields > 0 ? "shield.fill" : "shield")
+                            .font(.system(size: size * 0.08))
+                            .foregroundStyle(.blue)
+                        Text("\(shields)")
+                            .font(.system(size: size * 0.08, weight: .semibold))
+                    }
                 }
-                .padding(.top, 6)
+                .padding(.top, 4)
+
+                // Calories row
+                HStack(spacing: 2) {
+                    Image(systemName: "fork.knife")
+                        .font(.system(size: size * 0.07))
+                        .foregroundStyle(Self.accentGreen)
+                    Text(calorieText)
+                        .font(.system(size: size * 0.07, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.top, 2)
             }
+            .padding(.horizontal, size * 0.08)
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(steps.formatted()) steps, \(streak) day streak")
+        .accessibilityLabel("\(steps.formatted()) steps, \(streak) day streak, \(shields) shields, \(calorieText)")
         .accessibilityValue("\(progressPercent)% of \(goal.formatted()) daily goal\(progress >= 1.0 ? ", goal complete" : "")")
         .onAppear {
             if reduceMotion {
@@ -108,5 +153,12 @@ struct WatchStepRingView: View {
 }
 
 #Preview {
-    WatchStepRingView(steps: 3500, goal: 5000)
+    WatchStepRingView(
+        steps: 3500,
+        goal: 5000,
+        streak: 12,
+        shields: 2,
+        calories: 1850,
+        calorieGoal: 2000
+    )
 }

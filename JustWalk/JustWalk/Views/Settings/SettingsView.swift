@@ -14,7 +14,6 @@ struct SettingsView: View {
     private var subscriptionManager: SubscriptionManager { SubscriptionManager.shared }
     private var notificationManager: NotificationManager { NotificationManager.shared }
     private var walkNotificationManager: WalkNotificationManager { WalkNotificationManager.shared }
-    private var hapticsManager: HapticsManager { HapticsManager.shared }
     private var streakManager: StreakManager { StreakManager.shared }
     private var shieldManager: ShieldManager { ShieldManager.shared }
     private var healthKitManager: HealthKitManager { HealthKitManager.shared }
@@ -28,7 +27,9 @@ struct SettingsView: View {
     @State private var showStreakReminderSheet = false
     @State private var showWalkReminderSheet = false
     @State private var showShieldPurchaseSheet = false
-    @State private var showPrivacySheet = false
+    @State private var showCalorieGoalSetup = false
+
+    @ObservedObject private var calorieGoalManager = CalorieGoalManager.shared
 
     @State private var notificationPermissionStatus: UNAuthorizationStatus = .notDetermined
     @AppStorage("liveActivity_promptShown") private var liveActivityPromptShown = false
@@ -43,13 +44,18 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 goalSection
+
+                // Fuel section (Pro only)
+                if subscriptionManager.isPro {
+                    fuelSection
+                }
+
                 streakShieldsSection
-                notificationsSection
-                walksSection
-                privacySection
-                displaySection
                 proSection
-                dataSupportSection
+                notificationsSection
+                displaySection
+                dataSection
+                shareSupportSection
 
                 #if DEBUG
                 // Debug/Developer section
@@ -98,9 +104,6 @@ struct SettingsView: View {
                     onRequestProUpgrade: { showProPaywall = true }
                 )
             }
-            .sheet(isPresented: $showPrivacySheet) {
-                PrivacySheetView()
-            }
             .sheet(isPresented: $showDeleteSheet) {
                 DeleteDataConfirmationView(onConfirmDelete: {
                     // Reset local state after deletion
@@ -108,6 +111,9 @@ struct SettingsView: View {
                     // Post notification to reset app to onboarding
                     NotificationCenter.default.post(name: .didDeleteAllData, object: nil)
                 })
+            }
+            .sheet(isPresented: $showCalorieGoalSetup) {
+                CalorieGoalSetupView()
             }
             .alert("HealthKit Sync", isPresented: $showSyncResult) {
                 Button("OK", role: .cancel) {}
@@ -157,6 +163,39 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
             .padding(.vertical, 4)
+            .listRowBackground(JW.Color.backgroundCard)
+        }
+    }
+
+    // MARK: - Fuel Section (Calorie Goal)
+
+    private var fuelSection: some View {
+        Section("Fuel") {
+            Button {
+                showCalorieGoalSetup = true
+            } label: {
+                HStack {
+                    Image(systemName: "fork.knife")
+                        .foregroundStyle(JW.Color.accent)
+
+                    Text("Calorie Goal")
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    if let goal = calorieGoalManager.dailyGoal {
+                        Text("\(goal.formatted()) cal")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Not Set")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             .listRowBackground(JW.Color.backgroundCard)
         }
     }
@@ -328,71 +367,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - 4. Walks
-
-    private var walksSection: some View {
-        Section("Walks") {
-            Toggle("Haptics", isOn: Binding(
-                get: { hapticsManager.isEnabled },
-                set: { hapticsManager.isEnabled = $0 }
-            ))
-            .listRowBackground(JW.Color.backgroundCard)
-
-        }
-    }
-
-    // MARK: - Privacy
-
-    private var privacySection: some View {
-        Section("Privacy") {
-            Button {
-                showPrivacySheet = true
-            } label: {
-                HStack {
-                    Text("Your Data")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .listRowBackground(JW.Color.backgroundCard)
-
-            Toggle(isOn: $iCloudSyncEnabled) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("iCloud Sync")
-                    Text("Sync walks and streaks across your Apple devices.\nUses your iCloud account — we never see this data.")
-                        .font(JW.Font.caption)
-                        .foregroundStyle(JW.Color.textSecondary)
-                }
-            }
-            .listRowBackground(JW.Color.backgroundCard)
-            .onChange(of: iCloudSyncEnabled) { _, enabled in
-                if enabled {
-                    Task {
-                        let success = await CloudKitSyncManager.shared.setup()
-                        if success {
-                            CloudKitSyncManager.shared.pushAllToCloud()
-                        }
-                    }
-                }
-            }
-
-            if let url = URL(string: "https://getjustwalk.com/privacy") {
-                Link(destination: url) {
-                    HStack {
-                        Text("Privacy Policy")
-                        Spacer()
-                        Image(systemName: "arrow.up.right.square")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .listRowBackground(JW.Color.backgroundCard)
-            }
-        }
-    }
-
-    // MARK: - 5. Display
+    // MARK: - 4. Display
 
     private var displaySection: some View {
         Section("Display") {
@@ -448,10 +423,10 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - 8. Data & Support
+    // MARK: - 6. Data
 
-    private var dataSupportSection: some View {
-        Section("Data & Support") {
+    private var dataSection: some View {
+        Section("Data") {
             Button {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
@@ -506,6 +481,45 @@ struct SettingsView: View {
             .disabled(isSyncingHealthKit)
             .listRowBackground(JW.Color.backgroundCard)
 
+            // iCloud Sync
+            Toggle(isOn: $iCloudSyncEnabled) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("iCloud Sync")
+                    Text("Sync walks and streaks across your Apple devices.")
+                        .font(JW.Font.caption)
+                        .foregroundStyle(JW.Color.textSecondary)
+                }
+            }
+            .listRowBackground(JW.Color.backgroundCard)
+            .onChange(of: iCloudSyncEnabled) { _, enabled in
+                if enabled {
+                    Task {
+                        let success = await CloudKitSyncManager.shared.setup()
+                        if success {
+                            CloudKitSyncManager.shared.pushAllToCloud()
+                        }
+                    }
+                }
+            }
+
+            Button(role: .destructive) {
+                showDeleteSheet = true
+            } label: {
+                HStack {
+                    Text("Delete All Data")
+                    Spacer()
+                    Image(systemName: "trash")
+                        .foregroundStyle(.red)
+                }
+            }
+            .listRowBackground(JW.Color.backgroundCard)
+        }
+    }
+
+    // MARK: - 7. Share & Support
+
+    private var shareSupportSection: some View {
+        Section("Share & Support") {
             if let shareURL = URL(string: "https://apps.apple.com/app/just-walk/id6740066018") {
                 ShareLink(
                     item: shareURL,
@@ -523,18 +537,6 @@ struct SettingsView: View {
 
             NavigationLink("Support & Legal") {
                 SupportLegalView(profile: profile)
-            }
-            .listRowBackground(JW.Color.backgroundCard)
-
-            Button(role: .destructive) {
-                showDeleteSheet = true
-            } label: {
-                HStack {
-                    Text("Delete All Data")
-                    Spacer()
-                    Image(systemName: "trash")
-                        .foregroundStyle(.red)
-                }
             }
             .listRowBackground(JW.Color.backgroundCard)
         }

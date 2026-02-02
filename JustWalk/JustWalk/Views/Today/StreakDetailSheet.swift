@@ -24,34 +24,30 @@ struct StreakDetailSheet: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 0) {
-                    // Fixed header section (flame, streak count)
+                VStack(spacing: JW.Spacing.sm) {
+                    // Compact hero section (no card background)
                     heroSection
-                        .padding(.horizontal)
-                        .padding(.top, JW.Spacing.sm)
-
-                    Divider()
-                        .overlay(JW.Color.backgroundTertiary)
-                        .padding(.horizontal)
-                        .padding(.vertical, JW.Spacing.sm)
 
                     // Static month-based calendar (no nested scroll)
                     MonthNavigableCalendar(showPaywall: $showPaywall)
                         .layoutPriority(1)
-                        .padding(.horizontal)
 
                     // Fixed footer (legend + shield section)
                     VStack(spacing: JW.Spacing.md) {
                         legendRow
                         shieldSection
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, JW.Spacing.md)
+                    .padding(.horizontal, JW.Spacing.sm)
+                    .padding(.vertical, JW.Spacing.sm)
                 }
+                .padding(.horizontal, JW.Spacing.sm)
+                .padding(.top, JW.Spacing.xs)
+                .padding(.bottom, JW.Spacing.sm)
                 .frame(maxWidth: .infinity)
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollIndicators(.hidden)
+            .background(JW.Color.backgroundPrimary)
             .navigationTitle("Your Streak")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -59,45 +55,55 @@ struct StreakDetailSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .toolbarBackground(JW.Color.backgroundPrimary, for: .navigationBar)
         }
         .presentationDetents([.large, .medium], selection: .constant(.large))
         .presentationDragIndicator(.visible)
+        .presentationBackground(JW.Color.backgroundPrimary)
         .sheet(isPresented: $showPaywall) {
             ProUpgradeView(onComplete: { showPaywall = false })
         }
     }
 
+    @AppStorage("dailyStepGoal") private var dailyGoal = 5000
+
     // MARK: - Hero Section
 
     private var heroSection: some View {
         VStack(spacing: JW.Spacing.sm) {
+            // Flame icon - large centered circle
             ZStack {
                 Circle()
-                    .fill(JW.Color.streak.opacity(0.2))
-                    .frame(width: 72, height: 72)
+                    .fill(JW.Color.streak)
+                    .frame(width: 88, height: 88)
 
-                Image(systemName: "flame.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(JW.Color.streak)
+                Text("🔥")
+                    .font(.system(size: 40))
             }
 
+            // Streak count
             Text("\(streakData.currentStreak)")
-                .font(.system(size: 36, weight: .bold, design: .rounded))
+                .font(.system(size: 48, weight: .bold, design: .rounded))
                 .contentTransition(.numericText(value: Double(streakData.currentStreak)))
 
+            // "day" label
             Text(streakData.currentStreak == 1 ? "day" : "days")
-                .font(JW.Font.subheadline)
+                .font(JW.Font.title3)
                 .foregroundStyle(JW.Color.textSecondary)
+
+            // Goal display
+            Text("Goal: \(dailyGoal.formatted()) steps")
+                .font(JW.Font.subheadline)
+                .foregroundStyle(JW.Color.textTertiary)
 
             // Trophy: Best streak display
             if streakData.longestStreak > 0 {
-                HStack(spacing: 6) {
-                    Image(systemName: "trophy.fill")
+                HStack(spacing: 4) {
+                    Text("🏆")
                         .font(.system(size: 14))
-                        .foregroundStyle(.yellow)
 
                     if streakData.currentStreak == streakData.longestStreak && streakData.currentStreak > 1 {
-                        Text("Best: \(streakData.longestStreak) days — that's now!")
+                        Text("Best: \(streakData.longestStreak) days — now!")
                             .font(JW.Font.subheadline)
                             .foregroundStyle(JW.Color.textSecondary)
                     } else {
@@ -106,19 +112,18 @@ struct StreakDetailSheet: View {
                             .foregroundStyle(JW.Color.textSecondary)
                     }
                 }
-                .padding(.top, JW.Spacing.xs)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, JW.Spacing.sm)
+        .padding(.vertical, JW.Spacing.md)
     }
 
     // MARK: - Legend
 
     private var legendRow: some View {
         HStack(spacing: JW.Spacing.md) {
-            legendItem(color: JW.Color.accent, icon: "checkmark", label: "Goal Met")
-            legendItem(color: JW.Color.accentBlue, icon: "shield.fill", label: "Shield")
+            legendItem(color: JW.Color.accent, icon: "checkmark", label: "Goal")
+            legendItem(color: JW.Color.accentBlue, icon: "checkmark", label: "Shield")
             legendItemRing(label: "Partial")
         }
         .font(JW.Font.caption)
@@ -129,11 +134,11 @@ struct StreakDetailSheet: View {
             ZStack {
                 Circle()
                     .stroke(JW.Color.backgroundTertiary, lineWidth: 2)
-                    .frame(width: 14, height: 14)
+                    .frame(width: 16, height: 16)
                 Circle()
                     .trim(from: 0, to: 0.5)
                     .stroke(JW.Color.accent.opacity(0.7), style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                    .frame(width: 14, height: 14)
+                    .frame(width: 16, height: 16)
                     .rotationEffect(.degrees(-90))
             }
             Text(label)
@@ -146,11 +151,11 @@ struct StreakDetailSheet: View {
             ZStack {
                 Circle()
                     .fill(color)
-                    .frame(width: 14, height: 14)
+                    .frame(width: 16, height: 16)
 
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 7, weight: .bold))
+                        .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(.white)
                 }
             }
@@ -163,17 +168,14 @@ struct StreakDetailSheet: View {
     // MARK: - Shield Section
 
     private var shieldSection: some View {
-        VStack(spacing: JW.Spacing.md) {
-            HStack(spacing: JW.Spacing.sm) {
-                Image(systemName: "shield.fill")
-                    .foregroundStyle(JW.Color.accentBlue)
+        HStack(spacing: JW.Spacing.xs) {
+            Image(systemName: "shield.fill")
+                .font(.system(size: 16))
+                .foregroundStyle(JW.Color.accentBlue)
 
-                Text("\(shieldManager.availableShields) shield\(shieldManager.availableShields == 1 ? "" : "s") available")
-                    .font(JW.Font.headline)
-                    .foregroundStyle(JW.Color.textPrimary)
-            }
-
-
+            Text("\(shieldManager.availableShields) shield\(shieldManager.availableShields == 1 ? "" : "s") available")
+                .font(JW.Font.subheadline)
+                .foregroundStyle(JW.Color.textPrimary)
         }
     }
 
@@ -230,7 +232,7 @@ struct MonthNavigableCalendar: View {
         let weeks = buildMonthWeeks(for: displayedMonth)
         let weekdayHeaders = reorderedWeekdaySymbols()
 
-        VStack(spacing: JW.Spacing.sm) {
+        VStack(spacing: JW.Spacing.xs) {
             // Month navigation header
             monthNavigationHeader
 
@@ -243,9 +245,9 @@ struct MonthNavigableCalendar: View {
             weekdayHeader(symbols: weekdayHeaders)
 
             // Static calendar grid (no ScrollView)
-            VStack(spacing: JW.Spacing.md) {
+            VStack(spacing: JW.Spacing.sm) {
                 ForEach(weeks) { week in
-                    HStack(spacing: JW.Spacing.xs) {
+                    HStack(spacing: 2) {
                         ForEach(week.days) { day in
                             StreakCalendarDayCell(day: day)
                                 .frame(maxWidth: .infinity)
@@ -260,7 +262,7 @@ struct MonthNavigableCalendar: View {
                     }
                 }
             }
-            .padding(.horizontal, JW.Spacing.xs)
+            .padding(.horizontal, 2)
             .padding(.bottom, JW.Spacing.xs)
         }
         .frame(maxWidth: .infinity)
@@ -289,9 +291,9 @@ struct MonthNavigableCalendar: View {
                 previousMonth()
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(canGoBack ? JW.Color.accent : JW.Color.textTertiary)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 36, height: 36)
                     .contentShape(Rectangle())
             }
             .disabled(!canGoBack)
@@ -299,7 +301,7 @@ struct MonthNavigableCalendar: View {
             Spacer()
 
             Text(monthYearString(displayedMonth))
-                .font(JW.Font.headline)
+                .font(JW.Font.subheadline.weight(.semibold))
                 .foregroundStyle(JW.Color.textPrimary)
 
             Spacer()
@@ -308,20 +310,20 @@ struct MonthNavigableCalendar: View {
                 nextMonth()
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(isCurrentMonth ? JW.Color.textTertiary : JW.Color.accent)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 36, height: 36)
                     .contentShape(Rectangle())
             }
             .disabled(isCurrentMonth)
         }
-        .padding(.horizontal, JW.Spacing.xs)
+        .padding(.horizontal, 2)
     }
 
     // MARK: - Weekday Header
 
     private func weekdayHeader(symbols: [String]) -> some View {
-        HStack(spacing: JW.Spacing.xs) {
+        HStack(spacing: 2) {
             ForEach(symbols, id: \.self) { symbol in
                 Text(symbol)
                     .font(JW.Font.caption2)
@@ -329,40 +331,40 @@ struct MonthNavigableCalendar: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, JW.Spacing.xs)
+        .padding(.horizontal, 2)
     }
 
     // MARK: - Upgrade Prompt
 
     private var upgradePromptSection: some View {
-        HStack(spacing: JW.Spacing.sm) {
+        HStack(spacing: JW.Spacing.xs) {
             Image(systemName: "crown.fill")
-                .font(.system(size: 14))
+                .font(.system(size: 12))
                 .foregroundStyle(JW.Color.streak)
 
             Text("View full history with Pro")
-                .font(JW.Font.subheadline)
+                .font(JW.Font.caption)
                 .foregroundStyle(JW.Color.textSecondary)
 
-            Spacer(minLength: JW.Spacing.sm)
+            Spacer(minLength: JW.Spacing.xs)
 
             Button("Upgrade") {
                 showPaywall = true
             }
-            .font(JW.Font.subheadline.weight(.semibold))
+            .font(JW.Font.caption.weight(.semibold))
             .foregroundStyle(JW.Color.accent)
-            .padding(.horizontal, JW.Spacing.sm)
-            .padding(.vertical, JW.Spacing.xs)
+            .padding(.horizontal, JW.Spacing.xs)
+            .padding(.vertical, 4)
             .background(
                 Capsule()
                     .fill(JW.Color.accent.opacity(0.15))
             )
         }
-        .padding(.horizontal, JW.Spacing.sm)
-        .padding(.vertical, JW.Spacing.sm)
-        .background(JW.Color.backgroundTertiary.opacity(0.5))
-        .clipShape(RoundedRectangle(cornerRadius: JW.Radius.md))
         .padding(.horizontal, JW.Spacing.xs)
+        .padding(.vertical, JW.Spacing.xs)
+        .background(JW.Color.backgroundTertiary.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: JW.Radius.sm))
+        .padding(.horizontal, 2)
     }
 
     // MARK: - Navigation Actions
@@ -568,8 +570,8 @@ private struct StreakCalendarDay: Identifiable {
 private struct StreakCalendarDayCell: View {
     let day: StreakCalendarDay
 
-    private let circleSize: CGFloat = 36
-    private let ringSize: CGFloat = 36
+    private let circleSize: CGFloat = 40
+    private let ringSize: CGFloat = 40
 
     private var stepProgress: Double {
         guard day.goal > 0 else { return 0 }
@@ -583,46 +585,47 @@ private struct StreakCalendarDayCell: View {
     var body: some View {
         if day.isLocked {
             // Locked day (beyond 30 days for free users): faded circle with lock
-            VStack(spacing: 2) {
+            VStack(spacing: 1) {
                 ZStack {
                     Circle()
                         .fill(JW.Color.backgroundTertiary.opacity(0.4))
                         .frame(width: circleSize, height: circleSize)
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 10))
+                        .font(.system(size: 9))
                         .foregroundStyle(JW.Color.textTertiary.opacity(0.6))
                 }
-                Color.clear.frame(height: 8)
+                Color.clear.frame(height: 6)
             }
         } else if day.isInRange {
-            VStack(spacing: 2) {
+            VStack(spacing: 1) {
                 ZStack {
-                    if day.goalMet {
+                    // Shield takes visual priority - always show blue for shielded days
+                    if day.shieldUsed {
+                        // Shield used: solid blue circle with checkmark
+                        Circle()
+                            .fill(JW.Color.accentBlue)
+                            .frame(width: circleSize, height: circleSize)
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.white)
+                    } else if day.goalMet {
                         // Goal met: solid green circle with checkmark
                         Circle()
                             .fill(JW.Color.accent)
                             .frame(width: circleSize, height: circleSize)
                         Image(systemName: "checkmark")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(.white)
-                    } else if day.shieldUsed {
-                        // Shield used: solid blue circle with shield icon
-                        Circle()
-                            .fill(JW.Color.accentBlue)
-                            .frame(width: circleSize, height: circleSize)
-                        Image(systemName: "shield.fill")
-                            .font(.system(size: 12))
+                            .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(.white)
                     } else if hasPartialProgress {
                         // Partial progress: ring showing percentage
                         Circle()
-                            .stroke(JW.Color.backgroundTertiary, lineWidth: 3)
+                            .stroke(JW.Color.backgroundTertiary, lineWidth: 2.5)
                             .frame(width: ringSize, height: ringSize)
                         Circle()
                             .trim(from: 0, to: stepProgress)
                             .stroke(
                                 JW.Color.accent.opacity(0.7),
-                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                                style: StrokeStyle(lineWidth: 2.5, lineCap: .round)
                             )
                             .frame(width: ringSize, height: ringSize)
                             .rotationEffect(.degrees(-90))
@@ -637,26 +640,26 @@ private struct StreakCalendarDayCell: View {
                     if day.isToday {
                         Circle()
                             .stroke(JW.Color.accent, lineWidth: 2)
-                            .frame(width: 38, height: 38)
+                            .frame(width: 44, height: 44)
                     }
                 }
 
-                // Shield indicator below (for shielded days that also met goal)
-                if day.shieldUsed && day.goalMet {
+                // Shield indicator below (for shielded days)
+                if day.shieldUsed {
                     Image(systemName: "shield.fill")
-                        .font(.system(size: 8))
+                        .font(.system(size: 6))
                         .foregroundStyle(JW.Color.accentBlue)
                 } else {
-                    Color.clear.frame(height: 8)
+                    Color.clear.frame(height: 6)
                 }
             }
         } else {
             // Placeholder for out-of-range or future days
-            VStack(spacing: 2) {
+            VStack(spacing: 1) {
                 Circle()
                     .fill(Color.clear)
                     .frame(width: circleSize, height: circleSize)
-                Color.clear.frame(height: 8)
+                Color.clear.frame(height: 6)
             }
         }
     }

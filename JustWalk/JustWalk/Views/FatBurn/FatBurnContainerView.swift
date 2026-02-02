@@ -36,6 +36,7 @@ struct FatBurnContainerView: View {
         .task {
             await checkHealthKitAge()
         }
+        .toolbar(.hidden, for: .tabBar)
     }
 
     /// Try to get age from HealthKit first, so we don't have to ask

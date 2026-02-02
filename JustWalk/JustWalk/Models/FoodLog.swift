@@ -21,7 +21,7 @@ enum MealType: String, Codable, CaseIterable {
         case .breakfast: return "Breakfast"
         case .lunch: return "Lunch"
         case .dinner: return "Dinner"
-        case .snack: return "Snack"
+        case .snack: return "Other"
         case .unspecified: return "Meal"
         }
     }
@@ -31,7 +31,7 @@ enum MealType: String, Codable, CaseIterable {
         case .breakfast: return "🌅"
         case .lunch: return "🌮"
         case .dinner: return "🍽️"
-        case .snack: return "🍫"
+        case .snack: return "🍴"
         case .unspecified: return "🍴"
         }
     }

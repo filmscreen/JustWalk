@@ -66,6 +66,7 @@ struct WalkTabView: View {
             // Update viewing state when walk starts
             appState.isViewingActiveWalk = isWalking
         }
+        .toolbar(.hidden, for: .tabBar)
     }
 
     private func processCompletedWalk(_ walk: TrackedWalk) {

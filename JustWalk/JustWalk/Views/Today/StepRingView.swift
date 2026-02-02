@@ -51,12 +51,16 @@ struct StepRingView: View {
             }
 
             // Center content
-            VStack(spacing: 4) {
+            VStack(spacing: 2) {
                 AnimatedCounter(
                     value: steps,
                     font: JW.Font.heroNumber,
                     color: JW.Color.textPrimary
                 )
+
+                Text("steps")
+                    .font(JW.Font.subheadline)
+                    .foregroundStyle(JW.Color.textSecondary)
 
                 Group {
                     if progress >= 1.0 {
@@ -66,11 +70,12 @@ struct StepRingView: View {
                             .transition(.scale.combined(with: .opacity))
                     } else {
                         Text(steps == 0 ? "Let's get moving" : "\(max(goal - steps, 0).formatted()) to go")
-                            .font(JW.Font.subheadline)
+                            .font(JW.Font.caption)
                             .foregroundStyle(JW.Color.textTertiary)
                             .contentTransition(.interpolate)
                     }
                 }
+                .padding(.top, 2)
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: progress >= 1.0)
 
             }

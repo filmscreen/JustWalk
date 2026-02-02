@@ -12,7 +12,6 @@ enum AppTab: String, CaseIterable {
     case today
     case walks = "intervals" // renamed from "intervals", raw value preserved for stored state
     case fuel = "eat" // renamed from "eat", raw value preserved for stored state
-    case settings
 }
 
 @Observable

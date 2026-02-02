@@ -48,6 +48,10 @@ struct EditFoodEntryView: View {
         (Int(caloriesText) ?? -1) >= 0
     }
 
+    private var canRecalculate: Bool {
+        !entryDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     init(
         entry: FoodLog,
         onSave: @escaping (FoodLog) -> Void,
@@ -72,26 +76,35 @@ struct EditFoodEntryView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: JW.Spacing.xl) {
-                    // Source badge
+                VStack(spacing: JW.Spacing.md) {
+                    // Source badge (centered)
                     sourceBadge
+                        .padding(.bottom, JW.Spacing.xs)
 
-                    // Editable fields
-                    editableFieldsSection
+                    // Name card
+                    nameCard
 
-                    // Recalculate button
-                    if !entryDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        recalculateButton
-                    }
+                    // Description card with Re-estimate
+                    descriptionCard
+
+                    // Macros card (2×2 grid)
+                    macrosCard
+
+                    // Meal selector (no card)
+                    mealSelector
 
                     // Save button
                     saveButton
+                        .padding(.top, JW.Spacing.sm)
 
                     // Delete button
                     deleteButton
                 }
-                .padding(JW.Spacing.lg)
+                .padding(.horizontal, JW.Spacing.lg)
+                .padding(.top, JW.Spacing.md)
+                .padding(.bottom, JW.Spacing.lg)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(JW.Color.backgroundPrimary)
             .navigationTitle("Edit Entry")
             .navigationBarTitleDisplayMode(.inline)
@@ -125,18 +138,18 @@ struct EditFoodEntryView: View {
     // MARK: - Source Badge
 
     private var sourceBadge: some View {
-        HStack(spacing: JW.Spacing.sm) {
+        HStack(spacing: JW.Spacing.xs) {
             Image(systemName: sourceIcon)
-                .font(.system(size: 14))
+                .font(.system(size: 12))
             Text(sourceText)
                 .font(JW.Font.caption)
         }
         .foregroundStyle(sourceColor)
         .padding(.horizontal, JW.Spacing.md)
-        .padding(.vertical, JW.Spacing.xs)
+        .padding(.vertical, 6)
         .background(
             Capsule()
-                .fill(sourceColor.opacity(0.15))
+                .fill(sourceColor.opacity(0.12))
         )
     }
 
@@ -163,38 +176,148 @@ struct EditFoodEntryView: View {
         }
     }
 
-    // MARK: - Editable Fields Section
+    // MARK: - Name Card
 
-    private var editableFieldsSection: some View {
-        VStack(spacing: JW.Spacing.md) {
-            // Name field
-            EditableEntryTextField(
-                label: "Name",
-                text: $name,
-                placeholder: "Food name"
-            )
-            .focused($focusedField, equals: .name)
+    private var nameCard: some View {
+        VStack(alignment: .leading, spacing: JW.Spacing.xs) {
+            Text("Name")
+                .font(JW.Font.caption)
+                .foregroundStyle(JW.Color.textSecondary)
 
-            // Description field
-            EditableEntryTextField(
-                label: "Description",
-                text: $entryDescription,
-                placeholder: "What you ate (optional)",
-                isMultiline: true
-            )
-            .focused($focusedField, equals: .description)
-
-            // Meal type selector
-            mealTypeSelector
-
-            // Nutrition fields in grid
-            nutritionGrid
+            TextField("Food name", text: $name)
+                .font(JW.Font.headline)
+                .foregroundStyle(JW.Color.textPrimary)
+                .focused($focusedField, equals: .name)
         }
-        .padding(JW.Spacing.lg)
-        .jwCard()
+        .padding(JW.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: JW.Radius.md)
+                .fill(JW.Color.backgroundCard)
+        )
     }
 
-    private var mealTypeSelector: some View {
+    // MARK: - Description Card
+
+    private var descriptionCard: some View {
+        VStack(alignment: .leading, spacing: JW.Spacing.sm) {
+            Text("Description")
+                .font(JW.Font.caption)
+                .foregroundStyle(JW.Color.textSecondary)
+
+            TextField("What you ate...", text: $entryDescription, axis: .vertical)
+                .font(JW.Font.body)
+                .foregroundStyle(JW.Color.textPrimary)
+                .lineLimit(2...5)
+                .focused($focusedField, equals: .description)
+
+            // Re-estimate button
+            Button {
+                JustWalkHaptics.buttonTap()
+                var updatedEntry = buildUpdatedEntry()
+                updatedEntry.entryDescription = entryDescription
+                onRecalculate(updatedEntry)
+                dismiss()
+            } label: {
+                HStack(spacing: JW.Spacing.xs) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 14))
+                    Text("Re-estimate")
+                        .font(JW.Font.subheadline.weight(.medium))
+                }
+                .foregroundStyle(canRecalculate ? JW.Color.accent : JW.Color.textTertiary)
+                .padding(.vertical, JW.Spacing.sm)
+            }
+            .disabled(!canRecalculate)
+        }
+        .padding(JW.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: JW.Radius.md)
+                .fill(JW.Color.backgroundCard)
+        )
+    }
+
+    // MARK: - Macros Card (2×2 Grid)
+
+    private var macrosCard: some View {
+        VStack(spacing: JW.Spacing.lg) {
+            // Top row: Calories and Protein
+            HStack(spacing: JW.Spacing.lg) {
+                // Calories (prominent, green)
+                macroCell(
+                    value: $caloriesText,
+                    label: "Cal",
+                    isCalories: true,
+                    field: .calories
+                )
+
+                // Protein
+                macroCell(
+                    value: $proteinText,
+                    label: "Protein",
+                    suffix: "g",
+                    field: .protein
+                )
+            }
+
+            // Bottom row: Carbs and Fat
+            HStack(spacing: JW.Spacing.lg) {
+                // Carbs
+                macroCell(
+                    value: $carbsText,
+                    label: "Carbs",
+                    suffix: "g",
+                    field: .carbs
+                )
+
+                // Fat
+                macroCell(
+                    value: $fatText,
+                    label: "Fat",
+                    suffix: "g",
+                    field: .fat
+                )
+            }
+        }
+        .padding(JW.Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: JW.Radius.md)
+                .fill(JW.Color.backgroundCard)
+        )
+    }
+
+    private func macroCell(
+        value: Binding<String>,
+        label: String,
+        suffix: String? = nil,
+        isCalories: Bool = false,
+        field: Field
+    ) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 2) {
+                TextField("0", text: value)
+                    .font(isCalories ? .system(size: 32, weight: .bold, design: .rounded) : .system(size: 24, weight: .semibold, design: .rounded))
+                    .foregroundStyle(isCalories ? JW.Color.accent : JW.Color.textPrimary)
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.center)
+                    .focused($focusedField, equals: field)
+
+                if let suffix = suffix {
+                    Text(suffix)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(JW.Color.textTertiary)
+                }
+            }
+
+            Text(label)
+                .font(JW.Font.caption)
+                .foregroundStyle(JW.Color.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Meal Selector
+
+    private var mealSelector: some View {
         VStack(alignment: .leading, spacing: JW.Spacing.sm) {
             Text("Meal")
                 .font(JW.Font.caption)
@@ -203,109 +326,57 @@ struct EditFoodEntryView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: JW.Spacing.sm) {
                     ForEach(MealType.allCases.filter { $0 != .unspecified }, id: \.self) { type in
-                        EditMealChip(
-                            mealType: type,
-                            isSelected: mealType == type
-                        ) {
-                            mealType = type
-                            JustWalkHaptics.selectionChanged()
-                        }
+                        mealPill(type)
                     }
                 }
             }
         }
     }
 
-    private var nutritionGrid: some View {
-        VStack(spacing: JW.Spacing.md) {
-            // Calories (prominent)
-            EditableEntryNumberField(
-                label: "Calories",
-                text: $caloriesText,
-                isHighlighted: true
-            )
-            .focused($focusedField, equals: .calories)
+    private func mealPill(_ type: MealType) -> some View {
+        let isSelected = mealType == type
 
-            // Macros row
-            HStack(spacing: JW.Spacing.md) {
-                EditableEntryNumberField(
-                    label: "Protein",
-                    text: $proteinText,
-                    suffix: "g"
-                )
-                .focused($focusedField, equals: .protein)
-
-                EditableEntryNumberField(
-                    label: "Carbs",
-                    text: $carbsText,
-                    suffix: "g"
-                )
-                .focused($focusedField, equals: .carbs)
-
-                EditableEntryNumberField(
-                    label: "Fat",
-                    text: $fatText,
-                    suffix: "g"
-                )
-                .focused($focusedField, equals: .fat)
-            }
-        }
-    }
-
-    // MARK: - Recalculate Button
-
-    private var recalculateButton: some View {
-        Button {
-            JustWalkHaptics.buttonTap()
-            // Create updated entry with current description for recalculation
-            var updatedEntry = buildUpdatedEntry()
-            updatedEntry.entryDescription = entryDescription
-            onRecalculate(updatedEntry)
-            dismiss()
+        return Button {
+            mealType = type
+            JustWalkHaptics.selectionChanged()
         } label: {
-            HStack(spacing: JW.Spacing.sm) {
-                Image(systemName: "sparkles")
-                Text("Recalculate with AI")
+            HStack(spacing: JW.Spacing.xs) {
+                Text(type.icon)
+                    .font(.system(size: 14))
+                Text(type.displayName)
+                    .font(JW.Font.subheadline.weight(isSelected ? .semibold : .regular))
             }
-            .font(JW.Font.subheadline)
-            .foregroundStyle(JW.Color.accent)
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
+            .foregroundStyle(isSelected ? .black : JW.Color.textSecondary)
+            .padding(.horizontal, JW.Spacing.md)
+            .padding(.vertical, JW.Spacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: JW.Radius.md)
-                    .stroke(JW.Color.accent.opacity(0.5), lineWidth: 1)
+                Capsule()
+                    .fill(isSelected ? JW.Color.accent : JW.Color.backgroundCard)
             )
         }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Save Button
 
     private var saveButton: some View {
-        VStack(spacing: JW.Spacing.sm) {
-            Button {
-                saveEntry()
-            } label: {
-                HStack(spacing: JW.Spacing.sm) {
-                    Image(systemName: "checkmark")
-                    Text("Save Changes")
-                }
-                .font(JW.Font.headline)
-                .foregroundStyle(isValid ? .black : JW.Color.textTertiary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
-                .background(isValid ? JW.Color.accent : JW.Color.backgroundTertiary)
-                .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
+        Button {
+            saveEntry()
+        } label: {
+            HStack(spacing: JW.Spacing.sm) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 16, weight: .semibold))
+                Text("Save Changes")
             }
-            .disabled(!isValid)
-            .buttonPressEffect()
-
-            if wasEdited {
-                Text("Changes will be saved")
-                    .font(JW.Font.caption)
-                    .foregroundStyle(JW.Color.textTertiary)
-            }
+            .font(JW.Font.headline)
+            .foregroundStyle(isValid ? .black : JW.Color.textTertiary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(isValid ? JW.Color.accent : JW.Color.backgroundTertiary)
+            .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
         }
-        .padding(.top, JW.Spacing.md)
+        .disabled(!isValid)
+        .buttonPressEffect()
     }
 
     // MARK: - Delete Button
@@ -315,16 +386,15 @@ struct EditFoodEntryView: View {
             JustWalkHaptics.buttonTap()
             showDeleteConfirmation = true
         } label: {
-            HStack(spacing: JW.Spacing.sm) {
+            HStack(spacing: JW.Spacing.xs) {
                 Image(systemName: "trash")
+                    .font(.system(size: 14))
                 Text("Delete Entry")
             }
             .font(JW.Font.subheadline)
             .foregroundStyle(JW.Color.danger)
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
         }
-        .padding(.top, JW.Spacing.sm)
+        .padding(.vertical, JW.Spacing.sm)
     }
 
     // MARK: - Actions
@@ -358,111 +428,28 @@ struct EditFoodEntryView: View {
     }
 }
 
-// MARK: - Editable Text Field
-
-private struct EditableEntryTextField: View {
-    let label: String
-    @Binding var text: String
-    var placeholder: String = ""
-    var isMultiline: Bool = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: JW.Spacing.xs) {
-            Text(label)
-                .font(JW.Font.caption)
-                .foregroundStyle(JW.Color.textSecondary)
-
-            if isMultiline {
-                TextField(placeholder, text: $text, axis: .vertical)
-                    .font(JW.Font.body)
-                    .foregroundStyle(JW.Color.textPrimary)
-                    .lineLimit(3...6)
-                    .padding(JW.Spacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: JW.Radius.md)
-                            .fill(JW.Color.backgroundTertiary)
-                    )
-            } else {
-                TextField(placeholder, text: $text)
-                    .font(JW.Font.headline)
-                    .foregroundStyle(JW.Color.textPrimary)
-                    .padding(JW.Spacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: JW.Radius.md)
-                            .fill(JW.Color.backgroundTertiary)
-                    )
-            }
-        }
-    }
-}
-
-// MARK: - Editable Number Field
-
-private struct EditableEntryNumberField: View {
-    let label: String
-    @Binding var text: String
-    var suffix: String? = nil
-    var isHighlighted: Bool = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: JW.Spacing.xs) {
-            Text(label)
-                .font(JW.Font.caption)
-                .foregroundStyle(JW.Color.textSecondary)
-
-            HStack(spacing: JW.Spacing.xs) {
-                TextField("0", text: $text)
-                    .font(isHighlighted ? JW.Font.title2 : JW.Font.headline)
-                    .foregroundStyle(isHighlighted ? JW.Color.accent : JW.Color.textPrimary)
-                    .keyboardType(.numberPad)
-                    .multilineTextAlignment(suffix != nil ? .trailing : .leading)
-
-                if let suffix = suffix {
-                    Text(suffix)
-                        .font(JW.Font.subheadline)
-                        .foregroundStyle(JW.Color.textTertiary)
-                }
-            }
-            .padding(JW.Spacing.md)
-            .background(
-                RoundedRectangle(cornerRadius: JW.Radius.md)
-                    .fill(JW.Color.backgroundTertiary)
-            )
-        }
-    }
-}
-
-// MARK: - Edit Meal Chip
-
-private struct EditMealChip: View {
-    let mealType: MealType
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: JW.Spacing.xs) {
-                Text(mealType.icon)
-                    .font(.system(size: 14))
-                Text(mealType.displayName)
-                    .font(JW.Font.subheadline)
-                    .fontWeight(isSelected ? .semibold : .regular)
-            }
-            .foregroundStyle(isSelected ? JW.Color.backgroundPrimary : JW.Color.textSecondary)
-            .padding(.horizontal, JW.Spacing.md)
-            .padding(.vertical, JW.Spacing.sm)
-            .background(
-                Capsule()
-                    .fill(isSelected ? JW.Color.accent : JW.Color.backgroundTertiary)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - Previews
 
 #Preview("AI Entry") {
+    EditFoodEntryView(
+        entry: FoodLog(
+            date: Date(),
+            mealType: .dinner,
+            name: "Chicken Thighs",
+            entryDescription: "4 chicken thighs",
+            calories: 1040,
+            protein: 104,
+            carbs: 0,
+            fat: 72,
+            source: .ai
+        ),
+        onSave: { _ in },
+        onDelete: { _ in },
+        onRecalculate: { _ in }
+    )
+}
+
+#Preview("AI Adjusted Entry") {
     EditFoodEntryView(
         entry: FoodLog(
             date: Date(),
@@ -473,7 +460,7 @@ private struct EditMealChip: View {
             protein: 54,
             carbs: 85,
             fat: 38,
-            source: .ai
+            source: .aiAdjusted
         ),
         onSave: { _ in },
         onDelete: { _ in },

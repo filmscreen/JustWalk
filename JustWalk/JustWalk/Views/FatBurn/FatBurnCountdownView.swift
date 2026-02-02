@@ -46,6 +46,7 @@ struct FatBurnCountdownView: View {
         .animation(.easeInOut(duration: 0.3), value: showCountdown)
         .animation(.easeInOut(duration: 0.3), value: showCompletion)
         .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .tabBar)
         .onChange(of: walkSession.completedWalk != nil) { _, hasWalk in
             if hasWalk && walkSession.completedWalk?.mode == .fatBurn {
                 // Save walk to persistence

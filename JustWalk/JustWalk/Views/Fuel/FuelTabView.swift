@@ -20,7 +20,7 @@ struct FuelTabView: View {
     @State private var estimationState = FoodEstimationState()
     @State private var showAIConfirmation = false
     @State private var showAIError = false
-    @State private var pendingEstimate: FoodEstimate?
+    @State private var pendingEstimates: [FoodEstimate]?  // Now supports multiple items
 
     // Edit entry state
     @State private var showEditEntry = false
@@ -30,16 +30,23 @@ struct FuelTabView: View {
     @State private var showRecalculate = false
     @State private var entryToRecalculate: FoodLog?
 
+    // Input minimized state - starts minimized by default
+    @State private var isInputMinimized = true
+
+    // Focus request state for input field
+    @State private var requestInputFocus = false
+
     private let calendar = Calendar.current
 
     // MARK: - Computed Properties
 
-    private var dailySummary: (calories: Int, protein: Int, carbs: Int, fat: Int) {
-        foodLogManager.getDailySummary(for: selectedDate)
-    }
-
     private var logsByMeal: [MealType: [FoodLog]] {
         foodLogManager.getLogsByMeal(for: selectedDate)
+    }
+
+    /// Whether the selected date is today
+    private var isSelectedDateToday: Bool {
+        calendar.isDateInToday(selectedDate)
     }
 
     /// Whether the selected date allows adding/editing entries
@@ -86,65 +93,74 @@ struct FuelTabView: View {
     // MARK: - Fuel Tab Content
 
     private var fuelTabContent: some View {
-        ScrollView {
-            VStack(spacing: JW.Spacing.lg) {
-                // Calendar section
-                FuelCalendarView(
-                    selectedDate: $selectedDate,
-                    hasLogsForDate: { foodLogManager.hasLogs(for: $0) }
-                )
-
-                // Daily summary section
-                DailySummaryView(
-                    selectedDate: selectedDate,
-                    summary: dailySummary
-                )
-
-                // Divider
-                sectionDivider
-
-                // Food input section (only for editable dates)
-                if isDateEditable {
-                    FoodInputView(
-                        foodDescription: $foodDescription,
-                        selectedMealType: $selectedMealType,
-                        onLogTapped: handleLogTapped,
-                        onAddManuallyTapped: handleAddManuallyTapped
+        VStack(spacing: 0) {
+            // Scrollable content
+            ScrollView {
+                VStack(spacing: JW.Spacing.sm) {
+                    // Calendar section
+                    FuelCalendarView(
+                        selectedDate: $selectedDate,
+                        hasLogsForDate: { foodLogManager.hasLogs(for: $0) }
                     )
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                } else {
-                    // Read-only notice
-                    readOnlyNotice
-                        .transition(.opacity.combined(with: .move(edge: .top)))
+
+                    // Daily summary section
+                    DailySummaryView(selectedDate: selectedDate)
+
+                    // Today's log section
+                    FoodLogListView(
+                        logsByMeal: logsByMeal,
+                        onEntryTapped: { entry in
+                            if isDateEditable {
+                                handleEntryTapped(entry)
+                            }
+                        },
+                        onAddToMeal: { mealType in
+                            if isDateEditable {
+                                handleAddToMeal(mealType)
+                            }
+                        },
+                        onDeleteEntry: isDateEditable ? { entry in
+                            handleSwipeDelete(entry)
+                        } : nil,
+                        isToday: isSelectedDateToday,
+                        onTryExampleTapped: isSelectedDateToday ? {
+                            handleTryExampleTapped()
+                        } : nil
+                    )
                 }
-
-                // Divider
-                sectionDivider
-
-                // Today's log section
-                FoodLogListView(
-                    logsByMeal: logsByMeal,
-                    onEntryTapped: { entry in
-                        if isDateEditable {
-                            handleEntryTapped(entry)
-                        }
-                    },
-                    onAddToMeal: { mealType in
-                        if isDateEditable {
-                            handleAddToMeal(mealType)
-                        }
-                    },
-                    onDeleteEntry: isDateEditable ? { entry in
-                        handleSwipeDelete(entry)
-                    } : nil
-                )
+                .padding(.horizontal, JW.Spacing.md)
+                .padding(.top, JW.Spacing.sm)
+                .padding(.bottom, JW.Spacing.md)
             }
-            .padding(.horizontal, JW.Spacing.lg)
-            .padding(.top, JW.Spacing.md)
-            .padding(.bottom, JW.Spacing.xxxl)
-            .animation(.easeInOut(duration: 0.25), value: isDateEditable)
+
+            // Pinned input section at bottom
+            if isDateEditable {
+                FoodInputView(
+                    foodDescription: $foodDescription,
+                    selectedMealType: $selectedMealType,
+                    isMinimized: $isInputMinimized,
+                    requestFocus: $requestInputFocus,
+                    onLogTapped: handleLogTapped,
+                    onAddManuallyTapped: handleAddManuallyTapped
+                )
+                .padding(.horizontal, JW.Spacing.md)
+                .padding(.bottom, JW.Spacing.sm)
+                .background(
+                    JW.Color.backgroundPrimary
+                        .shadow(color: .black.opacity(0.2), radius: 4, y: -2)
+                        .ignoresSafeArea(edges: .bottom)
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else {
+                // Read-only notice
+                readOnlyNotice
+                    .padding(.horizontal, JW.Spacing.md)
+                    .padding(.bottom, JW.Spacing.sm)
+                    .transition(.opacity)
+            }
         }
         .background(JW.Color.backgroundPrimary)
+        .animation(.easeInOut(duration: 0.25), value: isDateEditable)
         .overlay {
             // Loading overlay
             if estimationState.isLoading {
@@ -159,12 +175,12 @@ struct FuelTabView: View {
             )
         }
         .sheet(isPresented: $showAIConfirmation) {
-            if let estimate = pendingEstimate {
-                FoodConfirmationView(
-                    originalEstimate: estimate,
+            if let estimates = pendingEstimates, !estimates.isEmpty {
+                MultiItemConfirmationView(
+                    originalEstimates: estimates,
                     mealType: selectedMealType,
                     selectedDate: selectedDate,
-                    onSave: handleAIConfirm,
+                    onSave: handleAIConfirmMultiple,
                     onCancel: handleAICancel
                 )
             }
@@ -220,18 +236,21 @@ struct FuelTabView: View {
     }
 
     private var readOnlyNotice: some View {
-        HStack(spacing: JW.Spacing.sm) {
+        HStack(spacing: JW.Spacing.xs) {
             Image(systemName: "lock.fill")
-                .font(.system(size: 14))
+                .font(.system(size: 12))
 
             Text(readOnlyMessage)
-                .font(JW.Font.subheadline)
+                .font(JW.Font.caption)
         }
         .foregroundStyle(JW.Color.textTertiary)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, JW.Spacing.xl)
-        .padding(.horizontal, JW.Spacing.lg)
-        .jwCard()
+        .padding(.vertical, JW.Spacing.sm)
+        .padding(.horizontal, JW.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: JW.Radius.md)
+                .fill(JW.Color.backgroundCard)
+        )
     }
 
     private var loadingOverlay: some View {
@@ -292,8 +311,8 @@ struct FuelTabView: View {
         case .idle, .loading:
             break
 
-        case .success(let estimate):
-            pendingEstimate = estimate
+        case .success(let estimates):
+            pendingEstimates = estimates
             showAIConfirmation = true
 
         case .error:
@@ -301,15 +320,19 @@ struct FuelTabView: View {
         }
     }
 
-    private func handleAIConfirm(_ foodLog: FoodLog) {
-        foodLogManager.addLog(foodLog)
+    /// Handle confirmation of multiple food items
+    private func handleAIConfirmMultiple(_ foodLogs: [FoodLog]) {
+        // Add each item as a separate entry
+        for log in foodLogs {
+            foodLogManager.addLog(log)
+        }
         foodDescription = ""
-        pendingEstimate = nil
+        pendingEstimates = nil
         estimationState.reset()
     }
 
     private func handleAICancel() {
-        pendingEstimate = nil
+        pendingEstimates = nil
         estimationState.reset()
     }
 
@@ -348,6 +371,13 @@ struct FuelTabView: View {
 
     private func handleSwipeDelete(_ entry: FoodLog) {
         foodLogManager.deleteLog(entry)
+    }
+
+    private func handleTryExampleTapped() {
+        // Populate input with example shown in empty state and expand
+        foodDescription = "2 eggs and toast"
+        isInputMinimized = false
+        requestInputFocus = true
     }
 }
 

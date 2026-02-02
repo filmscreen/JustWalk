@@ -41,6 +41,18 @@ struct WatchTodayView: View {
         debugProfile?.streak ?? streakInfo.currentStreak
     }
 
+    private var displayShields: Int {
+        streakInfo.availableShields
+    }
+
+    private var displayCalories: Int {
+        streakInfo.todayCalories
+    }
+
+    private var displayCalorieGoal: Int? {
+        streakInfo.calorieGoal
+    }
+
     private var dailyGoal: Int {
         displayGoal
     }
@@ -101,7 +113,10 @@ struct WatchTodayView: View {
                 steps: displaySteps,
                 goal: dailyGoal,
                 streak: displayStreak,
-                size: size * 0.9
+                shields: displayShields,
+                calories: displayCalories,
+                calorieGoal: displayCalorieGoal,
+                size: size * 0.95
             )
             .frame(width: fullSize.width, height: fullSize.height, alignment: .center)
             .onTapGesture(count: 3) {
@@ -119,7 +134,10 @@ struct WatchTodayView: View {
                     steps: steps,
                     goal: dailyGoal,
                     streak: displayStreak,
-                    size: size * 0.9
+                    shields: displayShields,
+                    calories: displayCalories,
+                    calorieGoal: displayCalorieGoal,
+                    size: size * 0.95
                 )
                 .frame(width: fullSize.width, height: fullSize.height, alignment: .center)
                 .onTapGesture(count: 3) {

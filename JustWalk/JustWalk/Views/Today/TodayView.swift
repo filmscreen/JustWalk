@@ -28,6 +28,13 @@ struct TodayView: View {
     @State private var milestoneStreakDays: Int = 0
     @State private var renderedCard: DynamicCardType = .tip(DailyTip.allTips[0])
     @AppStorage("hasSeenStreakMilestoneProPrompt") private var hasSeenMilestonePrompt = false
+    @State private var showSettings = false
+
+    // Tooltip states
+    @State private var showShieldsTooltip = false
+    @State private var showCaloriesTooltip = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     #if DEBUG
     @State private var showDebugOverlay = false
     #endif
@@ -135,33 +142,53 @@ struct TodayView: View {
         return "Your Day."
     }
 
-    /// Today's food summary for Pro users
-    private var todayFoodSummary: (calories: Int, protein: Int) {
-        let summary = foodLogManager.getTodaySummary()
-        return (calories: summary.calories, protein: summary.protein)
+    /// Today's calories for Pro users
+    private var todayCalories: Int {
+        foodLogManager.getTodaySummary().calories
     }
 
-    /// Whether to show the food summary row
-    private var showFoodSummary: Bool {
+    /// Whether user has Pro access for fuel tracking
+    private var isPro: Bool {
         subscriptionManager.isPro
     }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
-                // Headline
-                Text(headline)
-                    .font(.title.bold())
-                    .foregroundStyle(JW.Color.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .id(headline)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .bottom).combined(with: .opacity),
-                        removal: .opacity
-                    ))
-                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: headline)
+                VStack(spacing: 0) {
+                    // Header Row: Headline + Settings
+                    HStack(alignment: .center) {
+                        Text(headline)
+                            .font(.title.bold())
+                            .foregroundStyle(JW.Color.textPrimary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .id(headline)
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .bottom).combined(with: .opacity),
+                                removal: .opacity
+                            ))
+                            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: headline)
+
+                        Button {
+                            JustWalkHaptics.buttonTap()
+                            showSettings = true
+                        } label: {
+                            Image(systemName: "gearshape")
+                                .font(.system(size: 17, weight: .regular))
+                                .foregroundStyle(JW.Color.textSecondary)
+                                .frame(width: 44, height: 44)
+                                .background(
+                                    Circle()
+                                        .fill(JW.Color.backgroundCard)
+                                )
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                                )
+                        }
+                        .buttonStyle(ScalePressButtonStyle())
+                    }
                     .padding(.horizontal)
                     .padding(.top, JW.Spacing.sm)
                     .staggeredAppearance(index: 0, delay: 0.05)
@@ -178,13 +205,12 @@ struct TodayView: View {
                     showDebugOverlay = true
                 }
                 #endif
-                .padding(.bottom, JW.Spacing.xxl)           // 32pt → pills row
+                .padding(.bottom, JW.Spacing.xl)            // 24pt → pills row
 
-                // Streak & Shields Pills (centered)
-                HStack(spacing: JW.Spacing.md) {
+                // Pills Row (streak, shields, and fuel if Pro)
+                HStack(spacing: JW.Spacing.sm) {
                     StreakPill(
                         streak: streakManager.streakData.currentStreak,
-                        longestStreak: streakManager.streakData.longestStreak,
                         onTap: { showStreakDetail = true }
                     )
 
@@ -195,28 +221,25 @@ struct TodayView: View {
                     ) {
                         showShieldDetail = true
                     }
+                    .tooltip(
+                        isPresented: $showShieldsTooltip,
+                        content: "Shields protect your streak when life happens. Use one if you miss a day.",
+                        arrowDirection: .up,
+                        offset: CGSize(width: 0, height: 8),
+                        onDismiss: { TooltipKey.markAsSeen(.shields) }
+                    )
+
+                    FuelPill(calories: todayCalories, isPro: isPro)
+                        .tooltip(
+                            isPresented: $showCaloriesTooltip,
+                            content: "Your calories today. Tap to see details in Fuel.",
+                            arrowDirection: .up,
+                            offset: CGSize(width: 0, height: 8),
+                            onDismiss: { TooltipKey.markAsSeen(.calories) }
+                        )
                 }
                 .staggeredAppearance(index: 1, delay: 0.05)
-                .padding(.bottom, showFoodSummary ? JW.Spacing.md : JW.Spacing.xl)
-
-                // Food Summary Row (Pro only)
-                if showFoodSummary {
-                    FoodSummaryRow(
-                        calories: todayFoodSummary.calories,
-                        protein: todayFoodSummary.protein
-                    )
-                    .staggeredAppearance(index: 2, delay: 0.05)
-                    .padding(.bottom, JW.Spacing.xl)         // 24pt → week chart
-                }
-
-                // Week Chart
-                WeekChartView(liveTodaySteps: todaySteps)
-                    .padding(.vertical, JW.Spacing.lg)
-                    .padding(.horizontal, JW.Spacing.sm)
-                    .jwCard()
-                    .padding(.horizontal)
-                    .staggeredAppearance(index: showFoodSummary ? 3 : 2, delay: 0.05)
-                    .padding(.bottom, JW.Spacing.lg)
+                .padding(.bottom, JW.Spacing.xl)
 
                 // Dynamic Card (always visible — never empty)
                 DynamicCardView(cardType: renderedCard, onAction: { action in
@@ -227,12 +250,21 @@ struct TodayView: View {
                     insertion: .move(edge: .bottom).combined(with: .opacity),
                     removal: .move(edge: .trailing).combined(with: .opacity)
                 ))
-                .padding(.horizontal)
-                .staggeredAppearance(index: showFoodSummary ? 4 : 3, delay: 0.05)
+                    .padding(.horizontal)
+                    .staggeredAppearance(index: 2, delay: 0.05)
+                    .padding(.bottom, JW.Spacing.lg)
 
-                Spacer(minLength: 60)
+                // Week Chart
+                WeekChartView(liveTodaySteps: todaySteps)
+                    .padding(.vertical, JW.Spacing.lg)
+                    .padding(.horizontal, JW.Spacing.sm)
+                    .jwCard()
+                    .padding(.horizontal)
+                    .staggeredAppearance(index: 3, delay: 0.05)
+
+                    Spacer(minLength: 60)
+                }
             }
-        }
         .background(JW.Color.backgroundPrimary)
         .toolbar(.hidden, for: .navigationBar)
         .onAppear {
@@ -250,6 +282,11 @@ struct TodayView: View {
                 }
                 pushWidgetData()
                 checkStreakPaywallTrigger()
+            }
+
+            // Show tooltips after a delay (only if onboarding completed)
+            if hasCompletedOnboarding {
+                checkTooltips()
             }
         }
         .refreshable {
@@ -297,6 +334,11 @@ struct TodayView: View {
                 }
             )
         }
+        .sheet(isPresented: $showSettings) {
+            NavigationStack {
+                SettingsView()
+            }
+        }
         .onChange(of: streakManager.lastReachedMilestone) { _, milestone in
             guard let milestone, milestone == 7 else { return }
             guard !hasSeenMilestonePrompt else { return }
@@ -320,15 +362,89 @@ struct TodayView: View {
     }
 
     private func handleCardAction(_ action: CardAction) {
-        // Mark card as acted upon and re-evaluate
-        dynamicCardEngine.markAsActedUpon(dynamicCardEngine.currentCard)
-        withAnimation(JustWalkAnimation.standard) {
-            dynamicCardEngine.refresh(dailyGoal: dailyGoal, currentSteps: todaySteps)
+        switch action {
+        case .useShieldForDate(let date):
+            // Use shield to protect streak
+            handleUseShield(for: date)
+            return
+
+        case .letStreakBreak(let date):
+            // User chose to let streak break
+            handleLetStreakBreak(for: date)
+            return
+
+        case .navigateToFuelTab:
+            // Navigate to Fuel tab
+            dynamicCardEngine.markAsActedUpon(dynamicCardEngine.currentCard)
+            withAnimation(JustWalkAnimation.standard) {
+                dynamicCardEngine.refresh(dailyGoal: dailyGoal, currentSteps: todaySteps)
+                renderedCard = dynamicCardEngine.currentCard
+            }
+            appState.selectedTab = .fuel
+            return
+
+        case .dismissFuelUpsell(let milestone):
+            // Mark milestone as dismissed so it won't show again for this milestone
+            dynamicCardEngine.markFuelUpsellDismissed(milestone: milestone)
+            dynamicCardEngine.markAsActedUpon(dynamicCardEngine.currentCard)
+            withAnimation(JustWalkAnimation.standard) {
+                dynamicCardEngine.refresh(dailyGoal: dailyGoal, currentSteps: todaySteps)
+                renderedCard = dynamicCardEngine.currentCard
+            }
+            return
+
+        default:
+            // Mark card as acted upon and re-evaluate
+            dynamicCardEngine.markAsActedUpon(dynamicCardEngine.currentCard)
+            withAnimation(JustWalkAnimation.standard) {
+                dynamicCardEngine.refresh(dailyGoal: dailyGoal, currentSteps: todaySteps)
+                renderedCard = dynamicCardEngine.currentCard
+            }
+
+            // Route action to WalksHomeView via AppState
+            appState.pendingCardAction = action
+            appState.selectedTab = .walks
+        }
+    }
+
+    private func handleUseShield(for date: Date) {
+        // Deploy shield for the missed date
+        let deployed = shieldManager.autoDeployIfAvailable(forDate: date, silent: false)
+
+        if deployed {
+            JustWalkHaptics.success()
         }
 
-        // Route action to WalksHomeView via AppState
-        appState.pendingCardAction = action
-        appState.selectedTab = .walks
+        // Mark this date as addressed so the card doesn't show again
+        dynamicCardEngine.markStreakProtectionAddressed(for: date)
+        dynamicCardEngine.markAsActedUpon(dynamicCardEngine.currentCard)
+
+        // Refresh the card display
+        withAnimation(JustWalkAnimation.standard) {
+            dynamicCardEngine.refresh(dailyGoal: dailyGoal, currentSteps: todaySteps)
+            renderedCard = dynamicCardEngine.currentCard
+        }
+
+        // Update widget data
+        pushWidgetData()
+    }
+
+    private func handleLetStreakBreak(for date: Date) {
+        // Break the streak
+        _ = streakManager.breakStreak()
+
+        // Mark this date as addressed so the card doesn't show again
+        dynamicCardEngine.markStreakProtectionAddressed(for: date)
+        dynamicCardEngine.markAsActedUpon(dynamicCardEngine.currentCard)
+
+        // Refresh the card display
+        withAnimation(JustWalkAnimation.standard) {
+            dynamicCardEngine.refresh(dailyGoal: dailyGoal, currentSteps: todaySteps)
+            renderedCard = dynamicCardEngine.currentCard
+        }
+
+        // Update widget data
+        pushWidgetData()
     }
 
     private func checkStreakPaywallTrigger() {
@@ -377,13 +493,32 @@ struct TodayView: View {
             walkTimeMinutes: walkTime
         )
     }
+
+    private func checkTooltips() {
+        // Only show one tooltip at a time, with a delay for better UX
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            // Priority 1: Shields tooltip (show first)
+            if TooltipKey.shouldShow(.shields) {
+                withAnimation(JustWalkAnimation.standard) {
+                    showShieldsTooltip = true
+                }
+                return
+            }
+
+            // Priority 2: Calories tooltip (Pro users only)
+            if isPro && TooltipKey.shouldShow(.calories) {
+                withAnimation(JustWalkAnimation.standard) {
+                    showCaloriesTooltip = true
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Streak Pill
 
 struct StreakPill: View {
     let streak: Int
-    let longestStreak: Int
     let onTap: () -> Void
 
     @State private var isFlameAnimating = false
@@ -405,43 +540,20 @@ struct StreakPill: View {
         }
     }
 
-    /// Show "X best" when current streak is below the longest streak
-    private var showBest: Bool {
-        longestStreak > 0 && streak < longestStreak
-    }
-
     var body: some View {
         Button(action: {
             JustWalkHaptics.buttonTap()
             onTap()
         }) {
-            HStack(spacing: JW.Spacing.sm) {
+            HStack(spacing: JW.Spacing.xs) {
                 Image(systemName: streak > 0 ? "flame.fill" : "flame")
                     .foregroundStyle(flameColor)
                     .symbolEffect(.pulse, options: .repeating, value: streak > 0 && isFlameAnimating)
 
-                if streak > 0 {
-                    HStack(spacing: 4) {
-                        Text("\(streak) day\(streak == 1 ? "" : "s")")
-                            .font(JW.Font.subheadline)
-                            .foregroundStyle(JW.Color.textSecondary)
-                            .contentTransition(.numericText(value: Double(streak)))
-
-                        if showBest {
-                            Text("·")
-                                .font(JW.Font.subheadline)
-                                .foregroundStyle(JW.Color.textTertiary)
-
-                            Text("\(longestStreak) best")
-                                .font(JW.Font.subheadline)
-                                .foregroundStyle(JW.Color.textTertiary)
-                        }
-                    }
-                } else {
-                    Text("Start streak")
-                        .font(JW.Font.subheadline)
-                        .foregroundStyle(JW.Color.textTertiary)
-                }
+                Text("\(streak)")
+                    .font(JW.Font.subheadline.weight(.medium))
+                    .foregroundStyle(streak > 0 ? JW.Color.textSecondary : JW.Color.textTertiary)
+                    .contentTransition(.numericText(value: Double(streak)))
             }
             .padding(.horizontal, JW.Spacing.md)
             .padding(.vertical, JW.Spacing.sm)
@@ -475,11 +587,11 @@ struct ShieldsPill: View {
             JustWalkHaptics.buttonTap()
             onTap()
         }) {
-            HStack(spacing: JW.Spacing.sm) {
+            HStack(spacing: JW.Spacing.xs) {
                 Image(systemName: "shield.fill")
                     .foregroundStyle(JW.Color.accentBlue)
-                Text("\(count) shield\(count == 1 ? "" : "s")")
-                    .font(JW.Font.subheadline)
+                Text("\(count)")
+                    .font(JW.Font.subheadline.weight(.medium))
                     .foregroundStyle(JW.Color.textSecondary)
                     .contentTransition(.numericText(value: Double(count)))
             }
@@ -510,16 +622,34 @@ struct ShieldsPill: View {
     }
 }
 
-// MARK: - Food Summary Row
+// MARK: - Fuel Pill
 
-struct FoodSummaryRow: View {
+struct FuelPill: View {
     let calories: Int
-    let protein: Int
+    let isPro: Bool
 
     @Environment(AppState.self) private var appState
+    @ObservedObject private var goalManager = CalorieGoalManager.shared
 
     private var hasLoggedFood: Bool {
-        calories > 0 || protein > 0
+        isPro && calories > 0
+    }
+
+    /// Goal display state for the pill
+    private var goalState: FuelPillGoalState {
+        guard isPro, let goal = goalManager.dailyGoal else {
+            return .noGoal
+        }
+
+        let remaining = goal - calories
+
+        if abs(remaining) <= 50 {
+            return .onTarget
+        } else if remaining > 0 {
+            return .under(remaining: remaining)
+        } else {
+            return .over(amount: abs(remaining))
+        }
     }
 
     var body: some View {
@@ -527,28 +657,16 @@ struct FoodSummaryRow: View {
             JustWalkHaptics.buttonTap()
             appState.selectedTab = .fuel
         } label: {
-            HStack(spacing: JW.Spacing.sm) {
+            HStack(spacing: 2) {
                 Image(systemName: "fork.knife")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(hasLoggedFood ? JW.Color.accent : JW.Color.textTertiary)
+                    .foregroundStyle(iconColor)
 
-                if hasLoggedFood {
-                    Text("\(calories) cal")
-                        .font(JW.Font.subheadline)
-                        .foregroundStyle(JW.Color.textSecondary)
-                        .contentTransition(.numericText(value: Double(calories)))
-
-                    Text("·")
-                        .font(JW.Font.subheadline)
-                        .foregroundStyle(JW.Color.textTertiary)
-
-                    Text("\(protein)g protein")
-                        .font(JW.Font.subheadline)
-                        .foregroundStyle(JW.Color.textSecondary)
-                        .contentTransition(.numericText(value: Double(protein)))
+                if isPro {
+                    goalText
                 } else {
-                    Text("No food logged")
-                        .font(JW.Font.subheadline)
+                    Text("-")
+                        .font(JW.Font.subheadline.weight(.medium))
                         .foregroundStyle(JW.Color.textTertiary)
                 }
             }
@@ -560,11 +678,86 @@ struct FoodSummaryRow: View {
             )
             .overlay(
                 Capsule()
-                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+                    .stroke(borderColor, lineWidth: 1)
             )
         }
         .buttonStyle(ScalePressButtonStyle())
     }
+
+    private var iconColor: Color {
+        switch goalState {
+        case .noGoal:
+            return hasLoggedFood ? JW.Color.accent : JW.Color.textTertiary
+        case .under:
+            return JW.Color.accent
+        case .onTarget:
+            return JW.Color.accent
+        case .over:
+            return JW.Color.streak
+        }
+    }
+
+    private var borderColor: Color {
+        switch goalState {
+        case .over:
+            return JW.Color.streak.opacity(0.3)
+        default:
+            return Color.white.opacity(0.06)
+        }
+    }
+
+    @ViewBuilder
+    private var goalText: some View {
+        switch goalState {
+        case .noGoal:
+            // No goal set - show total calories
+            Text("\(calories)")
+                .font(JW.Font.subheadline.weight(.medium))
+                .foregroundStyle(hasLoggedFood ? JW.Color.textSecondary : JW.Color.textTertiary)
+                .contentTransition(.numericText(value: Double(calories)))
+
+            Text("cal")
+                .font(.system(size: 10))
+                .foregroundStyle(JW.Color.textTertiary)
+
+        case .under(let remaining):
+            // Under goal - show remaining
+            Text("\(remaining)")
+                .font(JW.Font.subheadline.weight(.medium))
+                .foregroundStyle(JW.Color.textSecondary)
+                .contentTransition(.numericText(value: Double(remaining)))
+
+            Text("left")
+                .font(.system(size: 10))
+                .foregroundStyle(JW.Color.textTertiary)
+
+        case .onTarget:
+            // On target
+            Image(systemName: "checkmark")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(JW.Color.accent)
+
+        case .over(let amount):
+            // Over goal - show amount over
+            Text("\(amount)")
+                .font(JW.Font.subheadline.weight(.medium))
+                .foregroundStyle(JW.Color.streak)
+                .contentTransition(.numericText(value: Double(amount)))
+
+            Text("over")
+                .font(.system(size: 10))
+                .foregroundStyle(JW.Color.streak.opacity(0.8))
+        }
+    }
+}
+
+// MARK: - Fuel Pill Goal State
+
+private enum FuelPillGoalState {
+    case noGoal
+    case under(remaining: Int)
+    case onTarget
+    case over(amount: Int)
 }
 
 #Preview {

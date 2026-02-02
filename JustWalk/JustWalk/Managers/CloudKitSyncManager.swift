@@ -48,6 +48,7 @@ class CloudKitSyncManager {
         static let dailyLog = "DailyLog"
         static let trackedWalk = "TrackedWalk"
         static let foodLog = "FoodLog"
+        static let calorieGoalSettings = "CalorieGoalSettings"
     }
 
     // Fixed record IDs for single-instance records
@@ -215,7 +216,8 @@ class CloudKitSyncManager {
             .didSaveTrackedWalk,  // Walk history is irreplaceable
             .didSaveShieldData,   // Shield balance must sync immediately (prevents duplication/loss)
             .didSaveDailyLog,     // Goal status & shield usage per day is critical for streak integrity
-            .didSaveFoodLog       // Food logs should sync immediately to preserve meal tracking
+            .didSaveFoodLog,      // Food logs should sync immediately to preserve meal tracking
+            .didSaveCalorieGoal   // Calorie goal settings must sync to preserve across devices
         ]
         for name in criticalNames {
             NotificationCenter.default.addObserver(
@@ -456,10 +458,16 @@ class CloudKitSyncManager {
         let foodLogs = persistence.loadAllFoodLogs()
         let foodLogRecords = foodLogs.map { buildFoodLogRecord($0) }
 
-        // Combine all records
-        let allRecords = [gameStateRecord] + logRecords + walkRecords + foodLogRecords
+        // Build calorie goal settings record (if exists)
+        var calorieGoalRecords: [CKRecord] = []
+        if let calorieGoalSettings = persistence.loadCalorieGoalSettings() {
+            calorieGoalRecords.append(buildCalorieGoalSettingsRecord(calorieGoalSettings))
+        }
 
-        logger.info("📊 Pushing \(allRecords.count) total records (1 gameState, \(logRecords.count) logs, \(walkRecords.count) walks, \(foodLogRecords.count) foodLogs)")
+        // Combine all records
+        let allRecords = [gameStateRecord] + logRecords + walkRecords + foodLogRecords + calorieGoalRecords
+
+        logger.info("📊 Pushing \(allRecords.count) total records (1 gameState, \(logRecords.count) logs, \(walkRecords.count) walks, \(foodLogRecords.count) foodLogs, \(calorieGoalRecords.count) calorieGoal)")
 
         // Batch in groups of 400 (CloudKit limit)
         let batchSize = 400
@@ -591,6 +599,23 @@ class CloudKitSyncManager {
             group.leave()
         }
 
+        // 5. Fetch calorie goal settings
+        group.enter()
+        fetchAllRecords(ofType: RecordType.calorieGoalSettings) { [weak self] records, error in
+            if let records {
+                self?.logger.info("📥 Pulled \(records.count) calorie goal settings records from CloudKit")
+                // Only merge the first one (there should only be one)
+                if let record = records.first {
+                    self?.mergeCalorieGoalSettings(remote: record)
+                }
+            } else if let error {
+                self?.logger.error("Pull calorie goal settings failed: \(error.localizedDescription)")
+                self?.logCKError(error, context: "Pull calorie goal settings")
+                pullError = error
+            }
+            group.leave()
+        }
+
         group.notify(queue: .main) { [weak self] in
             guard let self else { return }
             self.isSyncing = false
@@ -624,6 +649,42 @@ class CloudKitSyncManager {
             self.pendingRetry = false
             self.forceSync()
         }
+    }
+
+    // MARK: - Delete Individual Records from CloudKit
+
+    /// Deletes a FoodLog record from CloudKit when deleted locally
+    func deleteFoodLogFromCloud(logID: String) {
+        guard isSyncEnabled else { return }
+
+        let recordID = CKRecord.ID(recordName: "FoodLog_\(logID)", zoneID: zoneID)
+        let operation = CKModifyRecordsOperation(recordIDsToDelete: [recordID])
+        operation.modifyRecordsResultBlock = { [weak self] result in
+            switch result {
+            case .success:
+                self?.logger.info("🗑️ Deleted FoodLog from CloudKit: \(logID)")
+            case .failure(let error):
+                self?.logger.error("❌ Failed to delete FoodLog from CloudKit: \(error.localizedDescription)")
+            }
+        }
+        privateDB.add(operation)
+    }
+
+    /// Deletes CalorieGoalSettings record from CloudKit when deleted locally
+    func deleteCalorieGoalSettingsFromCloud(settingsID: String) {
+        guard isSyncEnabled else { return }
+
+        let recordID = CKRecord.ID(recordName: "CalorieGoalSettings_\(settingsID)", zoneID: zoneID)
+        let operation = CKModifyRecordsOperation(recordIDsToDelete: [recordID])
+        operation.modifyRecordsResultBlock = { [weak self] result in
+            switch result {
+            case .success:
+                self?.logger.info("🗑️ Deleted CalorieGoalSettings from CloudKit: \(settingsID)")
+            case .failure(let error):
+                self?.logger.error("❌ Failed to delete CalorieGoalSettings from CloudKit: \(error.localizedDescription)")
+            }
+        }
+        privateDB.add(operation)
     }
 
     // MARK: - Delete Cloud Data (Debug)
@@ -729,6 +790,24 @@ class CloudKitSyncManager {
         record["source"] = log.source.rawValue as CKRecordValue
         record["createdAt"] = log.createdAt as CKRecordValue
         record["modifiedAt"] = log.modifiedAt as CKRecordValue
+
+        return record
+    }
+
+    private func buildCalorieGoalSettingsRecord(_ settings: CalorieGoalSettings) -> CKRecord {
+        let recordID = CKRecord.ID(recordName: "CalorieGoalSettings_\(settings.settingsID)", zoneID: zoneID)
+        let record = CKRecord(recordType: RecordType.calorieGoalSettings, recordID: recordID)
+
+        record["settingsID"] = settings.settingsID as CKRecordValue
+        record["dailyGoal"] = settings.dailyGoal as CKRecordValue
+        record["calculatedMaintenance"] = settings.calculatedMaintenance as CKRecordValue
+        record["sex"] = settings.sex.rawValue as CKRecordValue
+        record["age"] = settings.age as CKRecordValue
+        record["heightCM"] = settings.heightCM as CKRecordValue
+        record["weightKG"] = settings.weightKG as CKRecordValue
+        record["activityLevel"] = settings.activityLevel.rawValue as CKRecordValue
+        record["createdAt"] = settings.createdAt as CKRecordValue
+        record["modifiedAt"] = settings.modifiedAt as CKRecordValue
 
         return record
     }
@@ -1039,6 +1118,61 @@ class CloudKitSyncManager {
         }
     }
 
+    private func mergeCalorieGoalSettings(remote: CKRecord) {
+        isMerging = true
+        defer { isMerging = false }
+
+        // Extract fields from CloudKit record
+        guard let settingsID = remote["settingsID"] as? String,
+              let dailyGoal = remote["dailyGoal"] as? Int,
+              let calculatedMaintenance = remote["calculatedMaintenance"] as? Int,
+              let sexRaw = remote["sex"] as? String,
+              let age = remote["age"] as? Int,
+              let heightCM = remote["heightCM"] as? Double,
+              let weightKG = remote["weightKG"] as? Double,
+              let activityLevelRaw = remote["activityLevel"] as? String,
+              let createdAt = remote["createdAt"] as? Date,
+              let modifiedAt = remote["modifiedAt"] as? Date else {
+            logger.error("❌ Failed to decode CalorieGoalSettings from CloudKit record - missing required fields")
+            return
+        }
+
+        guard let sex = BiologicalSex(rawValue: sexRaw),
+              let activityLevel = ActivityLevel(rawValue: activityLevelRaw) else {
+            logger.error("❌ Failed to decode CalorieGoalSettings enums from CloudKit")
+            return
+        }
+
+        let remoteSettings = CalorieGoalSettings(
+            id: UUID(uuidString: settingsID) ?? UUID(),
+            settingsID: settingsID,
+            dailyGoal: dailyGoal,
+            calculatedMaintenance: calculatedMaintenance,
+            sex: sex,
+            age: age,
+            heightCM: heightCM,
+            weightKG: weightKG,
+            activityLevel: activityLevel,
+            createdAt: createdAt,
+            modifiedAt: modifiedAt
+        )
+
+        let persistence = PersistenceManager.shared
+        let localSettings = persistence.loadCalorieGoalSettings()
+
+        if let localSettings {
+            // Merge: last-write-wins based on modifiedAt
+            if remoteSettings.modifiedAt > localSettings.modifiedAt {
+                persistence.saveCalorieGoalSettings(remoteSettings)
+                logger.info("📥 Updated CalorieGoalSettings from CloudKit: \(remoteSettings.dailyGoal) cal")
+            }
+        } else {
+            // No local settings — insert the remote one
+            persistence.saveCalorieGoalSettings(remoteSettings)
+            logger.info("📥 Restored CalorieGoalSettings from CloudKit: \(remoteSettings.dailyGoal) cal")
+        }
+    }
+
     // MARK: - Fetch Helpers
 
     private func fetchAllRecords(
@@ -1113,9 +1247,11 @@ class CloudKitSyncManager {
             persistence.invalidateCaches()
 
             // Reload managers with fresh data from persistence
-            StreakManager.shared.streakData = persistence.loadStreakData()
+            // Use load() which recalculates streak from daily logs for accuracy
+            StreakManager.shared.load()
             ShieldManager.shared.shieldData = persistence.loadShieldData()
             FoodLogManager.shared.refreshFromPersistence()
+            CalorieGoalManager.shared.refreshFromPersistence()
 
             // Post notification so UI can refresh (e.g., walk history, day details)
             NotificationCenter.default.post(name: .didCompleteCloudSync, object: nil)

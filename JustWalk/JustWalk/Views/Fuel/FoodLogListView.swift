@@ -12,24 +12,30 @@ struct FoodLogListView: View {
     let onEntryTapped: (FoodLog) -> Void
     let onAddToMeal: (MealType) -> Void
     let onDeleteEntry: ((FoodLog) -> Void)?
+    let isToday: Bool
+    let onTryExampleTapped: (() -> Void)?
 
     // State for delete confirmation
     @State private var entryToDelete: FoodLog?
     @State private var showDeleteConfirmation = false
 
-    // Define display order for meal types
-    private let mealOrder: [MealType] = [.breakfast, .lunch, .dinner, .snack]
+    // Define display order for meal types (includes unspecified to catch any orphaned entries)
+    private let mealOrder: [MealType] = [.breakfast, .lunch, .dinner, .snack, .unspecified]
 
     init(
         logsByMeal: [MealType: [FoodLog]],
         onEntryTapped: @escaping (FoodLog) -> Void,
         onAddToMeal: @escaping (MealType) -> Void,
-        onDeleteEntry: ((FoodLog) -> Void)? = nil
+        onDeleteEntry: ((FoodLog) -> Void)? = nil,
+        isToday: Bool = true,
+        onTryExampleTapped: (() -> Void)? = nil
     ) {
         self.logsByMeal = logsByMeal
         self.onEntryTapped = onEntryTapped
         self.onAddToMeal = onAddToMeal
         self.onDeleteEntry = onDeleteEntry
+        self.isToday = isToday
+        self.onTryExampleTapped = onTryExampleTapped
     }
 
     private var hasAnyEntries: Bool {
@@ -39,8 +45,19 @@ struct FoodLogListView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: JW.Spacing.md) {
+        VStack(spacing: JW.Spacing.sm) {
             if hasAnyEntries {
+                // Section header for log items
+                HStack {
+                    Text("TODAY'S LOG")
+                        .font(JW.Font.caption.bold())
+                        .foregroundStyle(JW.Color.textTertiary)
+                        .textCase(.uppercase)
+                        .tracking(0.5)
+                    Spacer()
+                }
+                .padding(.top, JW.Spacing.sm)
+
                 // Show meal groups with entries
                 ForEach(mealOrder, id: \.self) { mealType in
                     if let entries = logsByMeal[mealType], !entries.isEmpty {
@@ -88,10 +105,28 @@ struct FoodLogListView: View {
                 .font(JW.Font.headline)
                 .foregroundStyle(JW.Color.textSecondary)
 
-            Text("Use the input above to log what you ate")
+            Text("Just describe what you ate —\nwe handle the rest.")
                 .font(JW.Font.subheadline)
                 .foregroundStyle(JW.Color.textTertiary)
                 .multilineTextAlignment(.center)
+
+            // "Try it" example - only show for today
+            if isToday, let onTryExample = onTryExampleTapped {
+                Button {
+                    JustWalkHaptics.buttonTap()
+                    onTryExample()
+                } label: {
+                    HStack(spacing: JW.Spacing.xs) {
+                        Text("Try it:")
+                            .foregroundStyle(JW.Color.textTertiary)
+                        Text("\"2 eggs and toast\"")
+                            .foregroundStyle(JW.Color.accent)
+                    }
+                    .font(JW.Font.subheadline)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, JW.Spacing.xs)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, JW.Spacing.xxl)
@@ -109,13 +144,22 @@ private struct MealGroupView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Meal header
-            mealHeader
-                .padding(.horizontal, JW.Spacing.lg)
-                .padding(.top, JW.Spacing.lg)
-                .padding(.bottom, JW.Spacing.sm)
+            // Meal header with accent bar
+            HStack(spacing: 0) {
+                // Accent bar
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(JW.Color.accent)
+                    .frame(width: 3)
+                    .padding(.vertical, 4)
 
-            // Entry rows
+                mealHeader
+                    .padding(.leading, JW.Spacing.sm)
+            }
+            .padding(.horizontal, JW.Spacing.md)
+            .padding(.top, JW.Spacing.md)
+            .padding(.bottom, JW.Spacing.xs)
+
+            // Entry rows - indented to show hierarchy
             VStack(spacing: 0) {
                 ForEach(entries) { entry in
                     FoodEntryRow(
@@ -127,19 +171,23 @@ private struct MealGroupView: View {
                     // Divider between entries (not after last)
                     if entry.id != entries.last?.id {
                         Divider()
-                            .background(Color.white.opacity(0.06))
-                            .padding(.leading, JW.Spacing.lg)
+                            .background(Color.white.opacity(0.08))
+                            .padding(.leading, JW.Spacing.xl)
                     }
                 }
             }
 
             // Add to meal button
             addButton
-                .padding(.horizontal, JW.Spacing.lg)
-                .padding(.top, JW.Spacing.sm)
-                .padding(.bottom, JW.Spacing.lg)
+                .padding(.leading, JW.Spacing.xl)
+                .padding(.trailing, JW.Spacing.md)
+                .padding(.top, JW.Spacing.xs)
+                .padding(.bottom, JW.Spacing.md)
         }
-        .jwCard()
+        .background(
+            RoundedRectangle(cornerRadius: JW.Radius.md)
+                .fill(JW.Color.backgroundCard.opacity(0.5))
+        )
     }
 
     private var mealHeader: some View {
@@ -153,8 +201,8 @@ private struct MealGroupView: View {
 
             Spacer()
 
-            // Meal total calories
-            Text("\(totalCalories) cal")
+            // Meal total calories (with ~ if any items are AI-estimated)
+            Text(mealCaloriesText)
                 .font(JW.Font.subheadline)
                 .foregroundStyle(JW.Color.textSecondary)
         }
@@ -177,6 +225,16 @@ private struct MealGroupView: View {
 
     private var totalCalories: Int {
         entries.reduce(0) { $0 + $1.calories }
+    }
+
+    /// True if any entry in this meal is AI-estimated
+    private var hasAIEstimates: Bool {
+        entries.contains { $0.source == .ai || $0.source == .aiAdjusted }
+    }
+
+    /// Formatted calorie text for the meal
+    private var mealCaloriesText: String {
+        return "\(totalCalories) cal"
     }
 }
 
@@ -224,8 +282,9 @@ private struct FoodEntryRow: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(JW.Color.textTertiary)
             }
-            .padding(.horizontal, JW.Spacing.lg)
-            .padding(.vertical, JW.Spacing.md)
+            .padding(.leading, JW.Spacing.xl)
+            .padding(.trailing, JW.Spacing.md)
+            .padding(.vertical, JW.Spacing.sm)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -241,9 +300,7 @@ private struct FoodEntryRow: View {
     }
 
     private var caloriesText: String {
-        // Show ~ for AI-estimated entries
-        let prefix = entry.source == .ai ? "~" : ""
-        return "\(prefix)\(entry.calories) cal"
+        return "\(entry.calories) cal"
     }
 }
 

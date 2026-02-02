@@ -220,13 +220,23 @@ final class PhoneConnectivityManager: NSObject, ObservableObject {
     func syncStreakInfoToWatch() {
         let streak = StreakManager.shared.streakData
         let goal = PersistenceManager.shared.loadProfile().dailyStepGoal
-        let message: [String: Any] = [
+        let shields = ShieldManager.shared.availableShields
+        let todayCalories = FoodLogManager.shared.getTodaySummary().calories
+        let calorieGoal = CalorieGoalManager.shared.dailyGoal
+
+        var message: [String: Any] = [
             WatchMessage.Key.command.rawValue: WatchMessage.Command.syncStreakInfo.rawValue,
             WatchMessage.Key.streakCurrent.rawValue: streak.currentStreak,
             WatchMessage.Key.streakLongest.rawValue: streak.longestStreak,
             WatchMessage.Key.dailyGoal.rawValue: goal,
+            WatchMessage.Key.availableShields.rawValue: shields,
+            WatchMessage.Key.todayCalories.rawValue: todayCalories,
             WatchMessage.Key.timestamp.rawValue: Date().timeIntervalSince1970
         ]
+
+        if let calorieGoal {
+            message[WatchMessage.Key.calorieGoal.rawValue] = calorieGoal
+        }
 
         // Best-effort immediate send + guaranteed context update
         sendMessage(message, requiresImmediateDelivery: false)

@@ -307,6 +307,14 @@ class ShieldManager {
         // Recalculate streak from daily logs to include the repaired day
         streakManager.recalculateStreak()
 
+        // Refresh StepDataManager's cache if this is today
+        // This prevents step updates from overwriting the shieldUsed flag
+        if calendar.isDateInToday(target) {
+            Task { @MainActor in
+                StepDataManager.shared.refreshTodayCache()
+            }
+        }
+
         return true
     }
 }

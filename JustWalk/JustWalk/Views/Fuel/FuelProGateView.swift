@@ -11,36 +11,75 @@ struct FuelProGateView: View {
     @State private var showProUpgrade = false
 
     // Entrance animation states
-    @State private var showHero = false
-    @State private var showFeatures = false
+    @State private var showContent = false
+    @State private var showRing = false
     @State private var showCTA = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: JW.Spacing.xxl) {
-                Spacer()
-                    .frame(height: JW.Spacing.xl)
+        VStack(spacing: 0) {
+            Spacer()
 
-                // Hero section
-                heroSection
-                    .opacity(showHero ? 1 : 0)
-                    .offset(y: showHero ? 0 : 20)
+            // Main content - centered vertically
+            VStack(spacing: JW.Spacing.xl) {
+                // Animated 95% ring graphic
+                wellbeingRing
+                    .opacity(showContent ? 1 : 0)
+                    .scaleEffect(showContent ? 1 : 0.8)
 
-                // Feature highlights
-                featureSection
-                    .opacity(showFeatures ? 1 : 0)
-                    .offset(y: showFeatures ? 0 : 15)
+                // Title and messages
+                VStack(spacing: JW.Spacing.lg) {
+                    // Title
+                    Text("See the full picture.")
+                        .font(JW.Font.largeTitle)
+                        .foregroundStyle(JW.Color.textPrimary)
+                        .multilineTextAlignment(.center)
 
-                // CTA button
-                ctaSection
-                    .opacity(showCTA ? 1 : 0)
-                    .offset(y: showCTA ? 0 : 10)
+                    // Core message
+                    Text("Walking is ~20% of your well-being.\nWhat you eat is the other ~75%.")
+                        .font(JW.Font.body)
+                        .foregroundStyle(JW.Color.textSecondary)
+                        .multilineTextAlignment(.center)
 
-                Spacer()
+                    // Value proposition
+                    Text("Track your calories and macros in seconds — just describe what you ate.")
+                        .font(JW.Font.subheadline)
+                        .foregroundStyle(JW.Color.textTertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, JW.Spacing.md)
+                }
+                .opacity(showContent ? 1 : 0)
+                .offset(y: showContent ? 0 : 20)
             }
             .padding(.horizontal, JW.Spacing.xl)
+
+            Spacer()
+
+            // CTA section - pinned toward bottom
+            VStack(spacing: JW.Spacing.md) {
+                Button {
+                    JustWalkHaptics.buttonTap()
+                    showProUpgrade = true
+                } label: {
+                    Text("Unlock with Pro")
+                        .font(JW.Font.headline)
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(JW.Color.accent)
+                        .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
+                }
+                .buttonPressEffect()
+
+                Text("7-day free trial included")
+                    .font(JW.Font.caption)
+                    .foregroundStyle(JW.Color.textTertiary)
+            }
+            .padding(.horizontal, JW.Spacing.xl)
+            .padding(.bottom, JW.Spacing.xxl)
+            .opacity(showCTA ? 1 : 0)
+            .offset(y: showCTA ? 0 : 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(JW.Color.backgroundPrimary)
@@ -50,92 +89,39 @@ struct FuelProGateView: View {
         }
     }
 
-    // MARK: - Hero Section
+    // MARK: - 95% Wellbeing Ring
 
-    private var heroSection: some View {
-        VStack(spacing: JW.Spacing.lg) {
-            // Icon
-            ZStack {
-                Circle()
-                    .fill(JW.Color.accent.opacity(0.15))
-                    .frame(width: 100, height: 100)
+    private var wellbeingRing: some View {
+        ZStack {
+            // Background ring
+            Circle()
+                .stroke(Color.white.opacity(0.1), lineWidth: 10)
+                .frame(width: 120, height: 120)
 
-                Image(systemName: "fork.knife")
-                    .font(.system(size: 40, weight: .medium))
-                    .foregroundStyle(JW.Color.accent)
+            // Food segment (~75%) - teal/accent, starts at top
+            Circle()
+                .trim(from: 0, to: showRing ? 0.775 : 0)
+                .stroke(JW.Color.accent, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                .frame(width: 120, height: 120)
+                .rotationEffect(.degrees(-90))
+
+            // Walking segment (~20%) - blue, continues from food
+            Circle()
+                .trim(from: 0.775, to: showRing ? 0.95 : 0.775)
+                .stroke(JW.Color.accentBlue, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                .frame(width: 120, height: 120)
+                .rotationEffect(.degrees(-90))
+
+            // Center: 95%
+            VStack(spacing: 0) {
+                Text("95")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundStyle(JW.Color.textPrimary)
+                Text("%")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(JW.Color.textSecondary)
             }
-
-            // Title
-            Text("See the full picture")
-                .font(JW.Font.largeTitle)
-                .foregroundStyle(JW.Color.textPrimary)
-                .multilineTextAlignment(.center)
-
-            // Subtitle
-            Text("Log what you eat with AI.\nNo scanning. No searching.")
-                .font(JW.Font.body)
-                .foregroundStyle(JW.Color.textSecondary)
-                .multilineTextAlignment(.center)
         }
-    }
-
-    // MARK: - Feature Section
-
-    private var featureSection: some View {
-        VStack(spacing: JW.Spacing.md) {
-            FeatureRow(
-                icon: "sparkles",
-                iconColor: JW.Color.accent,
-                title: "AI-Powered Logging",
-                description: "Just describe what you ate — we handle the rest"
-            )
-
-            FeatureRow(
-                icon: "chart.pie.fill",
-                iconColor: JW.Color.accentBlue,
-                title: "Track Your Macros",
-                description: "See calories, protein, carbs, and fat at a glance"
-            )
-
-            FeatureRow(
-                icon: "calendar",
-                iconColor: JW.Color.accentPurple,
-                title: "Daily History",
-                description: "Review what you've eaten any day this week"
-            )
-
-            FeatureRow(
-                icon: "figure.walk",
-                iconColor: JW.Color.streak,
-                title: "Walk + Fuel Together",
-                description: "Complete picture of your daily health habits"
-            )
-        }
-    }
-
-    // MARK: - CTA Section
-
-    private var ctaSection: some View {
-        VStack(spacing: JW.Spacing.md) {
-            Button {
-                JustWalkHaptics.buttonTap()
-                showProUpgrade = true
-            } label: {
-                Text("Unlock with Pro")
-                    .font(JW.Font.headline)
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(JW.Color.accent)
-                    .clipShape(RoundedRectangle(cornerRadius: JW.Radius.lg))
-            }
-            .buttonPressEffect()
-
-            Text("7-day free trial included")
-                .font(JW.Font.caption)
-                .foregroundStyle(JW.Color.textTertiary)
-        }
-        .padding(.top, JW.Spacing.lg)
     }
 
     // MARK: - Entrance Animation
@@ -144,60 +130,20 @@ struct FuelProGateView: View {
         let quick = reduceMotion
 
         withAnimation(.easeOut(duration: 0.5).delay(quick ? 0 : 0.1)) {
-            showHero = true
+            showContent = true
         }
-        withAnimation(.easeOut(duration: 0.5).delay(quick ? 0 : 0.3)) {
-            showFeatures = true
+
+        // Animate ring segments with spring
+        let ringAnimation = quick
+            ? Animation.easeOut(duration: 0.3)
+            : .spring(response: 0.8, dampingFraction: 0.7)
+        withAnimation(ringAnimation.delay(quick ? 0 : 0.2)) {
+            showRing = true
         }
+
         withAnimation(.easeOut(duration: 0.5).delay(quick ? 0 : 0.5)) {
             showCTA = true
         }
-    }
-}
-
-// MARK: - Feature Row
-
-private struct FeatureRow: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: JW.Spacing.md) {
-            // Icon
-            ZStack {
-                Circle()
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 40, height: 40)
-
-                Image(systemName: icon)
-                    .font(.system(size: 18))
-                    .foregroundStyle(iconColor)
-            }
-
-            // Text
-            VStack(alignment: .leading, spacing: JW.Spacing.xs) {
-                Text(title)
-                    .font(JW.Font.headline)
-                    .foregroundStyle(JW.Color.textPrimary)
-
-                Text(description)
-                    .font(JW.Font.subheadline)
-                    .foregroundStyle(JW.Color.textSecondary)
-            }
-
-            Spacer()
-        }
-        .padding(JW.Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: JW.Radius.lg)
-                .fill(JW.Color.backgroundCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: JW.Radius.lg)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
     }
 }
 

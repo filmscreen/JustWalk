@@ -53,6 +53,15 @@ final class StepDataManager {
         }
     }
 
+    /// Refreshes the cached todayLog from persistence.
+    /// Call this after external changes to today's log (e.g., shield applied).
+    func refreshTodayCache() {
+        let today = Calendar.current.startOfDay(for: Date())
+        if let existing = persistence.loadDailyLog(for: today) {
+            todayLog = existing
+        }
+    }
+
     func updateTodaySteps(_ steps: Int, goalTarget: Int) {
         if todayLog == nil {
             fetchToday()
@@ -79,6 +88,12 @@ final class StepDataManager {
             wasGoalMet != today.goalMet
 
         guard didChange else { return }
+
+        // CRITICAL: Preserve shieldUsed flag from persistence
+        // The cached todayLog may be stale if a shield was applied elsewhere
+        if let persistedLog = persistence.loadDailyLog(for: today.date) {
+            today.shieldUsed = persistedLog.shieldUsed
+        }
 
         persistence.saveDailyLog(today)
         todayLog = today

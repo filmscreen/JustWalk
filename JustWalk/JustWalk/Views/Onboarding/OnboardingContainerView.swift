@@ -2,7 +2,7 @@
 //  OnboardingContainerView.swift
 //  JustWalk
 //
-//  Container view managing the 9-screen onboarding flow with horizontal slide transitions
+//  Container view managing the 7-screen onboarding flow with horizontal slide transitions
 //
 
 import SwiftUI
@@ -14,15 +14,12 @@ struct OnboardingContainerView: View {
     @Binding var isComplete: Bool
     enum OnboardingStep: Int, CaseIterable {
         case welcome           // Screen 1: More Than a Pedometer
-        case ninetyFivePercent // Screen 2: Two habits. 95% of your wellbeing.
-        case consistency       // Screen 3: Set a daily goal. Hit it. Repeat.
-        case shields           // Screen 4: Life Happens
-        case walksPreview      // Screen 5: Ready for More?
-        case permissions       // Screen 6: Health permissions
-        case notifications     // Screen 7: Notification setup
-        case goalSelection     // Screen 8: Your Daily Goal
-        case proUpgrade        // Screen 9: Pro Upgrade
-        case healthKitSync     // Screen 10: Import HealthKit history (final step)
+        case streakIntro       // Screen 2: Build Your Streak (streaks + shields)
+        case permissions       // Screen 3: See Your Walking Progress (HealthKit)
+        case goalSelection     // Screen 4: Your Daily Goal
+        case notifications     // Screen 5: Stay on Track (skippable)
+        case proUpgrade        // Screen 6: Just Walk Pro (skippable)
+        case healthKitSync     // Screen 7: Import Your Step History (skippable)
     }
 
     @State private var currentStep: OnboardingStep = .welcome
@@ -40,32 +37,20 @@ struct OnboardingContainerView: View {
                     MoreThanPedometerView(onContinue: { advanceToNextStep() })
                         .transition(.onboardingSlide)
 
-                case .ninetyFivePercent:
-                    NinetyFivePercentView(onContinue: { advanceToNextStep() })
-                        .transition(.onboardingSlide)
-
-                case .consistency:
-                    OneStepAtATimeView(onContinue: { advanceToNextStep() })
-                        .transition(.onboardingSlide)
-
-                case .shields:
-                    LifeHappensView(onContinue: { advanceToNextStep() })
-                        .transition(.onboardingSlide)
-
-                case .walksPreview:
-                    ReadyForMoreView(onContinue: { advanceToNextStep() })
+                case .streakIntro:
+                    StreakShieldsOnboardingView(onContinue: { advanceToNextStep() })
                         .transition(.onboardingSlide)
 
                 case .permissions:
                     PermissionsView(onContinue: { advanceToNextStep() })
                         .transition(.onboardingSlide)
 
-                case .notifications:
-                    NotificationSetupView(onContinue: { advanceToNextStep() })
-                        .transition(.onboardingSlide)
-
                 case .goalSelection:
                     GoalSettingView(onComplete: { advanceToNextStep() })
+                        .transition(.onboardingSlide)
+
+                case .notifications:
+                    NotificationSetupView(onContinue: { advanceToNextStep() })
                         .transition(.onboardingSlide)
 
                 case .proUpgrade:
@@ -104,20 +89,14 @@ struct OnboardingContainerView: View {
         let animation: Animation = switch nextStep {
         case .welcome:
             .easeOut(duration: 0.5)
-        case .ninetyFivePercent:
-            JustWalkAnimation.presentation
-        case .consistency:
-            JustWalkAnimation.presentation
-        case .shields:
-            JustWalkAnimation.presentation
-        case .walksPreview:
-            JustWalkAnimation.presentation
-        case .permissions:
+        case .streakIntro:
             JustWalkAnimation.standardSpring
-        case .notifications:
+        case .permissions:
             JustWalkAnimation.standardSpring
         case .goalSelection:
             JustWalkAnimation.presentation
+        case .notifications:
+            JustWalkAnimation.standardSpring
         case .proUpgrade:
             JustWalkAnimation.presentation
         case .healthKitSync:

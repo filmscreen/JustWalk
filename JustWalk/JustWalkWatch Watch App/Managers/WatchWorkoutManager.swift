@@ -149,12 +149,54 @@ final class WatchWorkoutManager: NSObject, ObservableObject {
         WatchConnectivityManager.shared.sendWorkoutResumed()
     }
 
+    /// Force cleanup of any zombie workout session.
+    /// Call this on app launch to ensure no stale sessions are running.
+    func forceCleanupIfNeeded() {
+        // If we have a workout session but walk manager says no walk is active, it's a zombie
+        if workoutSession != nil && workoutState == .idle {
+            Self.logger.warning("Found zombie workout session on launch, cleaning up")
+            cleanupSession()
+        }
+    }
+
+    /// Force cleanup regardless of state - use when WalkSessionManager says walk has ended
+    /// but workout session might still be lingering
+    func forceCleanup() {
+        if workoutSession != nil {
+            Self.logger.info("Force cleaning up workout session")
+            cleanupSession()
+        }
+    }
+
+    /// Internal cleanup - ends session and clears all references
+    private func cleanupSession() {
+        timer?.invalidate()
+        timer = nil
+
+        // End the HK session if it exists - this stops the green workout indicator
+        workoutSession?.end()
+
+        // Clear all references
+        workoutSession = nil
+        workoutBuilder = nil
+        currentWalkId = nil
+        startTime = nil
+        modeRaw = nil
+        intervalProgramRaw = nil
+
+        workoutState = .idle
+
+        Self.logger.info("Workout session cleaned up")
+    }
+
     /// End the workout
     func endWorkout() async -> WorkoutSummaryData? {
         guard let session = workoutSession,
               let builder = workoutBuilder,
               let startTime = startTime,
               let walkId = currentWalkId else {
+            // No valid session to end, but ensure cleanup just in case
+            cleanupSession()
             return nil
         }
 
@@ -302,9 +344,26 @@ extension WatchWorkoutManager: HKWorkoutSessionDelegate {
                 workoutState = .active
             case .paused:
                 workoutState = .paused
-            case .ended:
+            case .ended, .stopped:
+                // Session has ended normally or was stopped - ensure cleanup
+                // Note: cleanupSession() is idempotent and safe to call multiple times
                 workoutState = .idle
-            default:
+                // Only cleanup if this wasn't already handled by endWorkout()
+                // (endWorkout sets workoutSession to nil after calling session.end())
+                if self.workoutSession != nil {
+                    Self.logger.info("Session ended via delegate, cleaning up references")
+                    self.workoutSession = nil
+                    self.workoutBuilder = nil
+                }
+            case .notStarted:
+                // Session failed to start or was invalidated - cleanup zombie
+                Self.logger.warning("Session in notStarted state, cleaning up")
+                cleanupSession()
+            case .prepared:
+                // Session is prepared but not yet started - no action needed
+                break
+            @unknown default:
+                Self.logger.warning("Unknown workout session state: \(String(describing: toState))")
                 break
             }
         }
@@ -313,7 +372,9 @@ extension WatchWorkoutManager: HKWorkoutSessionDelegate {
     nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
         Self.logger.error("Workout session failed: \(error.localizedDescription)")
         Task { @MainActor in
-            workoutState = .idle
+            // CRITICAL: Must cleanup session on error to prevent zombie sessions
+            // that leave the green workout indicator on the watch face
+            cleanupSession()
             WatchConnectivityManager.shared.sendWorkoutError(error.localizedDescription)
         }
     }

@@ -67,7 +67,7 @@ struct OneStepAtATimeView: View {
                     .opacity(showLine3 ? 1 : 0)
                     .offset(y: showLine3 ? 0 : 15)
 
-                Text("Walking is 15-20% of your wellbeing.\nConsistency makes it count.")
+                Text("Walking is 15-20% of your well-being.\nConsistency makes it count.")
                     .font(JW.Font.body)
                     .foregroundStyle(JW.Color.textSecondary)
                     .multilineTextAlignment(.center)

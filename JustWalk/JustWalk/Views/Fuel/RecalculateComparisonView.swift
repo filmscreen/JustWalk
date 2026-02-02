@@ -377,10 +377,11 @@ struct RecalculateComparisonView: View {
             ? currentEntry.name
             : currentEntry.entryDescription
 
+        // Use fresh estimation - treat edited description as new item
         let result = await GeminiService.shared.estimateFoodWithResult(description)
 
         switch result {
-        case .success(let estimate), .successLowConfidence(let estimate), .usingDefaults(let estimate, _):
+        case .success(let estimate):
             newEstimate = estimate
             phase = .comparison
 

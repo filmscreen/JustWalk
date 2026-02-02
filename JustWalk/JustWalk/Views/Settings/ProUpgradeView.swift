@@ -31,6 +31,7 @@ struct ProUpgradeView: View {
 
     // Entrance animation state
     @State private var showHero = false
+    @State private var showFeatures = false
     @State private var showPricing = false
     @State private var showCTA = false
     @State private var showFooter = false
@@ -81,114 +82,88 @@ struct ProUpgradeView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                // MARK: Scrollable content (title + benefit cards)
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        // Hero section
-                        VStack(spacing: JW.Spacing.md) {
-                            Text("Just Walk Pro")
-                                .font(JW.Font.largeTitle)
-                                .foregroundStyle(JW.Color.textPrimary)
-                                .multilineTextAlignment(.center)
+                // MARK: Content
+                VStack(spacing: 0) {
+                    // Hero section
+                    VStack(spacing: JW.Spacing.sm) {
+                        Text("Just Walk Pro")
+                            .font(JW.Font.largeTitle)
+                            .foregroundStyle(JW.Color.textPrimary)
+                            .multilineTextAlignment(.center)
 
-                            Text("See the full picture")
-                                .font(JW.Font.title3)
-                                .foregroundStyle(JW.Color.textSecondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .padding(.horizontal, JW.Spacing.xl)
-                        .padding(.top, JW.Spacing.xl)
-                        .opacity(showHero ? 1 : 0)
-                        .offset(y: showHero ? 0 : 20)
-
-                        // 95% positioning badge
-                        HStack(spacing: JW.Spacing.sm) {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 14, weight: .medium))
-                            Text("Two habits. 95% of your wellbeing.")
-                                .font(JW.Font.subheadline.weight(.medium))
-                        }
-                        .foregroundStyle(JW.Color.accent)
-                        .padding(.horizontal, JW.Spacing.lg)
-                        .padding(.vertical, JW.Spacing.sm)
-                        .background(
-                            Capsule()
-                                .fill(JW.Color.accent.opacity(0.15))
-                        )
-                        .padding(.top, JW.Spacing.md)
-                        .padding(.bottom, JW.Spacing.lg)
-                        .opacity(showHero ? 1 : 0)
-
-                        // Feature sections
-                        VStack(spacing: JW.Spacing.lg) {
-                            // OUTPUT Section
-                            VStack(alignment: .leading, spacing: JW.Spacing.md) {
-                                FeatureSectionHeader(
-                                    label: "OUTPUT",
-                                    icon: "figure.walk",
-                                    color: JW.Color.accent
-                                )
-                                .staggeredAppearance(index: 0)
-
-                                FeatureComparisonCard(
-                                    icon: "bolt.fill",
-                                    iconColor: JW.Color.accent,
-                                    title: "Unlimited Guided Walks",
-                                    description: "Intervals, Fat Burn, Post-Meal — structured walks for every goal."
-                                )
-                                .staggeredAppearance(index: 1)
-                            }
-
-                            // INTAKE Section
-                            VStack(alignment: .leading, spacing: JW.Spacing.md) {
-                                FeatureSectionHeader(
-                                    label: "INTAKE",
-                                    icon: "fork.knife",
-                                    color: JW.Color.accentBlue
-                                )
-                                .staggeredAppearance(index: 2)
-
-                                FeatureComparisonCard(
-                                    icon: "sparkles",
-                                    iconColor: JW.Color.accentBlue,
-                                    title: "AI Food Logging",
-                                    description: "Describe what you ate — AI estimates calories and macros instantly."
-                                )
-                                .staggeredAppearance(index: 3)
-                            }
-
-                            // PROTECTION Section
-                            VStack(alignment: .leading, spacing: JW.Spacing.md) {
-                                FeatureSectionHeader(
-                                    label: "PROTECTION",
-                                    icon: "shield.fill",
-                                    color: JW.Color.streak
-                                )
-                                .staggeredAppearance(index: 4)
-
-                                FeatureComparisonCard(
-                                    icon: "shield.fill",
-                                    iconColor: JW.Color.streak,
-                                    title: "4 Shields Every Month",
-                                    description: "Life happens. Shields protect your streak when you can't walk."
-                                )
-                                .staggeredAppearance(index: 5)
-
-                                FeatureComparisonCard(
-                                    icon: "chart.bar.fill",
-                                    iconColor: JW.Color.accentPurple,
-                                    title: "Complete Walk History",
-                                    description: "See every walk, every streak, from day one."
-                                )
-                                .staggeredAppearance(index: 6)
-                            }
-                        }
-                        .padding(.horizontal, JW.Spacing.lg)
+                        Text("See the full picture.")
+                            .font(JW.Font.title3)
+                            .foregroundStyle(JW.Color.textSecondary)
+                            .multilineTextAlignment(.center)
                     }
-                    .padding(.bottom, JW.Spacing.lg)
+                    .padding(.horizontal, JW.Spacing.xl)
+                    .padding(.top, JW.Spacing.xl + 32) // Extra space for Skip button above
+                    .opacity(showHero ? 1 : 0)
+                    .offset(y: showHero ? 0 : 20)
+
+                    // 95% hero message (prominent card)
+                    HStack(spacing: JW.Spacing.sm) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(JW.Color.accent)
+
+                        Text("Walking (~20%) and what you eat (~75%) make up 95% of your well-being.")
+                            .font(JW.Font.subheadline)
+                            .foregroundStyle(JW.Color.textPrimary)
+                            .multilineTextAlignment(.leading)
+                    }
+                    .padding(JW.Spacing.lg)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: JW.Radius.lg)
+                            .fill(JW.Color.accent.opacity(0.12))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: JW.Radius.lg)
+                            .stroke(JW.Color.accent.opacity(0.3), lineWidth: 1)
+                    )
+                    .padding(.horizontal, JW.Spacing.lg)
+                    .padding(.top, JW.Spacing.lg)
+                    .opacity(showHero ? 1 : 0)
+
+                    // 3 Feature cards
+                    VStack(spacing: JW.Spacing.sm) {
+                        // INTAKE
+                        ProFeatureCard(
+                            label: "INTAKE",
+                            icon: "fork.knife",
+                            labelColor: JW.Color.accent,
+                            title: "AI Food Logging",
+                            subtitle: "Track calories and macros in seconds."
+                        )
+
+                        // OUTPUT
+                        ProFeatureCard(
+                            label: "OUTPUT",
+                            icon: "figure.walk",
+                            labelColor: JW.Color.accent,
+                            title: "Unlimited Guided Walks",
+                            subtitle: "Intervals, Fat Burn, Post-Meal"
+                        )
+
+                        // PROTECTION
+                        ProFeatureCard(
+                            label: "PROTECTION",
+                            icon: "shield.fill",
+                            labelColor: JW.Color.accent,
+                            title: "4 Shields Every Month",
+                            subtitle: "Life happens. Stay protected."
+                        )
+                    }
+                    .padding(.horizontal, JW.Spacing.lg)
+                    .padding(.top, JW.Spacing.lg)
+                    .opacity(showFeatures ? 1 : 0)
+                    .offset(y: showFeatures ? 0 : 15)
+
+                    Spacer(minLength: JW.Spacing.md)
                 }
 
-                // MARK: Fixed footer (pricing + CTA — always visible)
+                // MARK: Fixed footer (pricing + CTA)
                 stickyFooter
             }
             .background(JW.Color.backgroundPrimary)
@@ -199,28 +174,33 @@ struct ProUpgradeView: View {
                 successOverlay
             }
 
-            if showsCloseButton {
-                VStack {
-                    HStack {
-                        Spacer()
+            // Skip / Close button
+            VStack {
+                HStack {
+                    // Skip For Now (left side, during onboarding) - liquid glass style
+                    if showsCloseButton {
                         Button {
                             onComplete()
                             dismiss()
                         } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .semibold))
+                            Text("Skip For Now")
+                                .font(JW.Font.subheadline)
                                 .foregroundStyle(JW.Color.textSecondary)
-                                .frame(width: 32, height: 32)
-                                .background(JW.Color.backgroundCard.opacity(0.95))
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.25), radius: 6, x: 0, y: 3)
+                                .padding(.horizontal, JW.Spacing.md)
+                                .padding(.vertical, JW.Spacing.sm)
+                                .background(
+                                    RoundedRectangle(cornerRadius: JW.Radius.md)
+                                        .fill(Color.white.opacity(0.08))
+                                )
                         }
-                        .accessibilityLabel("Close")
+                        .buttonStyle(.plain)
+                        .padding(.top, JW.Spacing.md)
+                        .padding(.leading, JW.Spacing.lg)
                     }
-                    .padding(.top, JW.Spacing.lg)
-                    .padding(.trailing, JW.Spacing.lg)
+
                     Spacer()
                 }
+                Spacer()
             }
         }
         .onAppear { runEntrance() }
@@ -248,9 +228,9 @@ struct ProUpgradeView: View {
                 .overlay(JW.Color.backgroundTertiary)
 
             // Plan picker
-            VStack(spacing: JW.Spacing.sm) {
-                // Monthly row
-                PlanPickerRow(
+            HStack(spacing: JW.Spacing.sm) {
+                // Monthly
+                CompactPlanOption(
                     label: "Monthly",
                     price: monthlyPriceLabel,
                     subtitle: nil,
@@ -262,8 +242,8 @@ struct ProUpgradeView: View {
                     JustWalkHaptics.selectionChanged()
                 }
 
-                // Annual row (pre-selected)
-                PlanPickerRow(
+                // Annual (pre-selected)
+                CompactPlanOption(
                     label: "Annual",
                     price: annualPriceLabel,
                     subtitle: annualSubtitleLabel,
@@ -275,16 +255,9 @@ struct ProUpgradeView: View {
                     JustWalkHaptics.selectionChanged()
                 }
             }
-            .padding(.top, 24)
             .padding(.horizontal, JW.Spacing.lg)
+            .padding(.top, JW.Spacing.sm)
             .opacity(showPricing ? 1 : 0)
-            .offset(y: showPricing ? 0 : 10)
-
-            // Trial info
-            Text("7-day free trial · Cancel anytime")
-                .font(JW.Font.caption)
-                .foregroundStyle(JW.Color.textSecondary)
-                .opacity(showPricing ? 1 : 0)
 
             // CTA Button
             Button {
@@ -309,7 +282,12 @@ struct ProUpgradeView: View {
             .buttonPressEffect()
             .padding(.horizontal, JW.Spacing.lg)
             .opacity(showCTA ? 1 : 0)
-            .offset(y: showCTA ? 0 : 10)
+
+            // Trial info
+            Text("7-day free trial · Cancel anytime")
+                .font(JW.Font.caption)
+                .foregroundStyle(JW.Color.textSecondary)
+                .opacity(showCTA ? 1 : 0)
 
             // Restore + Terms
             VStack(spacing: JW.Spacing.xs) {
@@ -334,7 +312,7 @@ struct ProUpgradeView: View {
             .opacity(showFooter ? 1 : 0)
             .padding(.bottom, JW.Spacing.sm)
         }
-        .padding(.top, JW.Spacing.sm)
+        .padding(.top, JW.Spacing.xs)
         .background(JW.Color.backgroundPrimary)
     }
 
@@ -385,10 +363,10 @@ struct ProUpgradeView: View {
         let quick = reduceMotion
 
         withAnimation(.easeOut(duration: 0.5).delay(quick ? 0 : 0.2)) { showHero = true }
-        // Feature cards handle themselves via .staggeredAppearance()
-        withAnimation(.easeOut(duration: 0.5).delay(quick ? 0 : 0.8)) { showPricing = true }
-        withAnimation(.easeOut(duration: 0.5).delay(quick ? 0 : 1.1)) { showCTA = true }
-        withAnimation(.easeOut(duration: 0.4).delay(quick ? 0 : 1.3)) { showFooter = true }
+        withAnimation(.easeOut(duration: 0.5).delay(quick ? 0 : 0.5)) { showFeatures = true }
+        withAnimation(.easeOut(duration: 0.5).delay(quick ? 0 : 0.7)) { showPricing = true }
+        withAnimation(.easeOut(duration: 0.5).delay(quick ? 0 : 0.9)) { showCTA = true }
+        withAnimation(.easeOut(duration: 0.4).delay(quick ? 0 : 1.1)) { showFooter = true }
     }
 
     // MARK: - Actions
@@ -435,9 +413,60 @@ struct ProUpgradeView: View {
     }
 }
 
-// MARK: - Plan Picker Row
+// MARK: - Pro Feature Card (compact)
 
-private struct PlanPickerRow: View {
+private struct ProFeatureCard: View {
+    let label: String
+    let icon: String
+    let labelColor: Color
+    let title: String
+    let subtitle: String
+
+    var body: some View {
+        HStack(spacing: JW.Spacing.md) {
+            // Icon
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundStyle(labelColor)
+                .frame(width: 36, height: 36)
+                .background(
+                    Circle()
+                        .fill(labelColor.opacity(0.15))
+                )
+
+            // Text content
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
+                    .foregroundStyle(labelColor)
+                    .tracking(1)
+
+                Text(title)
+                    .font(JW.Font.subheadline.weight(.semibold))
+                    .foregroundStyle(JW.Color.textPrimary)
+
+                Text(subtitle)
+                    .font(JW.Font.caption)
+                    .foregroundStyle(JW.Color.textSecondary)
+            }
+
+            Spacer()
+        }
+        .padding(JW.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: JW.Radius.md)
+                .fill(JW.Color.backgroundCard)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: JW.Radius.md)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Compact Plan Option
+
+private struct CompactPlanOption: View {
     let label: String
     let price: String
     let subtitle: String?
@@ -446,41 +475,25 @@ private struct PlanPickerRow: View {
 
     var body: some View {
         Button(action: onSelect) {
-            HStack(spacing: JW.Spacing.md) {
-                // Radio button
-                ZStack {
-                    Circle()
-                        .stroke(isSelected ? JW.Color.accent : JW.Color.textTertiary, lineWidth: 2)
-                        .frame(width: 22, height: 22)
-
-                    if isSelected {
-                        Circle()
-                            .fill(JW.Color.accent)
-                            .frame(width: 12, height: 12)
-                    }
-                }
-
-                // Plan label
+            VStack(spacing: JW.Spacing.xs) {
                 Text(label)
+                    .font(JW.Font.caption.weight(.medium))
+                    .foregroundStyle(isSelected ? JW.Color.textPrimary : JW.Color.textSecondary)
+
+                Text(price)
                     .font(JW.Font.headline)
-                    .foregroundStyle(JW.Color.textPrimary)
+                    .foregroundStyle(isSelected ? JW.Color.textPrimary : JW.Color.textSecondary)
 
-                Spacer()
-
-                // Price info
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(price)
-                        .font(JW.Font.headline)
-                        .foregroundStyle(JW.Color.textPrimary)
-
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(JW.Font.caption)
-                            .foregroundStyle(JW.Color.accent)
-                    }
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(JW.Color.accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
             }
-            .padding(JW.Spacing.lg)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, JW.Spacing.md)
             .background(
                 RoundedRectangle(cornerRadius: JW.Radius.lg)
                     .fill(JW.Color.backgroundCard)
@@ -491,76 +504,6 @@ private struct PlanPickerRow: View {
             )
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Feature Comparison Card
-
-private struct FeatureComparisonCard: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: JW.Spacing.lg) {
-            // Icon
-            ZStack {
-                Circle()
-                    .fill(iconColor.opacity(0.15))
-                    .frame(width: 44, height: 44)
-
-                Image(systemName: icon)
-                    .font(.title3)
-                    .foregroundStyle(iconColor)
-            }
-
-            // Text
-            VStack(alignment: .leading, spacing: JW.Spacing.xs) {
-                Text(title)
-                    .font(JW.Font.headline.bold())
-                    .foregroundStyle(JW.Color.textPrimary)
-                    .lineLimit(1)
-
-                Text(description)
-                    .font(JW.Font.subheadline)
-                    .foregroundStyle(JW.Color.textSecondary)
-                    .lineLimit(2)
-            }
-
-            Spacer()
-        }
-        .padding(JW.Spacing.lg)
-        .background(
-            RoundedRectangle(cornerRadius: JW.Radius.lg)
-                .fill(JW.Color.backgroundCard)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: JW.Radius.lg)
-                .stroke(Color.white.opacity(0.06), lineWidth: 1)
-        )
-    }
-}
-
-// MARK: - Feature Section Header
-
-private struct FeatureSectionHeader: View {
-    let label: String
-    let icon: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: JW.Spacing.sm) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(color)
-
-            Text(label)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(color)
-                .tracking(1.5)
-        }
-        .padding(.leading, JW.Spacing.sm)
     }
 }
 

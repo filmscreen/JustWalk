@@ -124,6 +124,7 @@ struct PostMealSetupView: View {
                 dismiss()
             }
         }
+        .toolbar(.hidden, for: .tabBar)
     }
 
     // MARK: - Actions

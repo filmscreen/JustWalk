@@ -52,10 +52,18 @@ struct DayData: Identifiable {
 
     var status: DayStatus {
         if !isWithinWeek { return .future }
-        if goalMet { return .complete }
+
+        // For today: show goal complete (green) if met, otherwise show progress ring
+        // Shield for today is just insurance while user is still walking
+        if isToday {
+            if goalMet { return .complete }
+            return .inProgress(stepProgress)
+        }
+
+        // For past days: shield takes visual priority (user requested blue for all shielded days)
         if shieldUsed { return .shieldUsed }
-        if isToday { return .inProgress(stepProgress) }
-        if steps > 0 && isPastDay { return .inProgress(stepProgress) }
+        if goalMet { return .complete }
+        if steps > 0 { return .inProgress(stepProgress) }
         return .missedNoData
     }
 
@@ -270,10 +278,13 @@ struct DayIndicator: View {
                         .frame(width: circleSize, height: circleSize)
 
                 case .shieldUsed:
-                    // Gray circle (shield icon shown below)
+                    // Blue circle with white checkmark (like complete, but blue)
                     Circle()
-                        .fill(JW.Color.backgroundTertiary.opacity(0.5))
+                        .fill(JW.Color.accentBlue)
                         .frame(width: circleSize, height: circleSize)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(.white)
 
                 case .inProgress(_):
                     // Mini progress ring
@@ -851,7 +862,7 @@ struct ExtendedWeekDayColumn: View {
     @State private var animatedHeight: CGFloat = 0
 
     private var barColor: Color {
-        if data.shieldUsed { return JW.Color.streak }
+        if data.shieldUsed { return JW.Color.accentBlue }
         if data.goalMet { return JW.Color.success }
         return JW.Color.accent
     }
@@ -874,9 +885,10 @@ struct ExtendedWeekDayColumn: View {
             // Status indicator
             ZStack {
                 if data.shieldUsed {
-                    Image(systemName: "shield.fill")
+                    // Blue checkmark circle (like goal met, but blue)
+                    Image(systemName: "checkmark.circle.fill")
                         .font(JW.Font.caption2)
-                        .foregroundStyle(JW.Color.streak)
+                        .foregroundStyle(JW.Color.accentBlue)
                 } else if data.goalMet {
                     Image(systemName: "checkmark.circle.fill")
                         .font(JW.Font.caption2)
